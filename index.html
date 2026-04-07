@@ -613,7 +613,7 @@
           stateBox.style.display = '';
           stateBox.innerHTML = `
         <div class="state-icon">⚠️</div>
-        <p>Could not load data from Google Sheets.<br><small style="color:#94a3b8">${err.message}</small></p>
+        <p>Could not load data from Google Sheets.<br><small style="color:#94a3b8">${esc(err.message)}</small></p>
         <button class="retry-btn" onclick="fetchSheetData()">Try again</button>
       `;
         } finally {
@@ -623,7 +623,22 @@
 
       function parseCSV(text) {
         const lines = text.trim().split(/\r?\n/);
-        const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+        const headerFields = [];
+        let hCurrent = '';
+        let hInQuotes = false;
+        for (let i = 0; i < lines[0].length; i++) {
+          const ch = lines[0][i];
+          if (ch === '"') {
+            hInQuotes = !hInQuotes;
+          } else if (ch === ',' && !hInQuotes) {
+            headerFields.push(hCurrent.trim());
+            hCurrent = '';
+          } else {
+            hCurrent += ch;
+          }
+        }
+        headerFields.push(hCurrent.trim());
+        const headers = headerFields.map((h) => h.replace(/^"|"$/g, ''));
 
         return lines
           .slice(1)
@@ -665,8 +680,6 @@
       function loadData(rows) {
         allRows = rows;
         populateFilters(rows);
-        renderSummary(rows);
-        renderGoals(rows);
         renderTable(rows);
 
         document.getElementById('state-box').style.display = 'none';
@@ -709,9 +722,15 @@
       }
 
       function renderSummary(rows) {
-        const done = rows.filter((r) => normalizeStatus(r.Status) === 'done').length;
-        const doing = rows.filter((r) => normalizeStatus(r.Status) === 'doing').length;
-        const blocked = rows.filter((r) => normalizeStatus(r.Status) === 'blocked').length;
+        const counts = rows.reduce(
+          (acc, r) => {
+            const s = normalizeStatus(r.Status);
+            if (s in acc) acc[s]++;
+            return acc;
+          },
+          { done: 0, doing: 0, blocked: 0 }
+        );
+        const { done, doing, blocked } = counts;
 
         document.getElementById('summary').innerHTML = `
       <div class="card total">
@@ -850,22 +869,32 @@
         renderTable(filtered);
       }
 
-      function resetFilters() {
-        ['filter-dept', 'filter-team', 'filter-person', 'filter-status', 'filter-goal'].forEach(
-          (id) => (document.getElementById(id).value = '')
-        );
-        document.getElementById('search').value = '';
-        renderTable(allRows);
-      }
-
-      [
+      const FILTER_IDS = [
         'filter-dept',
         'filter-team',
         'filter-person',
         'filter-status',
         'filter-goal',
         'search',
-      ].forEach((id) => document.getElementById(id).addEventListener('input', applyFilters));
+      ];
+
+      function resetFilters() {
+        FILTER_IDS.forEach((id) => (document.getElementById(id).value = ''));
+        renderTable(allRows);
+      }
+
+      let debounceTimer;
+      FILTER_IDS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el.tagName === 'INPUT') {
+          el.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(applyFilters, 200);
+          });
+        } else {
+          el.addEventListener('input', applyFilters);
+        }
+      });
 
       fetchSheetData();
     </script>
