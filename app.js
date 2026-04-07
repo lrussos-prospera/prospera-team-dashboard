@@ -183,8 +183,8 @@ function renderSummary(rows) {
   const { done, doing, blocked } = counts;
   const total = rows.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
-  const doneColor = done > 0 ? 'style="color:var(--color-status-done)"' : '';
-  const blockedColor = blocked > 0 ? 'style="color:var(--brand-red)"' : '';
+  const doneClass = done > 0 ? 'status-done' : '';
+  const blockedClass = blocked > 0 ? 'status-blocked' : '';
 
   document.getElementById('summary').innerHTML = `
     <div class="hero-zone">
@@ -192,7 +192,7 @@ function renderSummary(rows) {
       <div class="hero-label">Complete</div>
       <div class="hero-stats">
         <div class="hero-stat">
-          <span class="hero-stat-value" ${doneColor}>${done}</span>
+          <span class="hero-stat-value ${doneClass}">${done}</span>
           <span class="hero-stat-label">Done</span>
         </div>
         <div class="hero-stat-divider"></div>
@@ -202,7 +202,7 @@ function renderSummary(rows) {
         </div>
         <div class="hero-stat-divider"></div>
         <div class="hero-stat">
-          <span class="hero-stat-value" ${blockedColor}>${blocked}</span>
+          <span class="hero-stat-value ${blockedClass}">${blocked}</span>
           <span class="hero-stat-label">Blocked</span>
         </div>
         <div class="hero-stat-divider"></div>
@@ -231,15 +231,15 @@ function renderGoals(rows) {
     .forEach(([goal, data]) => {
       const pct = data.total ? Math.round((data.done / data.total) * 100) : 0;
       const div = document.createElement('div');
-      div.className = 'goal-card';
+      div.className = `goal-card ${pct < 25 ? 'status-low' : ''}`;
       div.innerHTML = `
         <div class="goal-title">${esc(goal)}</div>
         <div class="goal-meta">
-          <span>${data.done} of ${data.total} done</span>
-          <span>${pct}%</span>
+          <div class="goal-pct-large">${pct}%</div>
+          <div class="goal-count">${data.done} / ${data.total} <span style="font-size:0.7em">DONE</span></div>
         </div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" style="width:${pct}%"></div>
+        <div class="progress-mini">
+          <div class="progress-mini-fill" style="width:${pct}%"></div>
         </div>
       `;
       grid.appendChild(div);
@@ -352,15 +352,21 @@ function renderTable(rows) {
         expandTr.id = rowId;
         expandTr.style.display = 'none';
         expandTr.innerHTML = `
-	          <td colspan="5" class="expand-content">
-	            <div class="expand-grid">
-	              ${r['Team'] ? `<div class="expand-field"><span class="expand-label">Team</span> ${esc(r['Team'])}</div>` : ''}
-              ${r['Goal'] ? `<div class="expand-field expand-field-mobile"><span class="expand-label">Goal</span> ${esc(r['Goal'])}</div>` : ''}
-              ${r['Added/updated'] ? `<div class="expand-field expand-field-mobile"><span class="expand-label">Updated</span> ${esc(r['Added/updated'])}</div>` : ''}
-              ${r['Details'] ? `<div class="expand-field"><span class="expand-label">Details</span> ${esc(r['Details'])}</div>` : ''}
-              ${r['Notes'] ? `<div class="expand-field"><span class="expand-label">Notes</span> ${esc(r['Notes'])}</div>` : ''}
-            </div>
-          </td>
+	          <td colspan="5">
+              <div class="expand-wrapper">
+                <div class="expand-content">
+                  <div class="expand-grid">
+                    ${r['Team'] ? `<div class="expand-item expand-team"><span class="expand-label">Team</span><div class="expand-field">${esc(r['Team'])}</div></div>` : ''}
+                    ${r['Details'] ? `<div class="expand-item expand-details"><span class="expand-label">Details</span><div class="expand-field">${esc(r['Details'])}</div></div>` : ''}
+                    ${r['Notes'] ? `<div class="expand-item expand-notes"><span class="expand-label">Notes</span><div class="expand-field">${esc(r['Notes'])}</div></div>` : ''}
+                  </div>
+                  <div class="expand-grid expand-mobile-only">
+                    ${r['Goal'] ? `<div class="expand-item"><span class="expand-label">Goal</span><div class="expand-field">${esc(r['Goal'])}</div></div>` : ''}
+                    ${r['Added/updated'] ? `<div class="expand-item"><span class="expand-label">Updated</span><div class="expand-field">${esc(r['Added/updated'])}</div></div>` : ''}
+                  </div>
+                </div>
+              </div>
+            </td>
 	        `;
         tbody.appendChild(expandTr);
 
@@ -456,6 +462,14 @@ document.getElementById('filter-toggle').addEventListener('click', () => {
 document.getElementById('reset-btn').addEventListener('click', resetFilters);
 
 document.getElementById('refresh-btn').addEventListener('click', fetchSheetData);
+
+// Quick Search: Focus search on "/" or just typing
+window.addEventListener('keydown', (e) => {
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+    e.preventDefault();
+    document.getElementById('search').focus();
+  }
+});
 
 document.getElementById('filter-dept').addEventListener('change', () => {
   const dept = document.getElementById('filter-dept').value;
