@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-Single-file static web application — all HTML, CSS, and JavaScript live in `index.html`. No build tools, no dependencies, no transpilation.
+Static web application — no build tools, no dependencies, no transpilation. Three files:
 
-- `index.html` — the entire application (served via GitHub Pages)
+- `index.html` — HTML structure and base64-encoded logo
+- `styles.css` — all styles, CSS custom properties for brand tokens, responsive breakpoints
+- `app.js` — data fetching, CSV parsing, rendering, filtering logic
 
 ## Data Source
 

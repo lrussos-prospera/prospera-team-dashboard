@@ -4,466 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Team Updates Dashboard — Próspera</title>
-    <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
-      :root {
-        --red: #fe4922;
-        --navy: #0f144c;
-        --green: #b2cdc7;
-        --blue: #daeaff;
-        --bg: #f4f6f9;
-        --text: #0f144c;
-        --muted: #64748b;
-        --border: #e2e8f0;
-      }
-
-      body {
-        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        min-height: 100vh;
-      }
-      header {
-        background: var(--navy);
-        color: white;
-        padding: 20px 40px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 16px;
-        border-bottom: 3px solid var(--red);
-      }
-      .header-left {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-      }
-      .logo-img {
-        height: 36px;
-        width: auto;
-        display: block;
-      }
-      .header-divider {
-        width: 1px;
-        height: 36px;
-        background: rgba(255, 255, 255, 0.2);
-      }
-      .header-titles h1 {
-        font-size: 1.15rem;
-        font-weight: 700;
-        letter-spacing: 0.3px;
-        color: white;
-      }
-      .header-titles .subtitle {
-        font-size: 0.78rem;
-        color: rgba(255, 255, 255, 0.55);
-        margin-top: 3px;
-        font-weight: 400;
-        letter-spacing: 0.3px;
-      }
-
-      .header-right {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 6px;
-      }
-      .header-right .viewed-date {
-        font-size: 0.72rem;
-        color: rgba(255, 255, 255, 0.45);
-      }
-
-      .data-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 12px;
-        border-radius: 99px;
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.3px;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        color: rgba(255, 255, 255, 0.75);
-      }
-      .data-badge .dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--green);
-        flex-shrink: 0;
-      }
-      .data-badge.loading .dot {
-        background: #f59e0b;
-        animation: pulse 1s infinite;
-      }
-      .data-badge.error .dot {
-        background: var(--red);
-      }
-      @keyframes pulse {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.3;
-        }
-      }
-
-      .refresh-btn {
-        background: none;
-        border: none;
-        color: rgba(255, 255, 255, 0.5);
-        font-size: 0.78rem;
-        cursor: pointer;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-family: inherit;
-        transition: color 0.15s;
-      }
-      .refresh-btn:hover {
-        color: white;
-      }
-      .refresh-btn.spinning {
-        animation: spin 0.7s linear infinite;
-        display: inline-block;
-      }
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      main {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 28px 24px;
-      }
-
-      .state-box {
-        background: white;
-        border-radius: 10px;
-        padding: 64px 40px;
-        text-align: center;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
-        margin-bottom: 28px;
-        color: var(--muted);
-      }
-      .state-box .state-icon {
-        font-size: 2.2rem;
-        margin-bottom: 14px;
-      }
-      .state-box p {
-        font-size: 0.9rem;
-      }
-      .state-box .retry-btn {
-        margin-top: 16px;
-        padding: 8px 20px;
-        background: var(--navy);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        font-family: inherit;
-        cursor: pointer;
-      }
-      .state-box .retry-btn:hover {
-        background: var(--red);
-      }
-
-      .summary-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 14px;
-        margin-bottom: 28px;
-      }
-      .card {
-        background: white;
-        border-radius: 10px;
-        padding: 18px 20px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
-        border-top: 3px solid transparent;
-      }
-      .card .label {
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.6px;
-        color: var(--muted);
-        margin-bottom: 8px;
-      }
-      .card .value {
-        font-size: 2rem;
-        font-weight: 700;
-        line-height: 1;
-      }
-      .card.done {
-        border-top-color: #16a34a;
-      }
-      .card.done .value {
-        color: #16a34a;
-      }
-      .card.doing {
-        border-top-color: var(--navy);
-      }
-      .card.doing .value {
-        color: var(--navy);
-      }
-      .card.blocked {
-        border-top-color: var(--red);
-      }
-      .card.blocked .value {
-        color: var(--red);
-      }
-      .card.total {
-        border-top-color: var(--navy);
-      }
-      .card.total .value {
-        color: var(--navy);
-      }
-
-      .goals-section {
-        margin-bottom: 28px;
-      }
-      .goals-section h2 {
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.7px;
-        color: var(--navy);
-        margin-bottom: 12px;
-      }
-      .goals-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 12px;
-      }
-      .goal-card {
-        background: white;
-        border-radius: 10px;
-        padding: 16px 18px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
-      }
-      .goal-card .goal-title {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--navy);
-        margin-bottom: 10px;
-        line-height: 1.4;
-      }
-      .goal-card .goal-meta {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.72rem;
-        color: var(--muted);
-        margin-bottom: 6px;
-      }
-      .progress-bar-bg {
-        background: #e2e8f0;
-        border-radius: 99px;
-        height: 7px;
-        overflow: hidden;
-      }
-      .progress-bar-fill {
-        height: 100%;
-        border-radius: 99px;
-        background: var(--red);
-        transition: width 0.5s ease;
-      }
-
-      .controls {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 20px;
-        align-items: flex-end;
-      }
-      .control-group {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      .control-group label {
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-        color: var(--muted);
-      }
-      .controls select,
-      .controls input[type='text'] {
-        padding: 7px 10px;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        font-size: 0.83rem;
-        font-family: inherit;
-        background: white;
-        color: var(--text);
-        cursor: pointer;
-        outline: none;
-        min-width: 140px;
-      }
-      .controls select:focus,
-      .controls input[type='text']:focus {
-        border-color: var(--navy);
-        box-shadow: 0 0 0 3px rgba(15, 20, 76, 0.1);
-      }
-      .reset-btn {
-        padding: 7px 14px;
-        background: #f1f5f9;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        font-size: 0.83rem;
-        font-weight: 600;
-        font-family: inherit;
-        color: var(--navy);
-        cursor: pointer;
-        align-self: flex-end;
-      }
-      .reset-btn:hover {
-        background: var(--blue);
-        border-color: var(--navy);
-      }
-
-      .table-wrap {
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
-        overflow: hidden;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.85rem;
-      }
-      thead tr {
-        background: var(--navy);
-        color: white;
-        text-align: left;
-      }
-      thead th {
-        padding: 12px 14px;
-        font-weight: 700;
-        font-size: 0.69rem;
-        text-transform: uppercase;
-        letter-spacing: 0.6px;
-        white-space: nowrap;
-      }
-      tbody tr {
-        border-bottom: 1px solid #f1f5f9;
-        transition: background 0.15s;
-      }
-      tbody tr:last-child {
-        border-bottom: none;
-      }
-      tbody tr:hover {
-        background: var(--blue);
-      }
-      td {
-        padding: 12px 14px;
-        vertical-align: top;
-        line-height: 1.5;
-      }
-
-      .td-dept {
-        font-weight: 700;
-        color: var(--navy);
-        white-space: nowrap;
-      }
-      .td-team {
-        color: #475569;
-        white-space: nowrap;
-        font-size: 0.8rem;
-      }
-      .td-person {
-        font-weight: 500;
-        white-space: nowrap;
-      }
-      .td-topic {
-        font-weight: 600;
-      }
-      .td-details {
-        color: #475569;
-        max-width: 360px;
-      }
-      .td-goal {
-        font-size: 0.75rem;
-        color: var(--navy);
-        font-weight: 500;
-        max-width: 200px;
-        opacity: 0.7;
-      }
-      .td-date {
-        font-size: 0.75rem;
-        color: #94a3b8;
-        white-space: nowrap;
-      }
-      .td-notes {
-        font-size: 0.75rem;
-        color: #94a3b8;
-        max-width: 160px;
-        font-style: italic;
-      }
-
-      .badge {
-        display: inline-block;
-        padding: 3px 10px;
-        border-radius: 99px;
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-        white-space: nowrap;
-      }
-      .badge-done {
-        background: #dcfce7;
-        color: #15803d;
-      }
-      .badge-doing {
-        background: var(--blue);
-        color: var(--navy);
-      }
-      .badge-blocked {
-        background: #fee2e2;
-        color: var(--red);
-      }
-      .badge-other {
-        background: #f1f5f9;
-        color: #475569;
-      }
-
-      .group-header td {
-        background: var(--blue);
-        font-weight: 700;
-        font-size: 0.72rem;
-        text-transform: uppercase;
-        letter-spacing: 0.6px;
-        color: var(--navy);
-        padding: 8px 14px;
-        border-top: 2px solid var(--border);
-      }
-
-      .empty {
-        text-align: center;
-        padding: 48px 24px;
-        color: #94a3b8;
-      }
-
-      .result-count {
-        font-size: 0.8rem;
-        color: #94a3b8;
-        margin-bottom: 10px;
-      }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Playfair+Display:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header>
@@ -484,85 +31,99 @@
         <div id="csv-badge" class="data-badge loading">
           <span class="dot"></span>
           <span id="csv-date-label">Loading…</span>
-          <button
-            class="refresh-btn"
-            id="refresh-btn"
-            title="Refresh data"
-            onclick="fetchSheetData()"
-          >
-            ↻
-          </button>
+          <button class="refresh-btn" id="refresh-btn" title="Refresh data">↻</button>
         </div>
         <div class="viewed-date" id="viewed-date"></div>
       </div>
     </header>
 
-    <main>
+    <main aria-label="Dashboard content">
       <div id="state-box" class="state-box">
         <div class="state-icon">⏳</div>
         <p id="state-msg">Fetching latest data from Google Sheets…</p>
       </div>
 
-      <div class="summary-grid" id="summary" style="display: none"></div>
+      <div
+        class="summary-grid"
+        id="summary"
+        role="region"
+        aria-label="Summary statistics"
+        aria-live="polite"
+        style="display: none"
+      ></div>
 
       <div class="goals-section" id="goals-section" style="display: none">
         <h2>Progress by Goal</h2>
         <div class="goals-grid" id="goals-grid"></div>
       </div>
 
+      <section id="blocked-section" class="blocked-section" style="display: none"></section>
+
       <div class="controls" id="controls" style="display: none">
-        <div class="control-group">
-          <label for="filter-dept">Department</label>
-          <select id="filter-dept">
-            <option value="">All</option>
-          </select>
+        <div class="search-bar">
+          <input
+            type="text"
+            id="search"
+            placeholder="Search updates…"
+            aria-label="Search updates"
+          />
+          <button
+            class="filter-toggle"
+            id="filter-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-label="Toggle filter panel"
+          >
+            Filters
+            <span class="filter-badge" id="filter-badge"></span>
+          </button>
+          <button class="reset-btn" id="reset-btn" aria-label="Reset all filters">Reset</button>
         </div>
-        <div class="control-group">
-          <label for="filter-team">Team</label>
-          <select id="filter-team">
-            <option value="">All</option>
-          </select>
+        <div class="filter-panel" id="filter-panel" style="display: none">
+          <div class="control-group">
+            <label for="filter-dept">Department</label>
+            <select id="filter-dept">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="filter-team">Team</label>
+            <select id="filter-team">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="filter-person">Responsible</label>
+            <select id="filter-person">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="filter-status">Status</label>
+            <select id="filter-status">
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="filter-goal">Goal</label>
+            <select id="filter-goal">
+              <option value="">All</option>
+            </select>
+          </div>
         </div>
-        <div class="control-group">
-          <label for="filter-person">Responsible</label>
-          <select id="filter-person">
-            <option value="">All</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <label for="filter-status">Status</label>
-          <select id="filter-status">
-            <option value="">All</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <label for="filter-goal">Goal</label>
-          <select id="filter-goal">
-            <option value="">All</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <label for="search">Search</label>
-          <input type="text" id="search" placeholder="Keyword…" />
-        </div>
-        <button class="reset-btn" onclick="resetFilters()">Reset</button>
       </div>
 
-      <div class="result-count" id="result-count" style="display: none"></div>
+      <div class="result-count" id="result-count" aria-live="polite" style="display: none"></div>
 
       <div class="table-wrap" id="table-wrap" style="display: none">
         <table>
           <thead>
             <tr>
-              <th>Department</th>
-              <th>Team</th>
-              <th>Responsible</th>
-              <th>Topic</th>
-              <th>Details</th>
-              <th>Status</th>
-              <th>Goal</th>
-              <th>Updated</th>
-              <th>Notes</th>
+              <th scope="col">Responsible</th>
+              <th scope="col">Topic</th>
+              <th scope="col">Status</th>
+              <th scope="col">Goal</th>
+              <th scope="col">Updated</th>
             </tr>
           </thead>
           <tbody id="table-body"></tbody>
@@ -570,333 +131,6 @@
       </div>
     </main>
 
-    <script>
-      const SHEET_URL =
-        'https://docs.google.com/spreadsheets/d/1bUY_Us-Vjq4JSYsnxrVXfAX6qRGjxZRgXR31me3Nc0U/gviz/tq?tqx=out:csv&gid=1636341361';
-
-      let allRows = [];
-
-      document.getElementById('viewed-date').textContent = new Date().toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-
-      async function fetchSheetData() {
-        const badge = document.getElementById('csv-badge');
-        const label = document.getElementById('csv-date-label');
-        const btn = document.getElementById('refresh-btn');
-        const stateBox = document.getElementById('state-box');
-
-        badge.className = 'data-badge loading';
-        label.textContent = 'Loading…';
-        btn.classList.add('spinning');
-
-        try {
-          const res = await fetch(SHEET_URL);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const text = await res.text();
-          const rows = parseCSV(text);
-          if (!rows.length) throw new Error('No data found in sheet');
-
-          loadData(rows);
-
-          badge.className = 'data-badge';
-          label.textContent =
-            'Live · refreshed ' +
-            new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        } catch (err) {
-          badge.className = 'data-badge error';
-          label.textContent = 'Could not load data';
-
-          stateBox.style.display = '';
-          stateBox.innerHTML = `
-        <div class="state-icon">⚠️</div>
-        <p>Could not load data from Google Sheets.<br><small style="color:#94a3b8">${esc(err.message)}</small></p>
-        <button class="retry-btn" onclick="fetchSheetData()">Try again</button>
-      `;
-        } finally {
-          btn.classList.remove('spinning');
-        }
-      }
-
-      function parseCSV(text) {
-        const lines = text.trim().split(/\r?\n/);
-        const headerFields = [];
-        let hCurrent = '';
-        let hInQuotes = false;
-        for (let i = 0; i < lines[0].length; i++) {
-          const ch = lines[0][i];
-          if (ch === '"') {
-            hInQuotes = !hInQuotes;
-          } else if (ch === ',' && !hInQuotes) {
-            headerFields.push(hCurrent.trim());
-            hCurrent = '';
-          } else {
-            hCurrent += ch;
-          }
-        }
-        headerFields.push(hCurrent.trim());
-        const headers = headerFields.map((h) => h.replace(/^"|"$/g, ''));
-
-        return lines
-          .slice(1)
-          .map((line) => {
-            const fields = [];
-            let current = '';
-            let inQuotes = false;
-            for (let i = 0; i < line.length; i++) {
-              const ch = line[i];
-              if (ch === '"') {
-                inQuotes = !inQuotes;
-              } else if (ch === ',' && !inQuotes) {
-                fields.push(current.trim());
-                current = '';
-              } else {
-                current += ch;
-              }
-            }
-            fields.push(current.trim());
-
-            const row = {};
-            headers.forEach((h, i) => {
-              row[h] = (fields[i] || '').replace(/^"|"$/g, '');
-            });
-            return row;
-          })
-          .filter((r) => Object.values(r).some((v) => v));
-      }
-
-      function normalizeStatus(raw) {
-        const s = String(raw).toLowerCase().trim();
-        if (s.includes('done')) return 'done';
-        if (s.includes('doing') || s.includes('in progress') || s.includes('progress'))
-          return 'doing';
-        if (s.includes('block')) return 'blocked';
-        return 'other';
-      }
-
-      function loadData(rows) {
-        allRows = rows;
-        populateFilters(rows);
-        renderTable(rows);
-
-        document.getElementById('state-box').style.display = 'none';
-        document.getElementById('summary').style.display = '';
-        document.getElementById('goals-section').style.display = '';
-        document.getElementById('controls').style.display = '';
-        document.getElementById('result-count').style.display = '';
-        document.getElementById('table-wrap').style.display = '';
-      }
-
-      function populateFilters(rows) {
-        const fill = (id, key) => {
-          const sel = document.getElementById(id);
-          while (sel.options.length > 1) sel.remove(1);
-          const values = [...new Set(rows.map((r) => r[key]).filter(Boolean))].sort();
-          values.forEach((v) => {
-            const opt = document.createElement('option');
-            opt.value = v;
-            opt.textContent = v;
-            sel.appendChild(opt);
-          });
-        };
-        fill('filter-dept', 'Department');
-        fill('filter-team', 'Team');
-        fill('filter-person', 'Responsible');
-        fill('filter-goal', 'Goal');
-
-        const statusSel = document.getElementById('filter-status');
-        while (statusSel.options.length > 1) statusSel.remove(1);
-        [
-          ['done', 'Done'],
-          ['doing', 'In Progress'],
-          ['blocked', 'Blocked'],
-        ].forEach(([val, label]) => {
-          const opt = document.createElement('option');
-          opt.value = val;
-          opt.textContent = label;
-          statusSel.appendChild(opt);
-        });
-      }
-
-      function renderSummary(rows) {
-        const counts = rows.reduce(
-          (acc, r) => {
-            const s = normalizeStatus(r.Status);
-            if (s in acc) acc[s]++;
-            return acc;
-          },
-          { done: 0, doing: 0, blocked: 0 }
-        );
-        const { done, doing, blocked } = counts;
-
-        document.getElementById('summary').innerHTML = `
-      <div class="card total">
-        <div class="label">Total Updates</div>
-        <div class="value">${rows.length}</div>
-      </div>
-      <div class="card done">
-        <div class="label">Done</div>
-        <div class="value">${done}</div>
-      </div>
-      <div class="card doing">
-        <div class="label">In Progress</div>
-        <div class="value">${doing}</div>
-      </div>
-      <div class="card blocked">
-        <div class="label">Blocked</div>
-        <div class="value">${blocked}</div>
-      </div>
-    `;
-      }
-
-      function renderGoals(rows) {
-        const goals = {};
-        rows.forEach((r) => {
-          const g = r['Goal'] || 'No Goal';
-          if (!goals[g]) goals[g] = { total: 0, done: 0 };
-          goals[g].total++;
-          if (normalizeStatus(r.Status) === 'done') goals[g].done++;
-        });
-
-        const grid = document.getElementById('goals-grid');
-        grid.innerHTML = '';
-        Object.entries(goals)
-          .sort()
-          .forEach(([goal, data]) => {
-            const pct = data.total ? Math.round((data.done / data.total) * 100) : 0;
-            const div = document.createElement('div');
-            div.className = 'goal-card';
-            div.innerHTML = `
-        <div class="goal-title">${esc(goal)}</div>
-        <div class="goal-meta">
-          <span>${data.done} of ${data.total} done</span>
-          <span>${pct}%</span>
-        </div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" style="width:${pct}%"></div>
-        </div>
-      `;
-            grid.appendChild(div);
-          });
-      }
-
-      function badge(raw) {
-        const norm = normalizeStatus(raw);
-        if (norm === 'done') return `<span class="badge badge-done">Done</span>`;
-        if (norm === 'doing') return `<span class="badge badge-doing">In Progress</span>`;
-        if (norm === 'blocked') return `<span class="badge badge-blocked">Blocked</span>`;
-        return `<span class="badge badge-other">${esc(raw)}</span>`;
-      }
-
-      function esc(str) {
-        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      }
-
-      function renderTable(rows) {
-        const tbody = document.getElementById('table-body');
-        const count = document.getElementById('result-count');
-
-        if (!rows.length) {
-          tbody.innerHTML = `<tr><td colspan="9" class="empty">No updates match your filters.</td></tr>`;
-          count.textContent = 'No results';
-          return;
-        }
-
-        count.textContent = `Showing ${rows.length} update${rows.length !== 1 ? 's' : ''}`;
-
-        const grouped = {};
-        rows.forEach((r) => {
-          const dept = r['Department'] || 'Other';
-          if (!grouped[dept]) grouped[dept] = [];
-          grouped[dept].push(r);
-        });
-
-        tbody.innerHTML = '';
-
-        Object.entries(grouped)
-          .sort()
-          .forEach(([dept, deptRows]) => {
-            const gh = document.createElement('tr');
-            gh.className = 'group-header';
-            gh.innerHTML = `<td colspan="9">${esc(dept)} &mdash; ${deptRows.length} update${deptRows.length !== 1 ? 's' : ''}</td>`;
-            tbody.appendChild(gh);
-
-            deptRows.forEach((r) => {
-              const tr = document.createElement('tr');
-              tr.innerHTML = `
-          <td class="td-dept">${esc(r['Department'])}</td>
-          <td class="td-team">${esc(r['Team'])}</td>
-          <td class="td-person">${esc(r['Responsible'])}</td>
-          <td class="td-topic">${esc(r['Topic'])}</td>
-          <td class="td-details">${esc(r['Details'])}</td>
-          <td>${badge(r['Status'])}</td>
-          <td class="td-goal">${esc(r['Goal'])}</td>
-          <td class="td-date">${esc(r['Added/updated'])}</td>
-          <td class="td-notes">${esc(r['Notes'] || '')}</td>
-        `;
-              tbody.appendChild(tr);
-            });
-          });
-
-        renderSummary(rows);
-        renderGoals(rows);
-      }
-
-      function applyFilters() {
-        const dept = document.getElementById('filter-dept').value;
-        const team = document.getElementById('filter-team').value;
-        const person = document.getElementById('filter-person').value;
-        const status = document.getElementById('filter-status').value;
-        const goal = document.getElementById('filter-goal').value;
-        const search = document.getElementById('search').value.toLowerCase();
-
-        const filtered = allRows.filter((r) => {
-          if (dept && r['Department'] !== dept) return false;
-          if (team && r['Team'] !== team) return false;
-          if (person && r['Responsible'] !== person) return false;
-          if (status && normalizeStatus(r['Status']) !== status) return false;
-          if (goal && r['Goal'] !== goal) return false;
-          if (search) {
-            const blob = Object.values(r).join(' ').toLowerCase();
-            if (!blob.includes(search)) return false;
-          }
-          return true;
-        });
-
-        renderTable(filtered);
-      }
-
-      const FILTER_IDS = [
-        'filter-dept',
-        'filter-team',
-        'filter-person',
-        'filter-status',
-        'filter-goal',
-        'search',
-      ];
-
-      function resetFilters() {
-        FILTER_IDS.forEach((id) => (document.getElementById(id).value = ''));
-        renderTable(allRows);
-      }
-
-      let debounceTimer;
-      FILTER_IDS.forEach((id) => {
-        const el = document.getElementById(id);
-        if (el.tagName === 'INPUT') {
-          el.addEventListener('input', () => {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(applyFilters, 200);
-          });
-        } else {
-          el.addEventListener('input', applyFilters);
-        }
-      });
-
-      fetchSheetData();
-    </script>
+    <script src="app.js"></script>
   </body>
 </html>
