@@ -107,6 +107,7 @@ function loadData(rows) {
   allRows = rows;
   populateFilters(rows);
   renderTable(rows);
+  updateFilterBadge();
 
   document.getElementById('state-box').style.display = 'none';
   document.getElementById('summary').style.display = '';
@@ -182,6 +183,7 @@ function renderSummary(rows) {
   const { done, doing, blocked } = counts;
   const total = rows.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
+  const doneColor = done > 0 ? 'style="color:var(--color-status-done)"' : '';
   const blockedColor = blocked > 0 ? 'style="color:var(--brand-red)"' : '';
 
   document.getElementById('summary').innerHTML = `
@@ -189,6 +191,11 @@ function renderSummary(rows) {
       <div class="hero-pct">${pct}<span class="hero-pct-symbol">%</span></div>
       <div class="hero-label">Complete</div>
       <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-value" ${doneColor}>${done}</span>
+          <span class="hero-stat-label">Done</span>
+        </div>
+        <div class="hero-stat-divider"></div>
         <div class="hero-stat">
           <span class="hero-stat-value">${doing}</span>
           <span class="hero-stat-label">In Progress</span>
@@ -300,7 +307,7 @@ function renderTable(rows) {
     grouped[dept].push(r);
   });
 
-	  tbody.innerHTML = '';
+  tbody.innerHTML = '';
 
   const toggleRowDetails = (summaryRow) => {
     const next = summaryRow.nextElementSibling;
@@ -309,7 +316,7 @@ function renderTable(rows) {
     const isOpen = next.style.display !== 'none';
     next.style.display = isOpen ? 'none' : 'table-row';
     summaryRow.setAttribute('aria-expanded', String(!isOpen));
-    summaryRow.querySelector('.expand-icon').textContent = isOpen ? '›' : '‹';
+    summaryRow.querySelector('.expand-icon').style.transform = isOpen ? '' : 'rotate(90deg)';
   };
 
   Object.entries(grouped)
@@ -320,18 +327,18 @@ function renderTable(rows) {
       gh.innerHTML = `<td colspan="5">${esc(dept)} &mdash; ${deptRows.length} update${deptRows.length !== 1 ? 's' : ''}</td>`;
       tbody.appendChild(gh);
 
-	      deptRows.forEach((r) => {
-	        const tr = document.createElement('tr');
-	        const rowId = `details-${dept.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${tbody.children.length}`;
-	        tr.tabIndex = 0;
-	        tr.setAttribute('role', 'button');
-	        tr.setAttribute('aria-expanded', 'false');
-	        tr.setAttribute('aria-controls', rowId);
-	        tr.setAttribute(
-	          'aria-label',
-	          `Toggle details for ${r['Responsible'] || 'team member'}: ${r['Topic'] || 'update'}`
-	        );
-	        tr.innerHTML = `
+      deptRows.forEach((r) => {
+        const tr = document.createElement('tr');
+        const rowId = `details-${dept.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${tbody.children.length}`;
+        tr.tabIndex = 0;
+        tr.setAttribute('role', 'button');
+        tr.setAttribute('aria-expanded', 'false');
+        tr.setAttribute('aria-controls', rowId);
+        tr.setAttribute(
+          'aria-label',
+          `Toggle details for ${r['Responsible'] || 'team member'}: ${r['Topic'] || 'update'}`
+        );
+        tr.innerHTML = `
 	          <td class="td-person"><span class="expand-icon" aria-hidden="true">›</span>${esc(r['Responsible'])}</td>
 	          <td class="td-topic">${esc(r['Topic'])}</td>
 	          <td>${badge(r['Status'])}</td>
@@ -340,29 +347,31 @@ function renderTable(rows) {
 	        `;
         tbody.appendChild(tr);
 
-	        const expandTr = document.createElement('tr');
-	        expandTr.className = 'expand-row';
-	        expandTr.id = rowId;
-	        expandTr.style.display = 'none';
-	        expandTr.innerHTML = `
+        const expandTr = document.createElement('tr');
+        expandTr.className = 'expand-row';
+        expandTr.id = rowId;
+        expandTr.style.display = 'none';
+        expandTr.innerHTML = `
 	          <td colspan="5" class="expand-content">
 	            <div class="expand-grid">
 	              ${r['Team'] ? `<div class="expand-field"><span class="expand-label">Team</span> ${esc(r['Team'])}</div>` : ''}
+              ${r['Goal'] ? `<div class="expand-field expand-field-mobile"><span class="expand-label">Goal</span> ${esc(r['Goal'])}</div>` : ''}
+              ${r['Added/updated'] ? `<div class="expand-field expand-field-mobile"><span class="expand-label">Updated</span> ${esc(r['Added/updated'])}</div>` : ''}
               ${r['Details'] ? `<div class="expand-field"><span class="expand-label">Details</span> ${esc(r['Details'])}</div>` : ''}
               ${r['Notes'] ? `<div class="expand-field"><span class="expand-label">Notes</span> ${esc(r['Notes'])}</div>` : ''}
             </div>
           </td>
 	        `;
-	        tbody.appendChild(expandTr);
+        tbody.appendChild(expandTr);
 
-	        tr.addEventListener('click', () => toggleRowDetails(tr));
-	        tr.addEventListener('keydown', (event) => {
-	          if (event.key !== 'Enter' && event.key !== ' ') return;
-	          event.preventDefault();
-	          toggleRowDetails(tr);
-	        });
-	      });
-	    });
+        tr.addEventListener('click', () => toggleRowDetails(tr));
+        tr.addEventListener('keydown', (event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          toggleRowDetails(tr);
+        });
+      });
+    });
 
   renderSummary(rows);
   renderGoals(rows);

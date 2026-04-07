@@ -247,7 +247,8 @@ main {
 }
 
 .hero-pct-symbol {
-  font-size: 2.5rem;
+  font-size: 1.75rem;
+  font-weight: 400;
   letter-spacing: 0;
   vertical-align: super;
 }
@@ -458,6 +459,9 @@ main {
   font-weight: 700;
   line-height: 1;
 }
+.filter-badge:empty {
+  display: none;
+}
 .filter-panel {
   display: flex;
   flex-wrap: wrap;
@@ -582,6 +586,7 @@ tbody tr:not(.group-header):not(.expand-row) {
   padding: 0 var(--space-lg) var(--space-lg);
   background: var(--color-border-light);
   border-bottom: 1px solid var(--color-border);
+  border-left: 3px solid var(--brand-dark-teal);
 }
 .expand-content {
   padding: var(--space-lg);
@@ -604,6 +609,9 @@ tbody tr:not(.group-header):not(.expand-row) {
   font-size: 0.85rem;
   color: var(--color-text-secondary);
   line-height: 1.5;
+}
+.expand-field-mobile {
+  display: none;
 }
 
 .badge {
@@ -733,12 +741,34 @@ header :focus-visible {
     width: 100%;
   }
 
+  thead th:nth-child(4),
+  thead th:nth-child(5),
+  .td-goal,
+  .td-date {
+    display: none;
+  }
+
+  .expand-field-mobile {
+    display: block;
+  }
+
+  td,
+  thead th {
+    padding: 10px 8px;
+  }
+
+  .td-person {
+    white-space: normal;
+  }
+
+  .badge {
+    font-size: 0.62rem;
+    padding: 2px 7px;
+  }
+
   .table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-  }
-  table {
-    min-width: 600px;
   }
 }
 
