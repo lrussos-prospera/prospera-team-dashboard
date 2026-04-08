@@ -58,12 +58,7 @@
         <div class="goals-grid" id="goals-grid" data-hook="goals-grid"></div>
       </div>
 
-      <div
-        class="scope-indicator"
-        id="scope-indicator"
-        data-hook="scope-indicator"
-        style="display: none"
-      >
+      <div class="scope-indicator" id="scope-indicator" data-hook="scope-indicator">
         <span id="scope-indicator-text"></span>
         <button
           type="button"
@@ -102,36 +97,38 @@
           </button>
           <button class="reset-btn" id="reset-btn" aria-label="Reset all filters">Reset</button>
         </div>
-        <div class="filter-panel" id="filter-panel" style="display: none">
-          <div class="control-group">
-            <label for="filter-dept">Department</label>
-            <select id="filter-dept">
-              <option value="">All</option>
-            </select>
-          </div>
-          <div class="control-group">
-            <label for="filter-team">Team</label>
-            <select id="filter-team">
-              <option value="">All</option>
-            </select>
-          </div>
-          <div class="control-group">
-            <label for="filter-person">Responsible</label>
-            <select id="filter-person">
-              <option value="">All</option>
-            </select>
-          </div>
-          <div class="control-group">
-            <label for="filter-status">Status</label>
-            <select id="filter-status">
-              <option value="">All</option>
-            </select>
-          </div>
-          <div class="control-group">
-            <label for="filter-goal">Goal</label>
-            <select id="filter-goal">
-              <option value="">All</option>
-            </select>
+        <div class="filter-panel" id="filter-panel">
+          <div class="filter-panel-inner">
+            <div class="control-group">
+              <label for="filter-dept">Department</label>
+              <select id="filter-dept">
+                <option value="">All</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label for="filter-team">Team</label>
+              <select id="filter-team">
+                <option value="">All</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label for="filter-person">Responsible</label>
+              <select id="filter-person">
+                <option value="">All</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label for="filter-status">Status</label>
+              <select id="filter-status">
+                <option value="">All</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label for="filter-goal">Goal</label>
+              <select id="filter-goal">
+                <option value="">All</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -142,6 +139,16 @@
         data-hook="result-count"
         aria-live="polite"
         style="display: none"
+      ></div>
+
+      <div
+        class="scoped-summary"
+        id="scoped-summary"
+        data-hook="scoped-summary"
+        style="display: none"
+        role="region"
+        aria-label="Filtered summary statistics"
+        aria-live="polite"
       ></div>
 
       <div class="table-wrap" id="table-wrap" data-hook="detail-table" style="display: none">

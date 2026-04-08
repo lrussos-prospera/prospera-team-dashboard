@@ -5,6 +5,7 @@ const DATE_STALE_THRESHOLD_DAYS = 7;
 
 const appState = {
   rows: [],
+  _initialRevealDone: false,
   lifecycle: {
     phase: 'idle', // idle | loading | loaded | error | no-data
     errorMessage: '',
@@ -49,6 +50,7 @@ const elements = {
   blockedSection: document.getElementById('blocked-section'),
   controls: document.getElementById('controls'),
   resultCount: document.getElementById('result-count'),
+  scopedSummary: document.getElementById('scoped-summary'),
   tableWrap: document.getElementById('table-wrap'),
   tableBody: document.getElementById('table-body'),
 
@@ -382,15 +384,83 @@ function syncVisibility(isLoaded) {
   elements.resultCount.style.display = display;
   elements.tableWrap.style.display = display;
   if (!isLoaded) {
-    elements.scopeIndicator.style.display = 'none';
+    elements.scopeIndicator.classList.remove('scope-indicator-visible');
+    elements.scopeIndicator.setAttribute('aria-hidden', 'true');
     elements.blockedSection.style.display = 'none';
+    elements.scopedSummary.style.display = 'none';
   }
+}
+
+function animateCounterTo(element, targetValue, duration) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    element.textContent = targetValue;
+    return;
+  }
+  const startValue = parseInt(element.textContent, 10) || 0;
+  if (startValue === targetValue) return;
+  const startTime = performance.now();
+
+  function step(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 4);
+    const current = Math.round(startValue + (targetValue - startValue) * eased);
+    element.textContent = current;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
 function renderSummary(rows) {
   const summary = deriveSummary(rows);
   const doneClass = summary.done > 0 ? 'status-done' : '';
   const blockedClass = summary.blocked > 0 ? 'status-blocked' : '';
+
+  const existingHeroZone = elements.summary.querySelector('.hero-zone');
+
+  if (existingHeroZone) {
+    const pctEl = existingHeroZone.querySelector('[data-hook="summary-percent"]');
+    const doneEl = existingHeroZone.querySelector('[data-hook="summary-done"] .hero-stat-value');
+    const doingEl = existingHeroZone.querySelector('[data-hook="summary-doing"] .hero-stat-value');
+    const blockedEl = existingHeroZone.querySelector(
+      '[data-hook="summary-blocked"] .hero-stat-value'
+    );
+    const totalEl = existingHeroZone.querySelector('[data-hook="summary-total"] .hero-stat-value');
+
+    // Animate the pct text node (before the % span)
+    if (pctEl) {
+      const pctTextNode = [...pctEl.childNodes].find((n) => n.nodeType === Node.TEXT_NODE);
+      if (pctTextNode) {
+        const startValue = parseInt(pctTextNode.textContent, 10) || 0;
+        if (startValue !== summary.pct) {
+          if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            pctTextNode.textContent = summary.pct;
+          } else {
+            const startTime = performance.now();
+            (function step(now) {
+              const elapsed = now - startTime;
+              const progress = Math.min(elapsed / 300, 1);
+              const eased = 1 - Math.pow(1 - progress, 4);
+              pctTextNode.textContent = Math.round(startValue + (summary.pct - startValue) * eased);
+              if (progress < 1) requestAnimationFrame(step);
+            })(performance.now());
+          }
+        }
+      }
+    }
+
+    if (doneEl) {
+      doneEl.className = `hero-stat-value ${doneClass}`.trim();
+      animateCounterTo(doneEl, summary.done, 300);
+    }
+    if (doingEl) animateCounterTo(doingEl, summary.doing, 300);
+    if (blockedEl) {
+      blockedEl.className = `hero-stat-value ${blockedClass}`.trim();
+      animateCounterTo(blockedEl, summary.blocked, 300);
+    }
+    if (totalEl) animateCounterTo(totalEl, summary.total, 300);
+    return;
+  }
 
   elements.summary.innerHTML = `
     <div class="hero-zone" data-hook="hero-zone">
@@ -424,13 +494,13 @@ function renderSummary(rows) {
 function renderScopeIndicator() {
   const { scope } = appState.view;
   if (!scope.value) {
-    elements.scopeIndicator.style.display = 'none';
+    elements.scopeIndicator.classList.remove('scope-indicator-visible');
     elements.scopeIndicator.setAttribute('aria-hidden', 'true');
     elements.scopeIndicatorText.textContent = '';
     return;
   }
 
-  elements.scopeIndicator.style.display = '';
+  elements.scopeIndicator.classList.add('scope-indicator-visible');
   elements.scopeIndicator.setAttribute('aria-hidden', 'false');
   elements.scopeIndicatorText.textContent =
     scope.type === 'department'
@@ -447,6 +517,16 @@ function setScope(type, value) {
   };
   collapseExpandedRow();
   renderApp();
+
+  if (nextValue && elements.tableWrap) {
+    const rect = elements.tableWrap.getBoundingClientRect();
+    if (rect.top > window.innerHeight * 0.7) {
+      const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'auto'
+        : 'smooth';
+      elements.tableWrap.scrollIntoView({ behavior, block: 'start' });
+    }
+  }
 }
 
 function scopeToGoal(goal) {
@@ -547,6 +627,50 @@ function renderBlocked(rows) {
   `;
 }
 
+function renderScopedSummary(viewRows) {
+  const narrowed = isNarrowedViewActive();
+
+  if (!narrowed) {
+    elements.scopedSummary.style.display = 'none';
+    return;
+  }
+
+  const summary = deriveSummary(viewRows);
+  const doneClass = summary.done > 0 ? ' status-done' : '';
+  const blockedClass = summary.blocked > 0 ? ' status-blocked' : '';
+
+  elements.scopedSummary.style.display = '';
+  elements.scopedSummary.innerHTML = `
+    <span class="scoped-summary-label">Filtered view</span>
+    <div class="scoped-summary-stats">
+      <div class="scoped-summary-stat">
+        <span class="scoped-summary-stat-value">${summary.pct}%</span>
+        <span class="scoped-summary-stat-label">Complete</span>
+      </div>
+      <div class="scoped-summary-divider"></div>
+      <div class="scoped-summary-stat">
+        <span class="scoped-summary-stat-value${doneClass}">${summary.done}</span>
+        <span class="scoped-summary-stat-label">Done</span>
+      </div>
+      <div class="scoped-summary-divider"></div>
+      <div class="scoped-summary-stat">
+        <span class="scoped-summary-stat-value">${summary.doing}</span>
+        <span class="scoped-summary-stat-label">In Progress</span>
+      </div>
+      <div class="scoped-summary-divider"></div>
+      <div class="scoped-summary-stat">
+        <span class="scoped-summary-stat-value${blockedClass}">${summary.blocked}</span>
+        <span class="scoped-summary-stat-label">Blocked</span>
+      </div>
+      <div class="scoped-summary-divider"></div>
+      <div class="scoped-summary-stat">
+        <span class="scoped-summary-stat-value">${summary.total}</span>
+        <span class="scoped-summary-stat-label">Total</span>
+      </div>
+    </div>
+  `;
+}
+
 function badge(raw, normalized) {
   if (normalized === 'done') return '<span class="badge badge-done">Done</span>';
   if (normalized === 'doing') return '<span class="badge badge-doing">In Progress</span>';
@@ -566,15 +690,30 @@ function toggleExpandedRow(rowKey) {
   const activeElement = document.activeElement;
   const shouldRestoreFocus = activeElement && activeElement.getAttribute('data-row-key') === rowKey;
 
-  appState.view.expandedRowKey = appState.view.expandedRowKey === rowKey ? null : rowKey;
-  renderApp();
+  const isCurrentlyExpanded = appState.view.expandedRowKey === rowKey;
+  const nextExpandedKey = isCurrentlyExpanded ? null : rowKey;
 
-  if (shouldRestoreFocus) {
-    const refreshedRow = document.querySelector(
-      `[data-hook="table-row-summary"][data-row-key="${rowKey}"]`
+  // Collapse previously expanded row (if different from this one)
+  if (appState.view.expandedRowKey && appState.view.expandedRowKey !== rowKey) {
+    const prevDetailRow = document.getElementById(`details-${appState.view.expandedRowKey}`);
+    const prevSummaryRow = document.querySelector(
+      `[data-hook="table-row-summary"][data-row-key="${appState.view.expandedRowKey}"]`
     );
-    if (refreshedRow) refreshedRow.focus();
+    if (prevDetailRow) prevDetailRow.classList.remove('expand-row-open');
+    if (prevSummaryRow) prevSummaryRow.setAttribute('aria-expanded', 'false');
   }
+
+  appState.view.expandedRowKey = nextExpandedKey;
+
+  // Toggle current row in-place for smooth animation
+  const detailRow = document.getElementById(`details-${rowKey}`);
+  const summaryRow = document.querySelector(
+    `[data-hook="table-row-summary"][data-row-key="${rowKey}"]`
+  );
+  if (detailRow) detailRow.classList.toggle('expand-row-open', !isCurrentlyExpanded);
+  if (summaryRow) summaryRow.setAttribute('aria-expanded', String(!isCurrentlyExpanded));
+
+  if (shouldRestoreFocus && summaryRow) summaryRow.focus();
 }
 
 function renderTable(rows) {
@@ -624,7 +763,7 @@ function renderTable(rows) {
     summaryRow.setAttribute('data-hook', 'table-row-summary');
     summaryRow.setAttribute('data-row-key', rowKey);
     summaryRow.innerHTML = `
-      <td class="td-person"><span class="expand-icon" aria-hidden="true" style="transform:${isExpanded ? 'rotate(90deg)' : 'none'}">›</span>${escapeHtml(row['Responsible'])}</td>
+      <td class="td-person"><span class="expand-icon" aria-hidden="true">›</span>${escapeHtml(row['Responsible'])}</td>
       <td class="td-topic">${escapeHtml(row['Topic'])}</td>
       <td>${badge(row.Status, row._status)}</td>
       <td class="td-goal">${escapeHtml(row['Goal'])}</td>
@@ -632,23 +771,24 @@ function renderTable(rows) {
     `;
 
     const detailRow = document.createElement('tr');
-    detailRow.className = 'expand-row';
+    detailRow.className = `expand-row${isExpanded ? ' expand-row-open' : ''}`;
     detailRow.id = `details-${rowKey}`;
     detailRow.setAttribute('data-hook', 'table-row-detail');
     detailRow.setAttribute('data-row-key', rowKey);
-    detailRow.style.display = isExpanded ? 'table-row' : 'none';
     detailRow.innerHTML = `
       <td colspan="5">
         <div class="expand-wrapper">
-          <div class="expand-content">
-            <div class="expand-grid">
-              ${row['Team'] ? `<div class="expand-item expand-team"><span class="expand-label">Team</span><div class="expand-field">${escapeHtml(row['Team'])}</div></div>` : ''}
-              ${row['Details'] ? `<div class="expand-item expand-details"><span class="expand-label">Details</span><div class="expand-field">${escapeHtml(row['Details'])}</div></div>` : ''}
-              ${row['Notes'] ? `<div class="expand-item expand-notes"><span class="expand-label">Notes</span><div class="expand-field">${escapeHtml(row['Notes'])}</div></div>` : ''}
-            </div>
-            <div class="expand-grid expand-mobile-only">
-              ${row['Goal'] ? `<div class="expand-item"><span class="expand-label">Goal</span><div class="expand-field">${escapeHtml(row['Goal'])}</div></div>` : ''}
-              ${row['Added/updated'] ? `<div class="expand-item"><span class="expand-label">Updated</span><div class="expand-field">${escapeHtml(row['Added/updated'])}</div></div>` : ''}
+          <div class="expand-inner">
+            <div class="expand-content">
+              <div class="expand-grid">
+                ${row['Team'] ? `<div class="expand-item expand-team"><span class="expand-label">Team</span><div class="expand-field">${escapeHtml(row['Team'])}</div></div>` : ''}
+                ${row['Details'] ? `<div class="expand-item expand-details"><span class="expand-label">Details</span><div class="expand-field">${escapeHtml(row['Details'])}</div></div>` : ''}
+                ${row['Notes'] ? `<div class="expand-item expand-notes"><span class="expand-label">Notes</span><div class="expand-field">${escapeHtml(row['Notes'])}</div></div>` : ''}
+              </div>
+              <div class="expand-grid expand-mobile-only">
+                ${row['Goal'] ? `<div class="expand-item"><span class="expand-label">Goal</span><div class="expand-field">${escapeHtml(row['Goal'])}</div></div>` : ''}
+                ${row['Added/updated'] ? `<div class="expand-item"><span class="expand-label">Updated</span><div class="expand-field">${escapeHtml(row['Added/updated'])}</div></div>` : ''}
+              </div>
             </div>
           </div>
         </div>
@@ -824,6 +964,17 @@ function populateFilterOptions() {
   });
 }
 
+function renderTableWithCrossfade(rows) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    renderTable(rows);
+    return;
+  }
+
+  renderTable(rows);
+  elements.tableBody.classList.add('table-fade-in');
+  setTimeout(() => elements.tableBody.classList.remove('table-fade-in'), 200);
+}
+
 function renderApp() {
   const isLoaded = appState.lifecycle.phase === 'loaded';
   syncVisibility(isLoaded);
@@ -835,7 +986,15 @@ function renderApp() {
   renderSummary(viewRows);
   renderGoals(viewRows);
   renderBlocked(viewRows);
-  renderTable(viewRows);
+  renderScopedSummary(viewRows);
+
+  if (appState._tableRenderedOnce) {
+    renderTableWithCrossfade(viewRows);
+  } else {
+    renderTable(viewRows);
+    appState._tableRenderedOnce = true;
+  }
+
   updateFilterBadge();
   updateSortIndicators();
 
@@ -844,6 +1003,36 @@ function renderApp() {
     appState.lifecycle.sourceLabel || 'Live'
   );
   elements.csvDateLabel.textContent = appState.lifecycle.refreshedLabel;
+}
+
+const REVEAL_TARGETS = [
+  { key: 'summary', delay: 0 },
+  { key: 'goalsSection', delay: 200 },
+  { key: 'blockedSection', delay: 500 },
+  { key: 'controls', delay: 650 },
+  { key: 'tableWrap', delay: 650 },
+  { key: 'resultCount', delay: 650 },
+];
+
+function prepareRevealChoreography() {
+  if (appState._initialRevealDone) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  REVEAL_TARGETS.forEach(({ key }) => {
+    const el = elements[key];
+    if (el) el.classList.add('anim-reveal');
+  });
+}
+
+function runInitialRevealChoreography() {
+  if (appState._initialRevealDone) return;
+  appState._initialRevealDone = true;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  REVEAL_TARGETS.forEach(({ key, delay }) => {
+    const el = elements[key];
+    if (!el || el.style.display === 'none') return;
+    setTimeout(() => el.classList.add('anim-revealed'), delay);
+  });
 }
 
 function clearScope() {
@@ -855,7 +1044,7 @@ function clearScope() {
 
 function closeFilterPanel() {
   appState.view.filterPanelOpen = false;
-  elements.filterPanel.style.display = 'none';
+  elements.filterPanel.classList.remove('filter-panel-open');
   elements.filterToggle.setAttribute('aria-expanded', 'false');
 }
 
@@ -1139,8 +1328,13 @@ async function fetchSheetData() {
     appState.rows = rows;
     populateFilterOptions();
 
+    prepareRevealChoreography();
     setLifecyclePhase('loaded');
     renderApp();
+    runInitialRevealChoreography();
+
+    elements.csvBadge.classList.add('flash-success');
+    setTimeout(() => elements.csvBadge.classList.remove('flash-success'), 600);
   } catch (error) {
     setLifecyclePhase('error', error instanceof Error ? error.message : 'Unknown error');
   }
@@ -1197,7 +1391,7 @@ function bindEvents() {
     }
 
     appState.view.filterPanelOpen = true;
-    elements.filterPanel.style.display = '';
+    elements.filterPanel.classList.add('filter-panel-open');
     elements.filterToggle.setAttribute('aria-expanded', 'true');
   });
 
