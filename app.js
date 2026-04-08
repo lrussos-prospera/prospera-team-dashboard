@@ -1053,8 +1053,220 @@ function renderDrilldownFilters(filterConfig) {
   });
 }
 
+function applyDrilldownFilters(rows, filters) {
+  return rows.filter((row) => {
+    if (filters.status && row._status !== filters.status) return false;
+    if (filters.dept && row['Department'] !== filters.dept) return false;
+    if (filters.team && row['Team'] !== filters.team) return false;
+    if (filters.person && row['Responsible'] !== filters.person) return false;
+    if (filters.search) {
+      const text = Object.values(row).join(' ').toLowerCase();
+      if (!text.includes(filters.search.toLowerCase())) return false;
+    }
+    return true;
+  });
+}
+
+function renderDrilldownSummaryStats(summary) {
+  const doneClass = summary.done > 0 ? ' status-done' : '';
+  const blockedClass = summary.blocked > 0 ? ' status-blocked' : '';
+  return `
+    <div class="drilldown-stats">
+      <div class="drilldown-stat">
+        <span class="drilldown-stat-value">${summary.pct}%</span>
+        <span class="drilldown-stat-label">Complete</span>
+      </div>
+      <div class="drilldown-stat-divider"></div>
+      <div class="drilldown-stat">
+        <span class="drilldown-stat-value${doneClass}">${summary.done}</span>
+        <span class="drilldown-stat-label">Done</span>
+      </div>
+      <div class="drilldown-stat-divider"></div>
+      <div class="drilldown-stat">
+        <span class="drilldown-stat-value">${summary.doing}</span>
+        <span class="drilldown-stat-label">In Progress</span>
+      </div>
+      <div class="drilldown-stat-divider"></div>
+      <div class="drilldown-stat">
+        <span class="drilldown-stat-value${blockedClass}">${summary.blocked}</span>
+        <span class="drilldown-stat-label">Blocked</span>
+      </div>
+      <div class="drilldown-stat-divider"></div>
+      <div class="drilldown-stat">
+        <span class="drilldown-stat-value">${summary.total}</span>
+        <span class="drilldown-stat-label">Total</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderDrilldownTable(rows) {
+  elements.drilldownTableBody.innerHTML = '';
+
+  if (!rows.length) {
+    elements.drilldownTableBody.innerHTML = `
+      <tr><td colspan="5" class="empty">No updates match the current filters.</td></tr>
+    `;
+    elements.drilldownResultCount.textContent = 'No matching updates';
+    return;
+  }
+
+  elements.drilldownResultCount.textContent = `Showing ${rows.length} update${rows.length !== 1 ? 's' : ''}`;
+
+  rows.forEach((row, index) => {
+    const rowKey = buildRowKey(row, `dd-${index}`);
+    const isExpanded = appState.view.expandedRowKey === rowKey;
+
+    const summaryRow = document.createElement('tr');
+    summaryRow.tabIndex = 0;
+    summaryRow.setAttribute('role', 'button');
+    summaryRow.setAttribute('aria-expanded', String(isExpanded));
+    summaryRow.setAttribute('aria-controls', `details-${rowKey}`);
+    summaryRow.setAttribute('data-hook', 'drilldown-row');
+    summaryRow.setAttribute('data-row-key', rowKey);
+    summaryRow.innerHTML = `
+      <td class="td-person"><span class="expand-icon" aria-hidden="true">›</span>${escapeHtml(row['Responsible'])}</td>
+      <td class="td-topic">${escapeHtml(row['Topic'])}</td>
+      <td>${badge(row.Status, row._status)}</td>
+      <td class="td-goal">${escapeHtml(row['Goal'])}</td>
+      <td class="td-date">${escapeHtml(row['Added/updated'])}</td>
+    `;
+
+    const detailRow = document.createElement('tr');
+    detailRow.className = `expand-row${isExpanded ? ' expand-row-open' : ''}`;
+    detailRow.id = `details-${rowKey}`;
+    detailRow.setAttribute('data-hook', 'drilldown-row-detail');
+    detailRow.innerHTML = `
+      <td colspan="5">
+        <div class="expand-wrapper">
+          <div class="expand-inner">
+            <div class="expand-content">
+              <div class="expand-grid">
+                ${row['Team'] ? `<div class="expand-item"><span class="expand-label">Team</span><div class="expand-field">${escapeHtml(row['Team'])}</div></div>` : ''}
+                ${row['Details'] ? `<div class="expand-item"><span class="expand-label">Details</span><div class="expand-field">${escapeHtml(row['Details'])}</div></div>` : ''}
+                ${row['Notes'] ? `<div class="expand-item"><span class="expand-label">Notes</span><div class="expand-field">${escapeHtml(row['Notes'])}</div></div>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+    `;
+
+    const onToggle = () => toggleExpandedRow(rowKey);
+    summaryRow.addEventListener('click', onToggle);
+    summaryRow.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onToggle();
+      }
+    });
+
+    elements.drilldownTableBody.appendChild(summaryRow);
+    elements.drilldownTableBody.appendChild(detailRow);
+  });
+}
+
+function renderGoalDrilldown(goalName, filters) {
+  const allGoalRows = appState.rows.filter((row) => (row['Goal'] || 'No Goal') === goalName);
+
+  if (!allGoalRows.length) {
+    navigateTo('overview');
+    return;
+  }
+
+  const filteredRows = applyDrilldownFilters(allGoalRows, filters);
+  const summary = deriveSummary(filteredRows);
+  const allSummary = deriveSummary(allGoalRows);
+
+  // Breadcrumb
+  renderBreadcrumb([{ label: 'Overview', hash: '#/' }, { label: goalName }]);
+
+  // Header
+  elements.drilldownTitle.textContent = goalName;
+  elements.drilldownSubtitle.textContent = `${allGoalRows.length} total updates`;
+
+  // Hero zone
+  const departments = {};
+  allGoalRows.forEach((row) => {
+    const dept = row['Department'] || 'Other';
+    if (!departments[dept]) departments[dept] = 0;
+    departments[dept]++;
+  });
+
+  const blockedRows = allGoalRows.filter((row) => row._status === 'blocked');
+
+  const deptChips = Object.entries(departments)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(
+      ([dept, count]) =>
+        `<a href="${escapeHtml(buildHash('department', dept))}" class="drilldown-chip">${escapeHtml(dept)} <span class="drilldown-chip-count">${count}</span></a>`
+    )
+    .join('');
+
+  const blockedCallout = blockedRows.length
+    ? `<div class="drilldown-blocked-callout" data-hook="drilldown-blocked">
+        <div class="drilldown-blocked-heading">Blocked Items</div>
+        ${blockedRows
+          .map(
+            (row) =>
+              `<div class="drilldown-blocked-item">
+            <a href="${escapeHtml(buildHash('employee', row['Responsible']))}" class="drilldown-person-link">${escapeHtml(row['Responsible'])}</a>
+            <span class="drilldown-blocked-topic">${escapeHtml(row['Topic'])}</span>
+          </div>`
+          )
+          .join('')}
+      </div>`
+    : '';
+
+  elements.drilldownHero.innerHTML = `
+    <div class="drilldown-hero-card">
+      <div class="drilldown-progress-section">
+        <div class="drilldown-progress-pct">${allSummary.pct}<span class="drilldown-progress-symbol">%</span></div>
+        <div class="drilldown-progress-bar">
+          <div class="drilldown-progress-fill" style="width:${allSummary.pct}%"></div>
+        </div>
+      </div>
+      ${renderDrilldownSummaryStats(allSummary)}
+      <div class="drilldown-section" data-hook="drilldown-departments">
+        <div class="drilldown-section-label">Contributing Departments</div>
+        <div class="drilldown-chips">${deptChips}</div>
+      </div>
+      ${blockedCallout}
+    </div>
+  `;
+
+  // Filters
+  const uniqueDepts = [...new Set(allGoalRows.map((r) => r['Department']).filter(Boolean))].sort();
+  const uniquePersons = [
+    ...new Set(allGoalRows.map((r) => r['Responsible']).filter(Boolean)),
+  ].sort();
+
+  renderDrilldownFilters([
+    { key: 'status', label: 'Status', options: ['done', 'doing', 'blocked'] },
+    { key: 'dept', label: 'Department', options: uniqueDepts },
+    { key: 'person', label: 'Person', options: uniquePersons },
+    { key: 'search' },
+  ]);
+
+  // Table
+  renderDrilldownTable(filteredRows);
+}
+
 function renderDrilldownView() {
-  // Stub — will be implemented in Tasks 4-6
+  const { view, param, filters } = appState.route;
+  if (view === 'goal') return renderGoalDrilldown(param, filters);
+  if (view === 'department') return renderDepartmentDrilldown(param, filters);
+  if (view === 'employee') return renderEmployeeDrilldown(param, filters);
+  navigateTo('overview');
+}
+
+function renderDepartmentDrilldown(deptName, filters) {
+  // Stub — implemented in Task 5
+  navigateTo('overview');
+}
+
+function renderEmployeeDrilldown(personName, filters) {
+  // Stub — implemented in Task 6
   navigateTo('overview');
 }
 

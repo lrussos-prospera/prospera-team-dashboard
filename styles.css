@@ -1199,6 +1199,185 @@ header :focus-visible {
   }
 }
 
+/* Drilldown hero card */
+.drilldown-hero-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-2xl);
+}
+
+.drilldown-progress-section {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.drilldown-progress-pct {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--brand-navy);
+  letter-spacing: -2px;
+}
+
+.drilldown-progress-symbol {
+  font-size: 1.5rem;
+  font-weight: 400;
+  vertical-align: super;
+}
+
+.drilldown-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--color-bg);
+  border-radius: var(--radius-full);
+  margin-top: var(--space-md);
+  overflow: hidden;
+}
+
+.drilldown-progress-fill {
+  height: 100%;
+  background: var(--brand-teal);
+  border-radius: var(--radius-full);
+  transition: width var(--duration-enter) var(--ease-out-quart);
+}
+
+.drilldown-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: var(--space-lg) 0;
+  border-top: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: var(--space-xl);
+}
+
+.drilldown-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 var(--space-2xl);
+}
+
+.drilldown-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-text);
+}
+
+.drilldown-stat-value.status-done {
+  color: var(--status-done);
+}
+
+.drilldown-stat-value.status-blocked {
+  color: var(--status-blocked);
+}
+
+.drilldown-stat-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.drilldown-stat-divider {
+  width: 1px;
+  height: 30px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+.drilldown-section {
+  margin-bottom: var(--space-lg);
+}
+
+.drilldown-section-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.drilldown-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.drilldown-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 6px 14px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--brand-navy);
+  text-decoration: none;
+  transition:
+    border-color var(--duration-instant) var(--ease-out-quart),
+    background var(--duration-instant) var(--ease-out-quart);
+}
+
+.drilldown-chip:hover {
+  border-color: var(--brand-teal);
+  background: rgba(106, 190, 190, 0.08);
+}
+
+.drilldown-chip-count {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+}
+
+.drilldown-blocked-callout {
+  background: var(--status-blocked-bg);
+  border: 1px solid rgba(221, 58, 59, 0.15);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+}
+
+.drilldown-blocked-heading {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brand-red);
+  margin-bottom: var(--space-sm);
+}
+
+.drilldown-blocked-item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-md);
+  padding: var(--space-xs) 0;
+}
+
+.drilldown-person-link {
+  font-weight: 700;
+  color: var(--brand-navy);
+  text-decoration: none;
+}
+
+.drilldown-person-link:hover {
+  text-decoration: underline;
+}
+
+.drilldown-blocked-topic {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1321,6 +1500,23 @@ header :focus-visible {
   .drilldown-table-wrap td,
   .drilldown-table-wrap thead th {
     padding: 10px 8px;
+  }
+
+  .drilldown-stats {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .drilldown-stat-divider {
+    display: none;
+  }
+
+  .drilldown-progress-pct {
+    font-size: 3rem;
+  }
+
+  .drilldown-hero-card {
+    padding: var(--space-xl);
   }
 }
 

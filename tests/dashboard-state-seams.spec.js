@@ -40,9 +40,8 @@ test.describe('dashboard state and render seams', () => {
     await page.goto('/');
 
     await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
-    // Stub redirects back to overview
-    await expect(page.locator('[data-hook="summary"]')).toBeVisible();
-    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('3');
+    await expect(page.locator('.drilldown-title')).toHaveText('Legal Framework');
+    await expect(page.locator('[data-hook="summary"]')).toBeHidden();
   });
 
   test('narrowed states preserve full goal-card frame with empty non-scopable goals', async ({
