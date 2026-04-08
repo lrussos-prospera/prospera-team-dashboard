@@ -1,0 +1,22 @@
+{
+  "featureId": "fix-department-scope-canonical-blocked-coverage",
+  "reviewedAt": "2026-04-08T08:34:18.871671Z",
+  "commitId": "92850c4a3f0d6b6bea58cd99382a4e6013c88ddd",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The change correctly swaps VAL-CROSS-002 off the all-blocked fixture and adds mixed blocked-vs-at-risk assertions for overview, narrowed search, and reset. However, the new department-scope path still leaves a regression hole for goal-card blocked-owner signals: it does not assert that unrelated goal cards clear their blocked-owner callout when department scope narrows them to zero rows, so stale canonical blocked owners from the prior overview could still leak through while this test passes.",
+    "issues": [
+      {
+        "file": "tests/dashboard-state-seams.spec.js",
+        "line": 229,
+        "severity": "blocking",
+        "description": "After scoping to the Governance department, the test checks the Legal Framework card but never verifies that the unrelated Infrastructure goal card clears its blocked-owner signal for the narrowed subset. In app.js, goal cards are always rendered from the full frame set while their blocked-owner text is recomputed from the active subset (renderGoals uses frameGoals from appState.rows and activeGoalData from deriveGoalBuckets(rows)). A regression that left the Infrastructure card showing stale \"Blocked: Mia Park\" during department scope or after the \"permit\" search would still satisfy this test, so the feature does not fully prove the VAL-OVERVIEW-003 / VAL-BLOCKED-002 / VAL-CROSS-002 requirement that related goal-card blocked signals stay limited to canonical Blocked rows throughout the department-scope flow."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Reviewed the handoff, transcript skeleton, skill instructions, commit 92850c4a3f0d6b6bea58cd99382a4e6013c88ddd, and the relevant app/test code. The feature improves coverage by moving the department-scope flow onto the mixed canonical-blocked fixture, but it still misses a blocking assertion on unrelated goal-card blocked-owner clearing during department narrowing, so the review fails."
+}

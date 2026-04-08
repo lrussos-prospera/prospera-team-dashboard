@@ -1,0 +1,21 @@
+{
+  "featureId": "fix-subset-freshness-header-coherence",
+  "reviewedAt": "2026-04-08T08:34:09Z",
+  "commitId": "ed19420",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation correctly fixes the scoped/narrowed freshness regression by deriving the header badge from the active visible subset (`viewRows`) instead of the broader unscoped row set. The added Playwright coverage exercises the mixed-recency regression path through department scoping and confirms the header, scope state, table subset, and goal-card stale treatment stay coherent, satisfying the feature description and the intended behaviors behind VAL-LOAD-021 and VAL-OVERVIEW-006.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "The worker discovered that the feature's listed Prettier verification command includes a CSV fixture path that this repository's Prettier setup cannot parse, so the documented verification step is not executable as written.",
+      "evidence": "Handoff discoveredIssues notes `npx prettier --check ... tests/fixtures/mixed-recency.csv` fails with `No parser could be inferred`, while the worker had to fall back to checking only formatted source/test files."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Reviewed worker session d453803d-73db-4c90-b3df-e9b6bf6c99cb and commit ed19420. The code change is minimal and correct, and the added browser test closes the specific narrowed/scoped mixed-recency gap without introducing an evident regression in freshness semantics. Report status: pass."
+}

@@ -1,0 +1,46 @@
+{
+  "milestone": "leadership-ui-followup-fixups",
+  "round": 1,
+  "status": "fail",
+  "validatorsRun": {
+    "test": {
+      "passed": true,
+      "command": "npx playwright test --workers=2 --pass-with-no-tests",
+      "exitCode": 0
+    },
+    "typecheck": {
+      "passed": true,
+      "command": "echo \"No separate typecheck for static JS app\"",
+      "exitCode": 0
+    },
+    "lint": {
+      "passed": true,
+      "command": "npx prettier --check index.html styles.css app.js",
+      "exitCode": 0
+    }
+  },
+  "reviewsSummary": {
+    "total": 2,
+    "passed": 1,
+    "failed": 1,
+    "failedFeatures": [
+      "fix-department-scope-canonical-blocked-coverage"
+    ]
+  },
+  "blockingIssues": [
+    {
+      "featureId": "fix-department-scope-canonical-blocked-coverage",
+      "severity": "blocking",
+      "description": "The department-scope/search/reset review found the new mixed canonical-blocked test still does not verify that unrelated goal cards clear blocked-owner signals when department narrowing reduces them to zero rows, leaving a regression hole in goal-card blocked-signal coverage."
+    }
+  ],
+  "appliedUpdates": [],
+  "suggestedGuidanceUpdates": [],
+  "rejectedObservations": [
+    {
+      "observation": "The feature's listed Prettier verification command includes a CSV fixture path that this repository's Prettier setup cannot parse as written.",
+      "reason": "rejected as a scrutiny shared-state update because the observation is specific to one feature's verificationSteps metadata rather than a broadly reusable services.yaml or library fact"
+    }
+  ],
+  "previousRound": null
+}
