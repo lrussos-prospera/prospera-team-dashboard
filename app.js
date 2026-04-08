@@ -2,6 +2,15 @@ const SHEET_URL =
   'https://docs.google.com/spreadsheets/d/1bUY_Us-Vjq4JSYsnxrVXfAX6qRGjxZRgXR31me3Nc0U/gviz/tq?tqx=out:csv&gid=1636341361';
 
 const DATE_STALE_THRESHOLD_DAYS = 7;
+const MANUAL_QA_FIXTURE_PARAM = 'qaFixture';
+const MANUAL_QA_FIXTURE_ALLOWLIST = new Set([
+  'all-blocked',
+  'canonical-blocked-mixed',
+  'empty-goals',
+  'escape-unwind-derived-ui',
+  'mixed-recency',
+  'stale-data',
+]);
 
 const appState = {
   rows: [],
@@ -9,6 +18,7 @@ const appState = {
     phase: 'idle', // idle | loading | loaded | error | no-data
     errorMessage: '',
     refreshedLabel: 'Loading…',
+    sourceLabel: 'Live',
   },
   view: {
     scope: {
@@ -223,25 +233,25 @@ function deriveBlockedRows(rows) {
   return rows.filter((r) => r._status === 'blocked');
 }
 
-function deriveRecencyLabel(rows) {
+function deriveRecencyLabel(rows, sourceLabel) {
   const goalBuckets = deriveGoalBuckets(rows);
   const validGoalAges = goalBuckets
     .map((bucket) => bucket.latestAgeDays)
     .filter((ageDays) => Number.isFinite(ageDays));
 
   if (!validGoalAges.length) {
-    return 'Live · update date unavailable';
+    return `${sourceLabel} · update date unavailable`;
   }
 
   const hasStaleGoal = validGoalAges.some((ageDays) => ageDays > DATE_STALE_THRESHOLD_DAYS);
 
   if (hasStaleGoal) {
     const stalestAgeDays = Math.max(...validGoalAges);
-    return `Live · stale (${stalestAgeDays}d old)`;
+    return `${sourceLabel} · stale (${stalestAgeDays}d old)`;
   }
 
   const freshestAgeDays = Math.min(...validGoalAges);
-  return `Live · current (${freshestAgeDays}d old)`;
+  return `${sourceLabel} · current (${freshestAgeDays}d old)`;
 }
 
 function isNarrowedViewActive() {
@@ -279,14 +289,16 @@ function setLifecyclePhase(phase, errorMessage = '') {
 
   syncVisibility(phase === 'loaded');
 
+  const sourceLabel = appState.lifecycle.sourceLabel || 'Live';
+
   els.csvBadge.className = `data-badge${isLoading ? ' loading' : ''}${isError || isNoData ? ' error' : ''}`;
   els.csvDateLabel.textContent =
     phase === 'loading'
-      ? 'Loading…'
+      ? `Loading ${sourceLabel.toLowerCase()} data…`
       : isError
-        ? 'Could not load data'
+        ? `Could not load ${sourceLabel.toLowerCase()} data`
         : isNoData
-          ? 'No source data'
+          ? `No ${sourceLabel.toLowerCase()} source data`
           : appState.lifecycle.refreshedLabel;
 
   if (isLoading) {
@@ -296,18 +308,28 @@ function setLifecyclePhase(phase, errorMessage = '') {
   }
 
   if (isLoading) {
+    const loadingMessage =
+      sourceLabel === 'Live'
+        ? 'Fetching latest data from Google Sheets…'
+        : `Fetching fixture data (${esc(sourceLabel)})…`;
+
     els.stateBox.style.display = '';
     els.stateBox.setAttribute('data-hook', 'loading-state');
     els.stateBox.innerHTML = `
       <div class="state-icon">⏳</div>
-      <p id="state-msg">Fetching latest data from Google Sheets…</p>
+      <p id="state-msg">${loadingMessage}</p>
     `;
   } else if (isError) {
+    const errorPrefix =
+      sourceLabel === 'Live'
+        ? 'Could not load data from Google Sheets.'
+        : `Could not load fixture data (${esc(sourceLabel)}).`;
+
     els.stateBox.style.display = '';
     els.stateBox.setAttribute('data-hook', 'error-state');
     els.stateBox.innerHTML = `
       <div class="state-icon">⚠️</div>
-      <p>Could not load data from Google Sheets.<br><small style="color:#94a3b8">${esc(errorMessage)}</small></p>
+      <p>${errorPrefix}<br><small style="color:#94a3b8">${esc(errorMessage)}</small></p>
       <button class="retry-btn" data-hook="retry-btn">Try again</button>
     `;
     const retryBtn = els.stateBox.querySelector('[data-hook="retry-btn"]');
@@ -772,7 +794,10 @@ function renderApp() {
   renderTable(viewRows);
   updateFilterBadge();
 
-  appState.lifecycle.refreshedLabel = deriveRecencyLabel(viewRows);
+  appState.lifecycle.refreshedLabel = deriveRecencyLabel(
+    viewRows,
+    appState.lifecycle.sourceLabel || 'Live'
+  );
   els.csvDateLabel.textContent = appState.lifecycle.refreshedLabel;
 }
 
@@ -891,15 +916,46 @@ function flushPendingSearchDebounce() {
   syncFilterStateFromControls();
 }
 
+function readManualQaFixtureSelection() {
+  const currentHost = window.location.hostname;
+  const isLocalHost =
+    currentHost === 'localhost' || currentHost === '127.0.0.1' || currentHost === '[::1]';
+  if (!isLocalHost) return '';
+
+  const params = new URLSearchParams(window.location.search);
+  const fixture = params.get(MANUAL_QA_FIXTURE_PARAM);
+  if (!fixture || !MANUAL_QA_FIXTURE_ALLOWLIST.has(fixture)) return '';
+  return fixture;
+}
+
+function fixtureSourceLabel(fixtureName) {
+  return `Fixture:${fixtureName}`;
+}
+
+async function fetchFixtureCsv(fixtureName) {
+  const response = await fetch(`tests/fixtures/${encodeURIComponent(fixtureName)}.csv`, {
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error(`Fixture HTTP ${response.status}`);
+  return response.text();
+}
+
 async function fetchSheetData() {
   flushPendingSearchDebounce();
+
+  const fixtureName = readManualQaFixtureSelection();
+  appState.lifecycle.sourceLabel = fixtureName ? fixtureSourceLabel(fixtureName) : 'Live';
   setLifecyclePhase('loading');
 
   try {
-    const response = await fetch(SHEET_URL);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const csv = fixtureName
+      ? await fetchFixtureCsv(fixtureName)
+      : await (async () => {
+          const response = await fetch(SHEET_URL);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.text();
+        })();
 
-    const csv = await response.text();
     const rows = parseCSV(csv).map((row, index) => ({
       ...row,
       __rowId: index,

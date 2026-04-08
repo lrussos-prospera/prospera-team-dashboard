@@ -9,6 +9,19 @@ const {
 } = require('./helpers/sheet-fixtures');
 
 test.describe('dashboard browser harness fixtures', () => {
+  test('manual qa fixture query param loads deterministic fixture without network route mocking', async ({
+    page,
+  }) => {
+    await page.goto('/?qaFixture=all-blocked');
+
+    await expect(page.locator('#state-box')).toBeHidden();
+    await expect(page.locator('#summary .hero-pct')).toHaveText('0%');
+    await expect(page.locator('#summary .hero-stat-value.status-blocked')).toHaveText('3');
+    await expect(page.locator('#blocked-section')).toBeVisible();
+    await expect(page.locator('#blocked-section .blocked-item')).toHaveCount(3);
+    await expect(page.locator('#csv-date-label')).toContainText('Fixture:all-blocked');
+  });
+
   test('all-blocked fixture renders risk-forward summary and blocked list', async ({ page }) => {
     await mockSheetCsv(page, 'all-blocked');
 
