@@ -1,7 +1,7 @@
 {
   "milestone": "foundation-fixups",
-  "round": 1,
-  "status": "fail",
+  "round": 2,
+  "status": "pass",
   "validatorsRun": {
     "test": {
       "passed": true,
@@ -20,33 +20,21 @@
     }
   },
   "reviewsSummary": {
-    "total": 3,
-    "passed": 2,
-    "failed": 1,
-    "failedFeatures": [
-      "fix-goal-card-frame-under-narrowing"
-    ]
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "failedFeatures": []
   },
-  "blockingIssues": [
+  "blockingIssues": [],
+  "appliedUpdates": [],
+  "suggestedGuidanceUpdates": [
     {
-      "featureId": "fix-goal-card-frame-under-narrowing",
-      "severity": "blocking",
-      "description": "app.js:369 keeps an empty goal card interactive whenever it is the active scope (`isInteractive = isScoped || isScopable`). If the user scopes to a goal and then narrows that scoped subset to zero rows with filters or search, the card still keeps its click handler and aria-enabled behavior, violating the requirement that goals with zero rows in the active subset remain non-scopable."
+      "target": "skills",
+      "suggestion": "Update the TDD skill to explicitly allow implicit plan approval and direct red-green execution when workers run in non-interactive Exec Mode with no user confirmation channel.",
+      "evidence": "The review for fix-empty-goal-card-interactivity-after-narrowing cites workerSessionId 03bfb970-6a2c-428a-a082-c7f2c84fd8a4, whose handoff recorded a justified deviation because the TDD skill expects an approval/planning interaction that is incompatible with Exec Mode.",
+      "isSystemic": false
     }
   ],
-  "appliedUpdates": [
-    {
-      "target": "library",
-      "description": "Documented in .factory/library/environment.md that .factory/init.sh must currently be invoked via sh because the script is not executable in this repo snapshot.",
-      "sourceFeature": "canonicalize-live-smoke-hardening"
-    }
-  ],
-  "suggestedGuidanceUpdates": [],
-  "rejectedObservations": [
-    {
-      "observation": "The worker updated .factory/services.yaml to derive the web root with $(git rev-parse --show-toplevel), which depends on git and being invoked from within the repository worktree.",
-      "reason": "rejected for now because the dependency is already evident in the command itself and the best remediation (services manifest note vs command rewrite) is an implementation choice rather than a clearly superior shared-state update."
-    }
-  ],
-  "previousRound": null
+  "rejectedObservations": [],
+  "previousRound": ".factory/validation/foundation-fixups/scrutiny/synthesis.round1.json"
 }

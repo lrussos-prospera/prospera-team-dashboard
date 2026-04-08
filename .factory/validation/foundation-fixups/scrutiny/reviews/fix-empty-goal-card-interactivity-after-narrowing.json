@@ -1,0 +1,21 @@
+{
+  "featureId": "fix-empty-goal-card-interactivity-after-narrowing",
+  "reviewedAt": "2026-04-08T00:00:00Z",
+  "commitId": "2ad31808f57955ff6ed75370d374de90ad93f8fb",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The rerun fully addresses the prior blocking issue from `fix-goal-card-frame-under-narrowing`. In `renderGoals`, goal-card interactivity now depends solely on whether the active subset still has rows (`isInteractive = isScopable`), so a previously scoped card correctly becomes non-interactive once filters/search narrow that scoped subset to zero rows while the dedicated scope-dismiss controls remain available. I did not identify any new blocking correctness regressions in the touched goal-card path or its added regression coverage.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The worker recorded a justified procedure deviation because the TDD skill expects an approval/planning interaction that is incompatible with non-interactive Exec Mode. The skill guidance should explicitly allow implicit plan approval when no user interaction channel exists.",
+      "evidence": "Handoff for workerSessionId 03bfb970-6a2c-428a-a082-c7f2c84fd8a4: `skillFeedback.followedProcedure` is false with deviation `tdd planning step requiring user approval before writing tests`, and suggested change `Add an Exec-mode note to the tdd skill allowing implicit plan approval and direct red-green execution when interactive user confirmation is unavailable.`"
+    }
+  ],
+  "addressesFailureFrom": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/foundation-fixups/scrutiny/reviews/fix-goal-card-frame-under-narrowing.json",
+  "summary": "Pass: the fix closes the prior blocker by making zero-row scoped goal cards non-interactive while preserving scope dismissal through the dedicated controls, and no new blocking correctness issues were found in the reviewed change set."
+}
