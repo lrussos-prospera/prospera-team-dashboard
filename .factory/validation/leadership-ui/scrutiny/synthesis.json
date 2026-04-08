@@ -1,0 +1,60 @@
+{
+  "milestone": "leadership-ui",
+  "round": 1,
+  "status": "fail",
+  "validatorsRun": {
+    "test": {
+      "passed": true,
+      "command": "npx playwright test --workers=2 --pass-with-no-tests",
+      "exitCode": 0
+    },
+    "typecheck": {
+      "passed": true,
+      "command": "echo \"No separate typecheck for static JS app\"",
+      "exitCode": 0
+    },
+    "lint": {
+      "passed": true,
+      "command": "npx prettier --check index.html styles.css app.js",
+      "exitCode": 0
+    }
+  },
+  "reviewsSummary": {
+    "total": 3,
+    "passed": 0,
+    "failed": 3,
+    "failedFeatures": [
+      "implement-load-freshness-and-goal-card-behavior",
+      "implement-blocked-scope-filter-and-reset-flows",
+      "implement-table-keyboard-responsive-and-motion-polish"
+    ]
+  },
+  "blockingIssues": [
+    {
+      "featureId": "implement-load-freshness-and-goal-card-behavior",
+      "severity": "blocking",
+      "description": "Refresh rebuilds the Department/Responsible/Goal/Status selects without restoring values from appState.view.filters, so active filters can remain applied while the visible controls appear reset to 'All'."
+    },
+    {
+      "featureId": "implement-blocked-scope-filter-and-reset-flows",
+      "severity": "blocking",
+      "description": "Search text is only committed to appState.view.filters.search after a 200ms debounce, but Refresh fetches immediately, so a just-entered search term can be lost and the narrowed state is not coherently preserved."
+    },
+    {
+      "featureId": "implement-table-keyboard-responsive-and-motion-polish",
+      "severity": "blocking",
+      "description": "Global Escape handling bails out whenever focus is inside a text-entry control, preventing the required unwind order of scope, expanded row, then filter panel after normal search/filter interaction."
+    }
+  ],
+  "appliedUpdates": [],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "skills",
+      "suggestion": "Update the static-dashboard-worker skill to mention that this repo's .factory/init.sh may need to be invoked via 'sh .factory/init.sh' when the script is not executable.",
+      "evidence": "The review for implement-load-freshness-and-goal-card-behavior found a worker startup deviation caused by a non-executable init script. The fallback is now documented in .factory/library/environment.md, but the worker skill still omits this repo-specific startup note.",
+      "isSystemic": false
+    }
+  ],
+  "rejectedObservations": [],
+  "previousRound": null
+}

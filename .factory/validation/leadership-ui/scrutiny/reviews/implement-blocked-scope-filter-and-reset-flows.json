@@ -1,0 +1,21 @@
+{
+  "featureId": "implement-blocked-scope-filter-and-reset-flows",
+  "reviewedAt": "2026-04-08T04:10:37Z",
+  "commitId": "baa7e30f59f32c40f0a5661f025acb64eac342b8",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The unified scope model and most scoped/filter/reset behaviors line up with the feature contract, but refresh does not reliably preserve the active narrowed state because search input is debounced while refresh reads stale filter state immediately.",
+    "issues": [
+      {
+        "file": "app.js",
+        "line": 879,
+        "severity": "blocking",
+        "description": "The search field only syncs `appState.view.filters.search` inside a 200ms debounce (`els.search.addEventListener('input', ...)`), while the refresh button immediately calls `fetchSheetData()` (`app.js:900`). If the user types a search term and clicks Refresh before the debounce fires, `fetchSheetData()` re-renders using the old empty search filter, so the narrowed state is not preserved after refresh. That violates VAL-CROSS-003's requirement that refresh preserve coherent scoped/filtered state. The new refresh test also misses this because it uses `page.fill()` and waits for the filtered count before clicking refresh (`tests/dashboard-state-seams.spec.js:169-187`), so it never exercises the race."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "summary": "I reviewed the mission feature metadata, the worker transcript skeleton, the handoff, the `static-dashboard-worker` skill, mission shared-state artifacts, and commit `baa7e30f59f32c40f0a5661f025acb64eac342b8`. The scope refactor largely satisfies the blocked/search/filter/reset requirements, but there is one blocking correctness gap: refresh can drop a just-entered search term because the search state is debounced and not flushed before `fetchSheetData()` runs, so the implementation does not fully satisfy the required coherent refresh behavior under active narrowing."
+}

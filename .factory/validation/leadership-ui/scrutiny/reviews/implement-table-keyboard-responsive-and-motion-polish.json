@@ -1,0 +1,22 @@
+{
+  "featureId": "implement-table-keyboard-responsive-and-motion-polish",
+  "reviewedAt": "2026-04-08T04:10:47.462922+00:00",
+  "commitId": "41af0612a5fe101b2b847cd51a4c18d432485744",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The feature covers most of the grouped-table, single-row expansion, arrow navigation, and mobile-detail requirements, but the Escape handling does not satisfy the required unwind behavior once focus is inside text-entry controls.",
+    "issues": [
+      {
+        "file": "app.js",
+        "line": 916,
+        "severity": "blocking",
+        "description": "Global Escape handling exits early whenever focus is inside an input, textarea, select, or contenteditable element. In the shipped UI, the search field keeps focus after typing, so pressing Escape while the filter panel is open or a scoped view is active does nothing instead of unwinding state in the required priority order (scope \u2192 expanded row \u2192 filter panel). This violates VAL-KEYBOARD-003 and also breaks the full in-page exploration flow because the primary keyboard unwind path stops working as soon as the user interacts with search or filters."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "I reviewed the feature metadata, transcript skeleton, worker handoff, skill guidance, architecture/shared-state files, and commit 41af0612a5fe101b2b847cd51a4c18d432485744. The implementation and tests cover one-row expansion, row-focus restoration, arrow-key navigation, reduced-motion parity, and mobile expansion content, but there is a blocking regression in Escape behavior: the window keydown handler suppresses all unwind logic whenever focus is inside a text-entry control, which is exactly where focus remains after search/filter interaction. Because the Phase 1 contract requires Escape to unwind active scope, expanded rows, and the filter panel in priority order during normal exploration, this feature should not pass scrutiny as shipped."
+}

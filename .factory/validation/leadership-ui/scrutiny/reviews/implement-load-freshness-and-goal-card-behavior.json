@@ -1,0 +1,26 @@
+{
+  "featureId": "implement-load-freshness-and-goal-card-behavior",
+  "reviewedAt": "2026-04-08T04:10:47.589916Z",
+  "commitId": "4004aea",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The change set correctly adds explicit no-data/error/retry surfaces and switches freshness copy to sheet-recency semantics, but it introduces a blocking state-coherency regression during refresh: active select-based filters remain in app state while the rebuilt filter controls no longer show those selections, so the dashboard can stay narrowed without visible explanation after refresh.",
+    "issues": [
+      {
+        "file": "app.js",
+        "line": 691,
+        "severity": "blocking",
+        "description": "`populateFilterOptions()` rebuilds the Department/Responsible/Goal/Status selects from scratch but never restores their current values from `appState.view.filters`. On refresh, `fetchSheetData()` calls `populateFilterOptions()` before `renderApp()` (app.js:829-849), so active narrowing can remain applied in state while the visible controls look reset to 'All'. This breaks the expected behavior that refresh preserves valid narrowing coherently and keeps active filter values visible (for example VAL-LOAD-030, VAL-LOAD-035, VAL-LOAD-049). Only the team select has value-restoration logic."}
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The worker followed a necessary startup fallback (`sh .factory/init.sh`) because the init script was not executable. The shared state has already been updated in `.factory/library/environment.md`, but the `static-dashboard-worker` skill still tells workers to rely on worker-base startup flow without mentioning this repo-specific fallback, so future workers can still hit avoidable blocker churn.",
+      "evidence": "Handoff skillFeedback marks followedProcedure=false and records the deviation; `.factory/library/environment.md` now documents invoking `.factory/init.sh` with `sh`, but `.factory/skills/static-dashboard-worker/SKILL.md` does not mention that fallback."
+    }
+  ],
+  "summary": "I reviewed the feature metadata, worker transcript skeleton, handoff, mission guidance, skill file, shared-state docs, and commit `4004aea`. The implementation covers the new in-place no-data/error/retry UI and recency-label semantics, but I am marking the feature as failed because refresh can leave active select filters applied while the rebuilt filter controls appear cleared, creating a misleading narrowed state that violates the expected refresh/filter coherence contract. Report written with one blocking code issue and one skills/shared-state observation."
+}
