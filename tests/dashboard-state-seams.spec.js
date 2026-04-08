@@ -300,16 +300,33 @@ test.describe('dashboard state and render seams', () => {
     await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
     await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
 
-    await page.keyboard.press('Escape');
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
-
-    await page.keyboard.press('Escape');
+    await page.locator('[data-hook="table-row-summary"]').first().click();
     await expect(page.locator('[data-hook="table-row-summary"][aria-expanded="true"]')).toHaveCount(
-      0
+      1
     );
 
     await page.locator('#filter-toggle').click();
     await expect(page.locator('#filter-panel')).toBeVisible();
+
+    await page.locator('#search').focus();
+    await expect(page.locator('#search')).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+    await expect(page.locator('[data-hook="table-row-summary"][aria-expanded="true"]')).toHaveCount(
+      1
+    );
+    await expect(page.locator('#filter-panel')).toBeVisible();
+
+    await page.locator('#search').focus();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-hook="table-row-summary"][aria-expanded="true"]')).toHaveCount(
+      0
+    );
+    await expect(page.locator('#filter-panel')).toBeVisible();
+
+    await page.locator('#filter-status').focus();
+    await expect(page.locator('#filter-status')).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(page.locator('#filter-panel')).toBeHidden();
     await expect(page.locator('#filter-toggle')).toHaveAttribute('aria-expanded', 'false');

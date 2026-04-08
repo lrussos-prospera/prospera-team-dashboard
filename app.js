@@ -789,6 +789,12 @@ function isTextEntryContext(element) {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || element.isContentEditable;
 }
 
+function shouldHandleEscapeForDashboardUnwind(element) {
+  if (!element) return true;
+  const tag = element.tagName;
+  return tag !== 'TEXTAREA' && !element.isContentEditable;
+}
+
 function focusAdjacentSummaryRow(currentRow, direction) {
   if (!currentRow) return;
 
@@ -948,7 +954,8 @@ function bindEvents() {
       return;
     }
 
-    if (event.key !== 'Escape' || isTextEntryContext(document.activeElement)) return;
+    if (event.key !== 'Escape') return;
+    if (!shouldHandleEscapeForDashboardUnwind(document.activeElement)) return;
 
     if (unwindEscapeState()) {
       event.preventDefault();
