@@ -335,6 +335,20 @@ test.describe('dashboard state and render seams', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('#filter-panel')).toBeHidden();
     await expect(page.locator('#filter-toggle')).toHaveAttribute('aria-expanded', 'false');
+
+    await page.locator('#filter-toggle').click();
+    await expect(page.locator('#filter-panel')).toBeVisible();
+
+    await page.locator('#filter-status').click();
+    await expect(page.locator('#filter-status')).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#filter-panel')).toBeVisible();
+    await expect(page.locator('#filter-status')).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#filter-panel')).toBeHidden();
+    await expect(page.locator('#filter-toggle')).toHaveAttribute('aria-expanded', 'false');
   });
 
   test('reduced motion mode preserves interaction behavior', async ({ page }) => {

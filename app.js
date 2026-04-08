@@ -791,9 +791,13 @@ function isTextEntryContext(element) {
 
 let escapeBypassSelect = null;
 
+function resetEscapeBypassSelect() {
+  escapeBypassSelect = null;
+}
+
 function shouldHandleEscapeForDashboardUnwind(element) {
   if (!element) {
-    escapeBypassSelect = null;
+    resetEscapeBypassSelect();
     return true;
   }
 
@@ -806,7 +810,7 @@ function shouldHandleEscapeForDashboardUnwind(element) {
     return true;
   }
 
-  escapeBypassSelect = null;
+  resetEscapeBypassSelect();
   return tag !== 'TEXTAREA' && !element.isContentEditable;
 }
 
@@ -969,13 +973,27 @@ function bindEvents() {
       return;
     }
 
-    if (event.key !== 'Escape') return;
-    if (!shouldHandleEscapeForDashboardUnwind(document.activeElement)) return;
+    if (event.key === 'Escape') {
+      if (!shouldHandleEscapeForDashboardUnwind(document.activeElement)) {
+        return;
+      }
 
-    if (unwindEscapeState()) {
-      event.preventDefault();
+      if (unwindEscapeState()) {
+        event.preventDefault();
+      }
+      return;
     }
+
+    resetEscapeBypassSelect();
   });
+
+  [els.filterDept, els.filterTeam, els.filterPerson, els.filterStatus, els.filterGoal].forEach(
+    (el) => {
+      el.addEventListener('pointerdown', () => {
+        resetEscapeBypassSelect();
+      });
+    }
+  );
 }
 
 initializeViewedDate();
