@@ -18,6 +18,7 @@ Environment variables, external dependencies, and setup notes.
 - Local validation should serve the repo on port `3100`.
 - Browser-based testing tooling must be installed in-repo during the mission because the repo currently has no test stack.
 - Installing `@playwright/test` does not install browser binaries; if Chromium is missing locally, run `npx playwright install chromium` before relying on browser tests.
+- `.factory/init.sh` is not executable in this repo snapshot; invoke it with `sh .factory/init.sh` (or `sh "/absolute/path/to/.factory/init.sh"`) rather than executing it directly.
 
 ## Constraints
 

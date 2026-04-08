@@ -1,0 +1,28 @@
+{
+  "featureId": "make-playwright-harness-portable",
+  "reviewedAt": "2026-04-08T02:50:06.012236Z",
+  "commitId": "2bcb412",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The feature removes the hard-coded absolute repo path from the Playwright config, init script, and local service harness, and the reviewed diff preserves the existing port-3100 startup behavior and test coverage. The implementation satisfies the feature intent for other clones and CI/workspace paths, but the new `.factory/services.yaml` command now assumes the service is always launched from inside a git worktree, which is a small portability regression compared with script-relative path derivation.",
+    "issues": [
+      {
+        "file": ".factory/services.yaml",
+        "line": 10,
+        "severity": "non_blocking",
+        "description": "The new `start` command derives the repo root with `$(git rev-parse --show-toplevel)`. This removes the hard-coded user path, but it also makes the harness depend on `git` being available and the command being executed from inside the repository worktree. A script-relative path resolution approach, like the one used in `.factory/init.sh`, would be more robust for portable local harness startup."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "services",
+      "observation": "The worker updated `.factory/services.yaml` to start the local web service from `$(git rev-parse --show-toplevel)`, but `.factory/services.yaml` does not currently document that the service command now depends on git and on being invoked from within the repo worktree.",
+      "evidence": ".factory/services.yaml:10 now uses `python3 -m http.server 3100 --directory \"$(git rev-parse --show-toplevel)\"` instead of a path derived from the service file or script location."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Pass. The reviewed commit successfully removes the user-specific absolute path assumptions from the Playwright harness and related setup while preserving current behavior, but the service manifest now has a minor non-blocking dependency on git-based root discovery."
+}

@@ -1,0 +1,52 @@
+{
+  "milestone": "foundation-fixups",
+  "round": 1,
+  "status": "fail",
+  "validatorsRun": {
+    "test": {
+      "passed": true,
+      "command": "npx playwright test --workers=2 --pass-with-no-tests",
+      "exitCode": 0
+    },
+    "typecheck": {
+      "passed": true,
+      "command": "echo \"No separate typecheck for static JS app\"",
+      "exitCode": 0
+    },
+    "lint": {
+      "passed": true,
+      "command": "npx prettier --check index.html styles.css app.js",
+      "exitCode": 0
+    }
+  },
+  "reviewsSummary": {
+    "total": 3,
+    "passed": 2,
+    "failed": 1,
+    "failedFeatures": [
+      "fix-goal-card-frame-under-narrowing"
+    ]
+  },
+  "blockingIssues": [
+    {
+      "featureId": "fix-goal-card-frame-under-narrowing",
+      "severity": "blocking",
+      "description": "app.js:369 keeps an empty goal card interactive whenever it is the active scope (`isInteractive = isScoped || isScopable`). If the user scopes to a goal and then narrows that scoped subset to zero rows with filters or search, the card still keeps its click handler and aria-enabled behavior, violating the requirement that goals with zero rows in the active subset remain non-scopable."
+    }
+  ],
+  "appliedUpdates": [
+    {
+      "target": "library",
+      "description": "Documented in .factory/library/environment.md that .factory/init.sh must currently be invoked via sh because the script is not executable in this repo snapshot.",
+      "sourceFeature": "canonicalize-live-smoke-hardening"
+    }
+  ],
+  "suggestedGuidanceUpdates": [],
+  "rejectedObservations": [
+    {
+      "observation": "The worker updated .factory/services.yaml to derive the web root with $(git rev-parse --show-toplevel), which depends on git and being invoked from within the repository worktree.",
+      "reason": "rejected for now because the dependency is already evident in the command itself and the best remediation (services manifest note vs command rewrite) is an implementation choice rather than a clearly superior shared-state update."
+    }
+  ],
+  "previousRound": null
+}

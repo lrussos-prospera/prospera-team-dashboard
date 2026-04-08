@@ -1,0 +1,22 @@
+{
+  "featureId": "fix-goal-card-frame-under-narrowing",
+  "reviewedAt": "2026-04-08T02:51:02.368932+00:00",
+  "commitId": "d0d3db638ea09d393e49080ac629a47317f0559c",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The fix addresses the original regression where narrowing removed unrelated goal cards entirely, but it still leaves a correctness gap: when the active scope remains set and additional filters narrow that scoped subset to zero rows, the now-empty scoped goal card stays interactive. That violates the feature intent that empty goals render with empty-goal treatment and remain non-scopable under narrowed states.",
+    "issues": [
+      {
+        "file": "app.js",
+        "line": 369,
+        "severity": "blocking",
+        "description": "renderGoals marks a card interactive whenever it is currently scoped (`const isInteractive = isScoped || isScopable`). If a user scopes to a goal and then adds filters/search that remove every row from that goal, the card renders as empty (`0 / 0`, no active rows) but still keeps its click handler and `aria-disabled=\"false\"` because `isScoped` is still true. The feature explicitly requires goals with zero rows in the active subset to remain non-scopable, so this scoped-empty state still violates the fix contract and the prior failure is only partially resolved."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/foundation/scrutiny/reviews/refactor-dashboard-state-and-render-seams.json",
+  "summary": "Fail: the commit restores the full goal-card frame under narrowing, but an empty goal card can still remain interactive when it is the active scope and later filters/search reduce that scoped subset to zero rows."
+}

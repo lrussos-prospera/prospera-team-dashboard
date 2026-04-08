@@ -1,0 +1,21 @@
+{
+  "featureId": "canonicalize-live-smoke-hardening",
+  "reviewedAt": "2026-04-08T02:50:06Z",
+  "commitId": "1163eb6",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Pass. The change cleanly folds the previously proven live-sheet hardening into the canonical harness by centralizing the 25s settle window and preserving exactly one controlled reload fallback before rethrowing. The live smoke assertion remains strict to the intended terminal states (`loaded` via visible summary or explicit Google Sheets error), and the deterministic fixture tests are untouched.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "Repo initialization currently requires invoking `.factory/init.sh` through `sh` because the script is not executable. This setup quirk is not captured in the shared environment guidance, so workers can hit a avoidable startup failure before switching invocation style.",
+      "evidence": "Transcript skeleton for worker session 502e1bc2-d35b-4d0a-93c2-74eb5dffcfaf shows `/Users/treygoff/Code/prospera-team-dashboard/.factory/init.sh` failing with `Permission denied`, then succeeding via `sh \"/Users/treygoff/Code/prospera-team-dashboard/.factory/init.sh\"`. Handoff `discoveredIssues` records the same behavior; `.factory/library/environment.md` does not mention this invocation requirement."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Reviewed handoff, transcript skeleton, mission/shared-state docs, and commit 1163eb6. No correctness or regression issues found in the smoke-hardening change; it satisfies the feature intent and keeps the live-surface assertion strong. One shared-state observation was noted about `.factory/init.sh` needing `sh` due to missing executable permissions."
+}
