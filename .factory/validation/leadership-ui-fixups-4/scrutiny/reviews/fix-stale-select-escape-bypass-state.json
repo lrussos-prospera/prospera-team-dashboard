@@ -1,0 +1,15 @@
+{
+  "featureId": "fix-stale-select-escape-bypass-state",
+  "reviewedAt": "2026-04-08T05:10:56Z",
+  "commitId": "61cdbbf",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The fix correctly scopes native-select Escape bypass state to the current interaction by clearing stale select tracking on non-Escape keydown and fresh pointer interactions, while preserving the immediate two-step Escape behavior needed for native popup dismissal followed by dashboard unwind. The updated Playwright coverage reopens the same select and verifies that the first Escape is native again before a second Escape closes dashboard UI, which matches the feature description and expected behavior.",
+    "issues": []
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Reviewed the transcript skeleton, handoff, skill procedure, and commit 61cdbbf for fix-stale-select-escape-bypass-state. The implementation and updated browser test cover the stale native-select Escape bypass regression as specified, and I found no blocking or non-blocking issues to report."
+}
