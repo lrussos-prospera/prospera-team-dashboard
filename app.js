@@ -52,6 +52,16 @@ const elements = {
   tableWrap: document.getElementById('table-wrap'),
   tableBody: document.getElementById('table-body'),
 
+  drilldownView: document.getElementById('drilldown-view'),
+  drilldownBreadcrumbList: document.getElementById('drilldown-breadcrumb-list'),
+  drilldownTitle: document.getElementById('drilldown-title'),
+  drilldownSubtitle: document.getElementById('drilldown-subtitle'),
+  drilldownHero: document.getElementById('drilldown-hero'),
+  drilldownFilters: document.getElementById('drilldown-filters'),
+  drilldownResultCount: document.getElementById('drilldown-result-count'),
+  drilldownTableWrap: document.getElementById('drilldown-table-wrap'),
+  drilldownTableBody: document.getElementById('drilldown-table-body'),
+
   filterDept: document.getElementById('filter-dept'),
   filterTeam: document.getElementById('filter-team'),
   filterPerson: document.getElementById('filter-person'),
@@ -379,6 +389,20 @@ function syncVisibility(isLoaded) {
   elements.resultCount.style.display = display;
   elements.tableWrap.style.display = display;
   if (!isLoaded) {
+    elements.blockedSection.style.display = 'none';
+    elements.scopedSummary.style.display = 'none';
+    elements.drilldownView.style.display = 'none';
+  }
+
+  const isDrilldown = appState.route.view !== 'overview';
+  elements.drilldownView.style.display = isDrilldown && isLoaded ? '' : 'none';
+
+  if (isDrilldown) {
+    elements.summary.style.display = 'none';
+    elements.goalsSection.style.display = 'none';
+    elements.controls.style.display = 'none';
+    elements.resultCount.style.display = 'none';
+    elements.tableWrap.style.display = 'none';
     elements.blockedSection.style.display = 'none';
     elements.scopedSummary.style.display = 'none';
   }
@@ -956,6 +980,77 @@ function onRouteChange() {
   appState.route = newRoute;
   collapseExpandedRow();
   renderApp();
+}
+
+function renderBreadcrumb(crumbs) {
+  elements.drilldownBreadcrumbList.innerHTML = crumbs
+    .map((crumb, i) => {
+      const isLast = i === crumbs.length - 1;
+      if (isLast) {
+        return `<li><span aria-current="page">${escapeHtml(crumb.label)}</span></li>`;
+      }
+      return `<li><a href="${escapeHtml(crumb.hash)}">${escapeHtml(crumb.label)}</a></li>`;
+    })
+    .join('');
+}
+
+function renderDrilldownFilters(filterConfig) {
+  const { filters } = appState.route;
+
+  elements.drilldownFilters.innerHTML = filterConfig
+    .map((config) => {
+      if (config.key === 'search') {
+        return `
+          <div class="drilldown-filter-group" style="flex:1;min-width:160px">
+            <label for="drilldown-search">Search</label>
+            <input type="text" id="drilldown-search" placeholder="Search…" value="${escapeHtml(filters.search || '')}" />
+          </div>
+        `;
+      }
+      const selectedValue = filters[config.key] || '';
+      const optionsHtml = (config.options || [])
+        .map(
+          (opt) =>
+            `<option value="${escapeHtml(opt)}"${opt === selectedValue ? ' selected' : ''}>${escapeHtml(opt)}</option>`
+        )
+        .join('');
+      return `
+        <div class="drilldown-filter-group">
+          <label for="drilldown-filter-${config.key}">${escapeHtml(config.label)}</label>
+          <select id="drilldown-filter-${config.key}">
+            <option value="">All</option>
+            ${optionsHtml}
+          </select>
+        </div>
+      `;
+    })
+    .join('');
+
+  filterConfig.forEach((config) => {
+    if (config.key === 'search') {
+      const input = document.getElementById('drilldown-search');
+      if (input) {
+        let timer;
+        input.addEventListener('input', () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            const newFilters = { ...appState.route.filters, search: input.value };
+            if (!input.value) delete newFilters.search;
+            navigateTo(appState.route.view, appState.route.param, newFilters);
+          }, 200);
+        });
+      }
+    } else {
+      const select = document.getElementById(`drilldown-filter-${config.key}`);
+      if (select) {
+        select.addEventListener('change', () => {
+          const newFilters = { ...appState.route.filters, [config.key]: select.value };
+          if (!select.value) delete newFilters[config.key];
+          navigateTo(appState.route.view, appState.route.param, newFilters);
+        });
+      }
+    }
+  });
 }
 
 function renderDrilldownView() {
