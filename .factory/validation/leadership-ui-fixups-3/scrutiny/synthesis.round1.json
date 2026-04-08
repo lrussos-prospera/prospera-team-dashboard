@@ -1,0 +1,41 @@
+{
+  "milestone": "leadership-ui-fixups-3",
+  "round": 1,
+  "status": "fail",
+  "validatorsRun": {
+    "test": {
+      "passed": true,
+      "command": "npx playwright test --workers=2 --pass-with-no-tests",
+      "exitCode": 0
+    },
+    "typecheck": {
+      "passed": true,
+      "command": "echo \"No separate typecheck for static JS app\"",
+      "exitCode": 0
+    },
+    "lint": {
+      "passed": true,
+      "command": "npx prettier --check index.html styles.css app.js",
+      "exitCode": 0
+    }
+  },
+  "reviewsSummary": {
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "failedFeatures": [
+      "fix-second-escape-unwinds-after-native-select-dismiss"
+    ]
+  },
+  "blockingIssues": [
+    {
+      "featureId": "fix-second-escape-unwinds-after-native-select-dismiss",
+      "severity": "blocking",
+      "description": "The implementation caches the focused native select in `escapeBypassSelect` and does not clear that bypass state when the select interaction context ends. Reusing the same select later can cause the next first Escape on that control to unwind dashboard state immediately instead of remaining available for native popup dismissal, violating the required native-select Escape semantics."
+    }
+  ],
+  "appliedUpdates": [],
+  "suggestedGuidanceUpdates": [],
+  "rejectedObservations": [],
+  "previousRound": null
+}

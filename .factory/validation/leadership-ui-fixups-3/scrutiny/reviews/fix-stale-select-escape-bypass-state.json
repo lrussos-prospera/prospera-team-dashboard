@@ -1,0 +1,15 @@
+{
+  "featureId": "fix-stale-select-escape-bypass-state",
+  "reviewedAt": "2026-04-08T05:18:21Z",
+  "commitId": "61cdbbf",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The fix adequately addresses the prior failure. The original bug came from persisting `escapeBypassSelect` across later reuse of the same native `<select>`, which let a later first Escape unwind dashboard state immediately. Commit `61cdbbf` introduces `resetEscapeBypassSelect()`, clears the bypass on non-Escape keydown, and resets it on pointerdown for the filter selects before a new native-select interaction begins. The updated browser test also now reopens the same `#filter-status` control and proves that the next first Escape is again reserved for native dismissal before a subsequent Escape closes the filter panel.",
+    "issues": []
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/leadership-ui-fixups-3/scrutiny/reviews/fix-second-escape-unwinds-after-native-select-dismiss.json",
+  "summary": "Pass: the follow-up fix closes the stale native-select Escape bypass gap identified in the prior review. The code now resets select-specific bypass state between separate interactions, and the expanded Playwright coverage demonstrates that reopening the same select restores first-Escape native dismissal semantics before the next Escape can unwind dashboard state." 
+}
