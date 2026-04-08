@@ -500,8 +500,18 @@ function buildRowKey(row, index) {
 }
 
 function toggleExpandedRow(rowKey) {
+  const activeElement = document.activeElement;
+  const shouldRestoreFocus = activeElement && activeElement.getAttribute('data-row-key') === rowKey;
+
   appState.view.expandedRowKey = appState.view.expandedRowKey === rowKey ? null : rowKey;
   renderApp();
+
+  if (shouldRestoreFocus) {
+    const refreshedRow = document.querySelector(
+      `[data-hook="table-row-summary"][data-row-key="${rowKey}"]`
+    );
+    if (refreshedRow) refreshedRow.focus();
+  }
 }
 
 function renderTable(rows) {
@@ -613,6 +623,18 @@ function renderTable(rows) {
         const onToggle = () => toggleExpandedRow(rowKey);
         summaryRow.addEventListener('click', onToggle);
         summaryRow.addEventListener('keydown', (event) => {
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            focusAdjacentSummaryRow(summaryRow, 1);
+            return;
+          }
+
+          if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            focusAdjacentSummaryRow(summaryRow, -1);
+            return;
+          }
+
           if (event.key !== 'Enter' && event.key !== ' ') return;
           event.preventDefault();
           onToggle();
@@ -726,6 +748,52 @@ function clearScope() {
   };
 }
 
+function closeFilterPanel() {
+  appState.view.filterPanelOpen = false;
+  els.filterPanel.style.display = 'none';
+  els.filterToggle.setAttribute('aria-expanded', 'false');
+}
+
+function isTextEntryContext(element) {
+  if (!element) return false;
+  const tag = element.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || element.isContentEditable;
+}
+
+function focusAdjacentSummaryRow(currentRow, direction) {
+  if (!currentRow) return;
+
+  const summaryRows = [...document.querySelectorAll('[data-hook="table-row-summary"]')];
+  const currentIndex = summaryRows.indexOf(currentRow);
+  if (currentIndex < 0) return;
+
+  const nextIndex = currentIndex + direction;
+  if (nextIndex < 0 || nextIndex >= summaryRows.length) return;
+
+  summaryRows[nextIndex].focus();
+}
+
+function unwindEscapeState() {
+  if (appState.view.scope.value) {
+    clearScope();
+    renderApp();
+    return true;
+  }
+
+  if (appState.view.expandedRowKey) {
+    appState.view.expandedRowKey = null;
+    renderApp();
+    return true;
+  }
+
+  if (appState.view.filterPanelOpen) {
+    closeFilterPanel();
+    return true;
+  }
+
+  return false;
+}
+
 function resetFilters() {
   appState.view.filters = {
     dept: '',
@@ -818,9 +886,14 @@ function bindEvents() {
   });
 
   els.filterToggle.addEventListener('click', () => {
-    appState.view.filterPanelOpen = !appState.view.filterPanelOpen;
-    els.filterPanel.style.display = appState.view.filterPanelOpen ? '' : 'none';
-    els.filterToggle.setAttribute('aria-expanded', String(appState.view.filterPanelOpen));
+    if (appState.view.filterPanelOpen) {
+      closeFilterPanel();
+      return;
+    }
+
+    appState.view.filterPanelOpen = true;
+    els.filterPanel.style.display = '';
+    els.filterToggle.setAttribute('aria-expanded', 'true');
   });
 
   els.resetBtn.addEventListener('click', resetFilters);
@@ -832,9 +905,18 @@ function bindEvents() {
   });
 
   window.addEventListener('keydown', (event) => {
-    if (event.key === '/' && document.activeElement.tagName !== 'INPUT') {
+    if (event.key === '/') {
+      if (!isTextEntryContext(document.activeElement)) {
+        event.preventDefault();
+        els.search.focus();
+      }
+      return;
+    }
+
+    if (event.key !== 'Escape' || isTextEntryContext(document.activeElement)) return;
+
+    if (unwindEscapeState()) {
       event.preventDefault();
-      els.search.focus();
     }
   });
 }

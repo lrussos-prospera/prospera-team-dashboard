@@ -206,4 +206,120 @@ test.describe('dashboard state and render seams', () => {
       1
     );
   });
+
+  test('keyboard supports slash focus, row toggles, arrow navigation, and escape unwind priority', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'all-blocked');
+    await page.goto('/');
+
+    await page.keyboard.press('/');
+    await expect(page.locator('#search')).toBeFocused();
+
+    const rows = page.locator('[data-hook="table-row-summary"]');
+    await rows.nth(0).focus();
+    await page.keyboard.press('Enter');
+    await expect(rows.nth(0)).toHaveAttribute('aria-expanded', 'true');
+
+    await page.keyboard.press('ArrowDown');
+    await expect(rows.nth(1)).toBeFocused();
+
+    await page.keyboard.press(' ');
+    await expect(rows.nth(1)).toHaveAttribute('aria-expanded', 'true');
+    await expect(rows.nth(0)).toHaveAttribute('aria-expanded', 'false');
+
+    await page.keyboard.press('ArrowUp');
+    await expect(rows.nth(0)).toBeFocused();
+
+    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-hook="table-row-summary"][aria-expanded="true"]')).toHaveCount(
+      0
+    );
+
+    await page.locator('#filter-toggle').click();
+    await expect(page.locator('#filter-panel')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#filter-panel')).toBeHidden();
+    await expect(page.locator('#filter-toggle')).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('reduced motion mode preserves interaction behavior', async ({ page }) => {
+    await mockSheetCsv(page, 'all-blocked');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+
+    const firstRow = page.locator('[data-hook="table-row-summary"]').first();
+    await firstRow.focus();
+    await page.keyboard.press('Enter');
+    await expect(firstRow).toHaveAttribute('aria-expanded', 'true');
+
+    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+  });
+
+  test('mobile layout preserves hidden table info through expansion and keeps scoped flow in-page', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'all-blocked');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+
+    await expect(page.locator('.hero-stats')).toHaveCSS('flex-direction', 'column');
+    await expect(page.locator('.goals-grid')).toHaveCSS('grid-template-columns', '366px');
+
+    const firstRow = page.locator('[data-hook="table-row-summary"]').first();
+    await firstRow.click();
+
+    await expect(firstRow.locator('.td-goal')).toBeHidden();
+    await expect(firstRow.locator('.td-date')).toBeHidden();
+
+    const detail = page
+      .locator('[data-hook="table-row-detail"]')
+      .filter({ hasText: 'Team' })
+      .first();
+    await expect(detail).toContainText('Goal');
+    await expect(detail).toContainText('Updated');
+
+    const initialUrl = page.url();
+    await page.locator('[data-hook="table-group-header"]').first().click();
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
+    await page.locator('#filter-toggle').click();
+    await page.locator('#search').fill('permit');
+    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
+    await page.locator('#reset-btn').click();
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+    await expect(page).toHaveURL(initialUrl);
+  });
+
+  test('full single-page exploration path preserves URL while scope expand search and reset interact', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'all-blocked');
+    await page.goto('/');
+
+    const initialUrl = page.url();
+
+    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
+    await expect(page.locator('[data-hook="scope-indicator"]')).toContainText('Legal Framework');
+
+    const rows = page.locator('[data-hook="table-row-summary"]');
+    await rows.first().click();
+    await expect(rows.first()).toHaveAttribute('aria-expanded', 'true');
+
+    await page.locator('#search').fill('permit');
+    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
+
+    await page.locator('#reset-btn').click();
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(3);
+    await expect(page).toHaveURL(initialUrl);
+  });
 });
