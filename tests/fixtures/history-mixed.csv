@@ -1,0 +1,22 @@
+Timestamp,Level,Entity,Total,Done,Doing,Blocked,Pct
+2026-03-25T12:00:00Z,overall,—,20,8,7,5,40
+2026-03-25T12:00:00Z,goal,Legal Framework,10,4,3,3,40
+2026-03-25T12:00:00Z,goal,Infrastructure,10,4,4,2,40
+2026-03-25T12:00:00Z,department,Governance,8,3,3,2,38
+2026-03-25T12:00:00Z,department,Operations,12,5,4,3,42
+2026-03-25T12:00:00Z,employee,Ana Cruz,5,2,2,1,40
+2026-03-25T12:00:00Z,employee,Leo Tan,4,2,1,1,50
+2026-04-01T12:00:00Z,overall,—,20,12,4,4,60
+2026-04-01T12:00:00Z,goal,Legal Framework,10,6,2,2,60
+2026-04-01T12:00:00Z,goal,Infrastructure,10,6,2,2,60
+2026-04-01T12:00:00Z,department,Governance,8,5,2,1,63
+2026-04-01T12:00:00Z,department,Operations,12,7,2,3,58
+2026-04-01T12:00:00Z,employee,Ana Cruz,5,3,1,1,60
+2026-04-01T12:00:00Z,employee,Leo Tan,4,3,1,0,75
+2026-04-05T12:00:00Z,overall,—,20,14,3,3,70
+2026-04-05T12:00:00Z,goal,Legal Framework,10,7,2,1,70
+2026-04-05T12:00:00Z,goal,Infrastructure,10,7,1,2,70
+2026-04-05T12:00:00Z,department,Governance,8,6,1,1,75
+2026-04-05T12:00:00Z,department,Operations,12,8,2,2,67
+2026-04-05T12:00:00Z,employee,Ana Cruz,5,4,1,0,80
+2026-04-05T12:00:00Z,employee,Leo Tan,4,4,0,0,100

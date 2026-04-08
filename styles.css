@@ -1727,3 +1727,60 @@ header :focus-visible {
     padding: var(--space-2xl);
   }
 }
+
+/* ── Period toggle ── */
+.period-toggle {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.period-toggle-btn {
+  padding: 4px 12px;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: inherit;
+  letter-spacing: inherit;
+  transition:
+    background var(--duration-instant),
+    color var(--duration-instant);
+}
+.period-toggle-btn:not(:last-child) {
+  border-right: 1px solid var(--color-border);
+}
+.period-toggle-btn:hover {
+  background: var(--color-bg);
+}
+.period-toggle-active {
+  background: var(--brand-navy);
+  color: white;
+}
+
+/* ── Delta badges ── */
+.delta-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  margin-left: 4px;
+}
+.delta-up {
+  color: var(--status-done);
+  background: var(--status-done-bg);
+}
+.delta-down {
+  color: var(--status-blocked);
+  background: var(--status-blocked-bg);
+}
+.delta-neutral {
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+}

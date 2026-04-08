@@ -1,5 +1,8 @@
 const SHEET_URL =
   'https://docs.google.com/spreadsheets/d/1bUY_Us-Vjq4JSYsnxrVXfAX6qRGjxZRgXR31me3Nc0U/gviz/tq?tqx=out:csv&gid=1636341361';
+const HISTORY_URL =
+  'https://docs.google.com/spreadsheets/d/1bUY_Us-Vjq4JSYsnxrVXfAX6qRGjxZRgXR31me3Nc0U/gviz/tq?tqx=out:csv&gid=2128123437';
+const PERIOD_DAYS = { '1w': 7, '1m': 30, '3m': 90 };
 
 const DATE_STALE_THRESHOLD_DAYS = 7;
 
@@ -29,11 +32,18 @@ const appState = {
     },
   },
   route: {
-    view: 'overview', // 'overview' | 'goal' | 'department' | 'employee'
+    view: 'overview', // 'overview' | 'goal' | 'department' | 'employee' | 'trends'
     param: '', // entity name
     filters: {}, // { status: 'blocked', search: 'tax' } from query string
   },
+  history: {
+    raw: [],
+    byLevel: {},
+    status: 'idle',
+  },
 };
+
+window.appState = appState;
 
 const elements = {
   viewedDate: document.getElementById('viewed-date'),
@@ -146,6 +156,154 @@ function parseCSV(text) {
       return row;
     })
     .filter((row) => headers.some((header) => Boolean(row[header])));
+}
+
+function parseHistoryCSV(text) {
+  const rows = parseCSV(text);
+  return rows
+    .map((row) => ({
+      timestamp: new Date(row['Timestamp']),
+      level: (row['Level'] || '').toLowerCase(),
+      entity: row['Entity'] || '—',
+      total: parseInt(row['Total'], 10) || 0,
+      done: parseInt(row['Done'], 10) || 0,
+      doing: parseInt(row['Doing'], 10) || 0,
+      blocked: parseInt(row['Blocked'], 10) || 0,
+      pct: parseInt(row['Pct'], 10) || 0,
+    }))
+    .filter((row) => row.level && !isNaN(row.timestamp.getTime()));
+}
+
+function indexHistoryData(rows) {
+  const byLevel = { overall: [], goal: {}, department: {}, employee: {} };
+  rows.forEach((row) => {
+    if (row.level === 'overall') {
+      byLevel.overall.push(row);
+    } else if (byLevel[row.level]) {
+      if (!byLevel[row.level][row.entity]) byLevel[row.level][row.entity] = [];
+      byLevel[row.level][row.entity].push(row);
+    }
+  });
+  byLevel.overall.sort((a, b) => a.timestamp - b.timestamp);
+  Object.values(byLevel.goal).forEach((arr) => arr.sort((a, b) => a.timestamp - b.timestamp));
+  Object.values(byLevel.department).forEach((arr) => arr.sort((a, b) => a.timestamp - b.timestamp));
+  Object.values(byLevel.employee).forEach((arr) => arr.sort((a, b) => a.timestamp - b.timestamp));
+  return byLevel;
+}
+
+function getHistoryForEntity(level, entity) {
+  if (level === 'overall') return appState.history.byLevel.overall || [];
+  return (appState.history.byLevel[level] || {})[entity] || [];
+}
+
+function computeDelta(historyRows, periodKey) {
+  if (historyRows.length < 2) return null;
+  const now = Date.now();
+  const cutoff = now - PERIOD_DAYS[periodKey] * 24 * 60 * 60 * 1000;
+  const current = historyRows[historyRows.length - 1];
+  let closest = null;
+  let closestDist = Infinity;
+  for (const row of historyRows) {
+    const dist = Math.abs(row.timestamp.getTime() - cutoff);
+    if (dist < closestDist) {
+      closestDist = dist;
+      closest = row;
+    }
+  }
+  if (!closest || closest === current) return null;
+  const pctDelta = current.pct - closest.pct;
+  const blockedDelta = current.blocked - closest.blocked;
+  const doneDelta = current.done - closest.done;
+  return { pctDelta, blockedDelta, doneDelta, from: closest, to: current };
+}
+
+function aggregateDaily(historyRows) {
+  const byDay = {};
+  historyRows.forEach((row) => {
+    const dayKey = row.timestamp.toISOString().slice(0, 10);
+    byDay[dayKey] = row;
+  });
+  return Object.values(byDay).sort((a, b) => a.timestamp - b.timestamp);
+}
+
+let slugCounter = 0;
+function slugify(name) {
+  return (
+    name
+      .replace(/[^a-zA-Z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .toLowerCase() +
+    '-' +
+    slugCounter++
+  );
+}
+
+function isTrendPanelOpen() {
+  return sessionStorage.getItem('trendPanelOpen') === 'true';
+}
+function setTrendPanelOpen(open) {
+  sessionStorage.setItem('trendPanelOpen', String(open));
+}
+
+function renderPeriodToggle(container, currentPeriod, onChange) {
+  const periods = [
+    { key: '1w', label: '1W' },
+    { key: '1m', label: '1M' },
+    { key: '3m', label: '3M' },
+  ];
+  container.innerHTML = `
+    <div class="period-toggle" role="radiogroup" aria-label="Comparison period">
+      ${periods
+        .map(
+          (p) => `
+        <button type="button"
+          class="period-toggle-btn${p.key === currentPeriod ? ' period-toggle-active' : ''}"
+          data-period="${p.key}"
+          role="radio"
+          aria-checked="${p.key === currentPeriod}"
+        >${p.label}</button>
+      `
+        )
+        .join('')}
+    </div>
+  `;
+  container.querySelectorAll('.period-toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', () => onChange(btn.dataset.period));
+  });
+}
+
+function renderDeltaBadge(delta, metric = 'pctDelta') {
+  if (!delta) return '';
+  const value = delta[metric];
+  const direction = value > 0 ? 'Up' : value < 0 ? 'Down' : 'No change';
+  const display = metric === 'pctDelta' ? `${Math.abs(value)}%` : Math.abs(value);
+  const ariaLabel = `${direction} ${display}`;
+  if (value === 0)
+    return `<span class="delta-badge delta-neutral" aria-label="${ariaLabel}">→ 0%</span>`;
+  const arrow = value > 0 ? '↑' : '↓';
+  const cls = value > 0 ? 'delta-up' : 'delta-down';
+  return `<span class="delta-badge ${cls}" aria-label="${ariaLabel}">${arrow} ${display}</span>`;
+}
+
+function renderFrappeLineChart(containerId, historyRows, metric, yLabel) {
+  if (typeof frappe === 'undefined') return;
+  const container = document.getElementById(containerId);
+  if (!container || !historyRows.length) return;
+  container.innerHTML = '';
+  const daily = aggregateDaily(historyRows);
+  const labels = daily.map((r) =>
+    r.timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  );
+  const values = daily.map((r) => r[metric]);
+  new frappe.Chart(container, {
+    data: { labels, datasets: [{ values }] },
+    type: 'line',
+    height: 180,
+    colors: ['#368496'],
+    lineOptions: { regionFill: 1, hideDots: values.length > 20 },
+    axisOptions: { xIsSeries: true },
+    tooltipOptions: { formatTooltipY: (d) => `${d} ${yLabel}` },
+  });
 }
 
 function clearSelectOptions(selectEl) {
@@ -995,9 +1153,10 @@ function parseRoute(hash) {
   const view = segments[0] || 'overview';
   const param = segments.slice(1).join('/');
 
-  const validViews = ['overview', 'goal', 'department', 'employee'];
+  const validViews = ['overview', 'goal', 'department', 'employee', 'trends'];
   if (!validViews.includes(view)) return { view: 'overview', param: '', filters: {} };
-  if (view !== 'overview' && !param) return { view: 'overview', param: '', filters: {} };
+  if (view !== 'overview' && view !== 'trends' && !param)
+    return { view: 'overview', param: '', filters: {} };
 
   const filters = {};
   if (queryPart) {
@@ -1010,7 +1169,19 @@ function parseRoute(hash) {
 }
 
 function buildHash(view, param, filters) {
-  if (view === 'overview') return '#/';
+  if (view === 'overview') {
+    if (filters && Object.keys(filters).length) {
+      return `#/?${new URLSearchParams(filters).toString()}`;
+    }
+    return '#/';
+  }
+  if (view === 'trends') {
+    let hash = '#/trends';
+    if (filters && Object.keys(filters).length) {
+      hash += `?${new URLSearchParams(filters).toString()}`;
+    }
+    return hash;
+  }
   let hash = `#/${encodeURIComponent(view)}/${encodeURIComponent(param).replace(/%20/g, '+')}`;
   if (filters && Object.keys(filters).length) {
     const qs = new URLSearchParams(filters).toString();
@@ -1023,6 +1194,12 @@ function navigateTo(view, param = '', filters = {}) {
   const hash = buildHash(view, param, filters);
   if (window.location.hash === hash) return;
   window.location.hash = hash;
+}
+
+function replaceRoute(view, param = '', filters = {}) {
+  const hash = buildHash(view, param, filters);
+  history.replaceState(null, '', hash);
+  appState.route = parseRoute(hash);
 }
 
 function onRouteChange() {
@@ -1864,6 +2041,27 @@ async function fetchFixtureCsv(fixtureName) {
   return text;
 }
 
+async function fetchHistoryData() {
+  appState.history.status = 'loading';
+  try {
+    const fixtureName = readManualQaFixtureSelection();
+    const url = fixtureName ? buildFixtureCsvUrl(fixtureName + '-history') : HISTORY_URL;
+    const response = await fetch(url);
+    if (!response.ok) {
+      appState.history.status = 'error';
+      return;
+    }
+    const text = await response.text();
+    const rows = parseHistoryCSV(text);
+    appState.history.raw = rows;
+    appState.history.byLevel = indexHistoryData(rows);
+    appState.history.status = 'loaded';
+    if (appState.lifecycle.phase === 'loaded') renderApp();
+  } catch {
+    appState.history.status = 'error';
+  }
+}
+
 async function fetchSheetData() {
   flushPendingSearchDebounce();
 
@@ -1880,6 +2078,7 @@ async function fetchSheetData() {
   }
 
   setLifecyclePhase('loading');
+  fetchHistoryData();
 
   try {
     const csv = fixtureName

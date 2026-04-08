@@ -6,6 +6,8 @@ const {
   failSheetCsv,
   mockSheetCsvSequence,
   mockSheetCsvBody,
+  mockHistoryCsv,
+  failHistoryCsv,
 } = require('./helpers/sheet-fixtures');
 
 test.describe('dashboard browser harness fixtures', () => {
@@ -186,6 +188,80 @@ test.describe('dashboard browser harness fixtures', () => {
     await page.locator('[data-hook="empty-reset-btn"]').click();
 
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('3');
+  });
+
+  test('history fetch failure does not break main dashboard', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await failHistoryCsv(page);
+    await page.goto('/');
+    await expect(page.locator('#state-box')).toBeHidden();
+    await expect(page.locator('#summary .hero-pct')).toBeVisible();
+    const historyStatus = await page.evaluate(() => window.appState?.history?.status);
+    expect(historyStatus).toBe('error');
+  });
+
+  test('history data is parsed and indexed by level', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/');
+    await expect(page.locator('#summary .hero-pct')).toBeVisible();
+    const history = await page.evaluate(() => {
+      const h = window.appState?.history;
+      return {
+        status: h?.status,
+        overallCount: h?.byLevel?.overall?.length,
+        goalKeys: Object.keys(h?.byLevel?.goal || {}),
+        deptKeys: Object.keys(h?.byLevel?.department || {}),
+        employeeKeys: Object.keys(h?.byLevel?.employee || {}),
+      };
+    });
+    expect(history.status).toBe('loaded');
+    expect(history.overallCount).toBe(3);
+    expect(history.goalKeys).toContain('Legal Framework');
+    expect(history.goalKeys).toContain('Infrastructure');
+    expect(history.deptKeys).toContain('Governance');
+    expect(history.deptKeys).toContain('Operations');
+    expect(history.employeeKeys).toContain('Ana Cruz');
+    expect(history.employeeKeys).toContain('Leo Tan');
+  });
+
+  test('history fixture routes by GID separately from updates fixture', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/');
+    await expect(page.locator('#summary .hero-pct')).toBeVisible();
+    const mainRows = await page.evaluate(() => window.appState?.rows?.length);
+    const historyRows = await page.evaluate(() => window.appState?.history?.raw?.length);
+    expect(mainRows).toBeGreaterThan(0);
+    expect(historyRows).toBe(21);
+  });
+
+  test('parseRoute handles overview with query params', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/');
+    const result = await page.evaluate(() => {
+      return parseRoute('#/?period=3m');
+    });
+    expect(result.view).toBe('overview');
+    expect(result.filters.period).toBe('3m');
+  });
+
+  test('buildHash overview with filters includes query params', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/');
+    const result = await page.evaluate(() => {
+      return buildHash('overview', '', { period: '3m' });
+    });
+    expect(result).toBe('#/?period=3m');
+  });
+
+  test('parseRoute handles trends view', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/');
+    const result = await page.evaluate(() => {
+      return parseRoute('#/trends');
+    });
+    expect(result.view).toBe('trends');
   });
 });
 
