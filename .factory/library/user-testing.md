@@ -21,6 +21,7 @@ Testing surface, tools, and runtime validation notes.
 - Local static serving is workable on `http://127.0.0.1:3100`.
 - The live Google Sheets CSV endpoint is currently reachable, but live-sheet smoke checks can settle slowly enough to need an extended wait or one controlled reload before concluding failure.
 - Before validation, ensure the local server is running from `.factory/services.yaml` and browser tooling dependencies are installed.
+- Because the manifest `web.start` command resolves repo root via `git rev-parse --show-toplevel`, run startup/healthcheck flows from inside the repository git worktree.
 
 ## Validation Concurrency
 

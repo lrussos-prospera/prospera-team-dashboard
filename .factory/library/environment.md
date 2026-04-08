@@ -16,6 +16,7 @@ Environment variables, external dependencies, and setup notes.
 
 - The app is a static HTML/CSS/JS site and must remain single-page with no framework and no routing.
 - Local validation should serve the repo on port `3100`.
+- `.factory/services.yaml` derives the web root with `git rev-parse --show-toplevel`; run service commands from inside a valid git worktree so root resolution succeeds.
 - Browser-based testing tooling must be installed in-repo during the mission because the repo currently has no test stack.
 - Installing `@playwright/test` does not install browser binaries; if Chromium is missing locally, run `npx playwright install chromium` before relying on browser tests.
 - `.factory/init.sh` is not executable in this repo snapshot; invoke it with `sh .factory/init.sh` (or `sh "/absolute/path/to/.factory/init.sh"`) rather than executing it directly.

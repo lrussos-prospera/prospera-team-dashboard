@@ -7,6 +7,7 @@ commands:
 
 services:
   web:
+    # Requires running inside a git worktree; git rev-parse resolves the repository root.
     start: python3 -m http.server 3100 --directory "$(git rev-parse --show-toplevel)"
     stop: lsof -ti :3100 | xargs kill
     healthcheck: curl -sf http://127.0.0.1:3100
