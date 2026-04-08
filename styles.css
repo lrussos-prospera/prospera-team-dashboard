@@ -841,6 +841,33 @@ tbody tr:not(.group-header):not(.expand-row) {
   color: var(--color-text-faint);
 }
 
+.empty > div {
+  margin-bottom: 10px;
+}
+
+.empty-scope-note {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--brand-dark-teal);
+  margin-bottom: 14px;
+}
+
+.empty .retry-btn {
+  padding: 8px 16px;
+  background: var(--brand-navy);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.empty .retry-btn:hover {
+  background: var(--brand-red);
+}
+
 .result-count {
   font-size: 0.9rem;
   color: var(--color-text-faint);

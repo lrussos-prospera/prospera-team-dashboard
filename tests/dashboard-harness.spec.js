@@ -1,5 +1,12 @@
+const fs = require('node:fs');
+const path = require('node:path');
 const { test, expect } = require('@playwright/test');
-const { mockSheetCsv, failSheetCsv } = require('./helpers/sheet-fixtures');
+const {
+  mockSheetCsv,
+  failSheetCsv,
+  mockSheetCsvSequence,
+  mockSheetCsvBody,
+} = require('./helpers/sheet-fixtures');
 
 test.describe('dashboard browser harness fixtures', () => {
   test('all-blocked fixture renders risk-forward summary and blocked list', async ({ page }) => {
@@ -47,6 +54,91 @@ test.describe('dashboard browser harness fixtures', () => {
       'Could not load data from Google Sheets.'
     );
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  });
+
+  test('retry clears error state and recovers loaded dashboard without URL changes', async ({
+    page,
+  }) => {
+    await mockSheetCsvSequence(page, [
+      { type: 'abort', errorCode: 'failed' },
+      {
+        type: 'fulfill',
+        body: fs.readFileSync(path.join(__dirname, 'fixtures', 'all-blocked.csv'), 'utf8'),
+      },
+    ]);
+
+    await page.goto('/');
+    const urlBeforeRetry = page.url();
+
+    await expect(page.locator('[data-hook="error-state"]')).toBeVisible();
+    await page.getByRole('button', { name: 'Try again' }).click();
+
+    await expect(page.locator('#state-box')).toBeHidden();
+    await expect(page.locator('[data-hook="summary"]')).toBeVisible();
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('3');
+    await expect(page.url()).toBe(urlBeforeRetry);
+  });
+
+  test('no-data response is explicit and distinct from no-match states', async ({ page }) => {
+    await mockSheetCsvBody(
+      page,
+      'Department,Team,Responsible,Topic,Status,Goal,Added/updated,Details,Notes\n'
+    );
+
+    await page.goto('/');
+
+    await expect(page.locator('[data-hook="no-data-state"]')).toBeVisible();
+    await expect(page.locator('[data-hook="no-data-state"]')).toContainText(
+      'No usable update rows were returned from the source.'
+    );
+    await expect(page.locator('[data-hook="summary"]')).toBeHidden();
+  });
+
+  test('refresh preserves active narrowing state and does not reset recency from fetch time alone', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'stale-data');
+
+    await page.goto('/');
+
+    await page.locator('#filter-toggle').click();
+    await page.locator('#filter-status').selectOption('doing');
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('2');
+
+    const beforeLabel = await page.locator('#csv-date-label').innerText();
+    await page.locator('#refresh-btn').click();
+
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('2');
+    await expect(page.locator('#filter-badge')).toHaveText('1');
+    await expect(page.locator('#csv-date-label')).toContainText('stale');
+    const afterLabel = await page.locator('#csv-date-label').innerText();
+    expect(beforeLabel).toMatch(/stale/);
+    expect(afterLabel).toMatch(/stale/);
+  });
+
+  test('no-match state shows recoverable reset affordance and retains scope context', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'all-blocked');
+
+    await page.goto('/');
+
+    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
+    await page.locator('#filter-toggle').click();
+    await page.locator('#filter-person').selectOption('Mia Park');
+
+    await expect(page.locator('[data-hook="no-results-state"]')).toBeVisible();
+    await expect(page.locator('[data-hook="no-results-state"]')).toContainText(
+      'No updates match your current scope, search, or filters.'
+    );
+    await expect(page.locator('[data-hook="no-results-scope-note"]')).toContainText(
+      'Active scope: Legal Framework'
+    );
+
+    await page.locator('[data-hook="empty-reset-btn"]').click();
+
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('3');
   });
 });
 

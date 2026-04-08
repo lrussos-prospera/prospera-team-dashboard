@@ -24,7 +24,38 @@ async function failSheetCsv(page) {
   });
 }
 
+async function mockSheetCsvSequence(page, sequence) {
+  let index = 0;
+  await page.route(SHEET_ROUTE, async (route) => {
+    const step = sequence[Math.min(index, sequence.length - 1)];
+    index += 1;
+
+    if (step.type === 'abort') {
+      await route.abort(step.errorCode || 'failed');
+      return;
+    }
+
+    await route.fulfill({
+      status: step.status || 200,
+      contentType: 'text/csv; charset=utf-8',
+      body: step.body || '',
+    });
+  });
+}
+
+async function mockSheetCsvBody(page, body) {
+  await page.route(SHEET_ROUTE, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/csv; charset=utf-8',
+      body,
+    });
+  });
+}
+
 module.exports = {
   mockSheetCsv,
   failSheetCsv,
+  mockSheetCsvSequence,
+  mockSheetCsvBody,
 };

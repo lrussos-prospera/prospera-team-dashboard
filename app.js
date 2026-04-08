@@ -6,7 +6,7 @@ const DATE_STALE_THRESHOLD_DAYS = 7;
 const appState = {
   rows: [],
   lifecycle: {
-    phase: 'idle', // idle | loading | loaded | error
+    phase: 'idle', // idle | loading | loaded | error | no-data
     errorMessage: '',
     refreshedLabel: 'Loading…',
   },
@@ -234,10 +234,32 @@ function deriveRecencyLabel(rows) {
     return `Live · stale (${ageDays}d old)`;
   }
 
-  return (
-    'Live · refreshed ' +
-    new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  return `Live · current (${ageDays}d old)`;
+}
+
+function isNarrowedViewActive() {
+  return Boolean(
+    appState.view.scopeGoal ||
+    appState.view.filters.search ||
+    appState.view.filters.dept ||
+    appState.view.filters.team ||
+    appState.view.filters.person ||
+    appState.view.filters.status ||
+    appState.view.filters.goal
   );
+}
+
+function renderNoDataState(message) {
+  els.stateBox.style.display = '';
+  els.stateBox.setAttribute('data-hook', 'no-data-state');
+  els.stateBox.innerHTML = `
+    <div class="state-icon">📭</div>
+    <p>${esc(message)}<br><small style="color:#64748b">No usable update rows were returned from the source.</small></p>
+    <button class="retry-btn" data-hook="retry-btn">Try again</button>
+  `;
+
+  const retryBtn = els.stateBox.querySelector('[data-hook="retry-btn"]');
+  if (retryBtn) retryBtn.addEventListener('click', fetchSheetData);
 }
 
 function setLifecyclePhase(phase, errorMessage = '') {
@@ -246,14 +268,17 @@ function setLifecyclePhase(phase, errorMessage = '') {
 
   const isLoading = phase === 'loading';
   const isError = phase === 'error';
+  const isNoData = phase === 'no-data';
 
-  els.csvBadge.className = `data-badge${isLoading ? ' loading' : ''}${isError ? ' error' : ''}`;
+  els.csvBadge.className = `data-badge${isLoading ? ' loading' : ''}${isError || isNoData ? ' error' : ''}`;
   els.csvDateLabel.textContent =
     phase === 'loading'
       ? 'Loading…'
       : isError
         ? 'Could not load data'
-        : appState.lifecycle.refreshedLabel;
+        : isNoData
+          ? 'No source data'
+          : appState.lifecycle.refreshedLabel;
 
   if (isLoading) {
     els.refreshBtn.classList.add('spinning');
@@ -263,12 +288,14 @@ function setLifecyclePhase(phase, errorMessage = '') {
 
   if (isLoading) {
     els.stateBox.style.display = '';
+    els.stateBox.setAttribute('data-hook', 'loading-state');
     els.stateBox.innerHTML = `
       <div class="state-icon">⏳</div>
       <p id="state-msg">Fetching latest data from Google Sheets…</p>
     `;
   } else if (isError) {
     els.stateBox.style.display = '';
+    els.stateBox.setAttribute('data-hook', 'error-state');
     els.stateBox.innerHTML = `
       <div class="state-icon">⚠️</div>
       <p>Could not load data from Google Sheets.<br><small style="color:#94a3b8">${esc(errorMessage)}</small></p>
@@ -276,8 +303,11 @@ function setLifecyclePhase(phase, errorMessage = '') {
     `;
     const retryBtn = els.stateBox.querySelector('[data-hook="retry-btn"]');
     if (retryBtn) retryBtn.addEventListener('click', fetchSheetData);
+  } else if (isNoData) {
+    renderNoDataState(errorMessage || 'No data found in sheet');
   } else {
     els.stateBox.style.display = 'none';
+    els.stateBox.removeAttribute('data-hook');
   }
 }
 
@@ -458,9 +488,28 @@ function toggleExpandedRow(rowKey) {
 
 function renderTable(rows) {
   if (!rows.length) {
-    els.tableBody.innerHTML =
-      '<tr><td colspan="5" class="empty">No updates match your filters.</td></tr>';
-    els.resultCount.textContent = 'No results';
+    const scopeMessage = appState.view.scopeGoal
+      ? `<div class="empty-scope-note" data-hook="no-results-scope-note">Active scope: ${esc(appState.view.scopeGoal)}</div>`
+      : '';
+    const emptyMessage = isNarrowedViewActive()
+      ? 'No updates match your current scope, search, or filters.'
+      : 'No updates are currently available.';
+
+    els.tableBody.innerHTML = `
+      <tr>
+        <td colspan="5" class="empty" data-hook="no-results-state">
+          <div>${emptyMessage}</div>
+          ${scopeMessage}
+          <button type="button" class="retry-btn" data-hook="empty-reset-btn">Reset narrowing</button>
+        </td>
+      </tr>
+    `;
+    els.resultCount.textContent = 'No matching updates';
+
+    const resetFromEmpty = els.tableBody.querySelector('[data-hook="empty-reset-btn"]');
+    if (resetFromEmpty) {
+      resetFromEmpty.addEventListener('click', resetFilters);
+    }
     return;
   }
 
@@ -678,7 +727,12 @@ async function fetchSheetData() {
 
     const csv = await response.text();
     const rows = parseCSV(csv);
-    if (!rows.length) throw new Error('No data found in sheet');
+    if (!rows.length) {
+      appState.rows = [];
+      setLifecyclePhase('no-data', 'No data found in sheet');
+      syncVisibility(false);
+      return;
+    }
 
     appState.rows = rows;
     populateFilterOptions();
