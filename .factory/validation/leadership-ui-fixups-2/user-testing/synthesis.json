@@ -1,0 +1,21 @@
+{
+  "milestone": "leadership-ui-fixups-2",
+  "round": 1,
+  "status": "pass",
+  "assertionsSummary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "appliedUpdates": [],
+  "previousRound": null,
+  "notes": [
+    "No completed implementation features in this milestone declared validation-contract assertion IDs in their fulfills field, so there were no user-surface assertions to execute in this round.",
+    "The only completed implementation feature in this milestone (fix-escape-vs-native-select-popup) had an empty fulfills array, so user-testing did not select any assertions.",
+    "validation-state.json was left unchanged because no assertion statuses were advanced or downgraded."
+  ]
+}
