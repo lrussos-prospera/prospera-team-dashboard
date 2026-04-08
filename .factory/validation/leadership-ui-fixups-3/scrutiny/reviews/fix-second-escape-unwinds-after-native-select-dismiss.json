@@ -1,0 +1,22 @@
+{
+  "featureId": "fix-second-escape-unwinds-after-native-select-dismiss",
+  "reviewedAt": "2026-04-08T05:00:11Z",
+  "commitId": "5719e21",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The change fixes the immediately repeated-Escape path on a focused native select, but it persists bypass state on the select element itself and never clears that state when the interaction context ends. As a result, later first-Escape presses on that same select can incorrectly unwind dashboard state immediately instead of being reserved for native select dismissal.",
+    "issues": [
+      {
+        "file": "app.js",
+        "line": 792,
+        "severity": "blocking",
+        "description": "`escapeBypassSelect` is stored globally and only reset when `shouldHandleEscapeForDashboardUnwind()` runs on a non-`SELECT` element or null. If the user presses Escape once on `#filter-status`, then closes/reopens the filter panel or otherwise returns to that same select later, the same DOM element remains cached and the next 'first' Escape on that select goes straight to `unwindEscapeState()` instead of preserving native select dismissal semantics. That violates the feature requirement that the first Escape remain available for the browser's native select popup whenever that control is being used again."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Fail: the immediate two-Escape scenario is covered, but the implementation keeps stale select-bypass state and can treat a later first Escape on the same focused select as a dashboard unwind. That is a correctness/regression risk against the required native-select Escape semantics."
+}
