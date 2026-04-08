@@ -1,0 +1,15 @@
+{
+  "featureId": "misc-document-git-dependent-service-root-resolution",
+  "reviewedAt": "2026-04-08T03:15:16Z",
+  "commitId": "cbc6cc3",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The implementation satisfies the follow-up intent by documenting the git-worktree dependency in all of the shared setup surfaces that workers are expected to read before startup or validation. The changes are narrowly scoped to documentation/config comments, preserve the existing portable root-resolution approach, and do not introduce any codepath or service-manifest regressions.",
+    "issues": []
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Pass. Commit cbc6cc3 correctly documents that the manifest web service derives its root with git rev-parse and therefore must be run from within a git worktree. No blocking or non-blocking implementation issues were found, and no additional shared-state gaps were identified from this feature review."
+}
