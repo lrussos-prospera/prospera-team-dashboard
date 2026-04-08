@@ -118,30 +118,6 @@ h1 {
   opacity: 0.6;
 }
 
-/* Specific component polish */
-.hero-zone {
-  border: 1px solid var(--color-border);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-}
-.hero-pct {
-  font-family: var(--font-body);
-  font-size: 5.5rem;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  color: var(--brand-navy);
-}
-
-.goals-section h2,
-.blocked-heading {
-  font-family: var(--font-body);
-  font-size: 1.3rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 20px;
-  color: var(--brand-navy);
-}
-
 .header-right {
   display: flex;
   flex-direction: column;
@@ -259,6 +235,7 @@ main {
 .hero-zone {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow-md);
   padding: 32px 40px;
   display: flex;
@@ -347,6 +324,8 @@ main {
 .goals-section h2 {
   font-size: 1.4rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--brand-navy);
   margin-bottom: 14px;
   font-family: var(--font-display);
@@ -497,6 +476,8 @@ button.goal-card {
   font-family: var(--font-display);
   font-size: 1.4rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--brand-red);
   margin-bottom: var(--space-md);
 }

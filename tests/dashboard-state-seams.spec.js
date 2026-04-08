@@ -512,29 +512,53 @@ test.describe('dashboard state and render seams', () => {
     );
   });
 
-  test('keyboard supports slash focus, row toggles, arrow navigation, and escape unwind priority', async ({
-    page,
-  }) => {
+  test('slash key focuses search from neutral context', async ({ page }) => {
     await mockSheetCsv(page, 'all-blocked');
     await page.goto('/');
 
     await page.keyboard.press('/');
     await expect(page.locator('#search')).toBeFocused();
+  });
+
+  test('Enter and Space toggle row expansion with single-expanded constraint', async ({ page }) => {
+    await mockSheetCsv(page, 'all-blocked');
+    await page.goto('/');
 
     const rows = page.locator('[data-hook="table-row-summary"]');
+
     await rows.nth(0).focus();
     await page.keyboard.press('Enter');
     await expect(rows.nth(0)).toHaveAttribute('aria-expanded', 'true');
 
-    await page.keyboard.press('ArrowDown');
-    await expect(rows.nth(1)).toBeFocused();
+    await page.keyboard.press(' ');
+    await expect(rows.nth(0)).toHaveAttribute('aria-expanded', 'false');
 
+    await rows.nth(1).focus();
     await page.keyboard.press(' ');
     await expect(rows.nth(1)).toHaveAttribute('aria-expanded', 'true');
     await expect(rows.nth(0)).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('ArrowUp and ArrowDown navigate between summary rows', async ({ page }) => {
+    await mockSheetCsv(page, 'all-blocked');
+    await page.goto('/');
+
+    const rows = page.locator('[data-hook="table-row-summary"]');
+
+    await rows.nth(0).focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(rows.nth(1)).toBeFocused();
+
+    await page.keyboard.press('ArrowDown');
+    await expect(rows.nth(2)).toBeFocused();
 
     await page.keyboard.press('ArrowUp');
-    await expect(rows.nth(0)).toBeFocused();
+    await expect(rows.nth(1)).toBeFocused();
+  });
+
+  test('Escape unwinds scope before expansion before filter panel', async ({ page }) => {
+    await mockSheetCsv(page, 'all-blocked');
+    await page.goto('/');
 
     await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
     await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
@@ -562,6 +586,19 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="table-row-summary"][aria-expanded="true"]')).toHaveCount(
       0
     );
+    await expect(page.locator('#filter-panel')).toBeVisible();
+
+    await page.locator('#search').focus();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#filter-panel')).toBeHidden();
+    await expect(page.locator('#filter-toggle')).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('Escape defers to native select dropdown on first press', async ({ page }) => {
+    await mockSheetCsv(page, 'all-blocked');
+    await page.goto('/');
+
+    await page.locator('#filter-toggle').click();
     await expect(page.locator('#filter-panel')).toBeVisible();
 
     await page.locator('#filter-status').focus();
