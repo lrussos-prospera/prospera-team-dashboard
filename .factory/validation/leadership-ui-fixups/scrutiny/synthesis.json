@@ -1,0 +1,41 @@
+{
+  "milestone": "leadership-ui-fixups",
+  "round": 1,
+  "status": "fail",
+  "validatorsRun": {
+    "test": {
+      "passed": true,
+      "command": "npx playwright test --workers=2 --pass-with-no-tests",
+      "exitCode": 0
+    },
+    "typecheck": {
+      "passed": true,
+      "command": "echo \"No separate typecheck for static JS app\"",
+      "exitCode": 0
+    },
+    "lint": {
+      "passed": true,
+      "command": "npx prettier --check index.html styles.css app.js",
+      "exitCode": 0
+    }
+  },
+  "reviewsSummary": {
+    "total": 3,
+    "passed": 2,
+    "failed": 1,
+    "failedFeatures": [
+      "fix-escape-unwind-with-text-control-focus"
+    ]
+  },
+  "blockingIssues": [
+    {
+      "featureId": "fix-escape-unwind-with-text-control-focus",
+      "severity": "blocking",
+      "description": "`shouldHandleEscapeForDashboardUnwind()` returns true for focused `<select>` elements, so the global Escape handler can intercept the first Escape press intended to dismiss the browser’s native select popup. That over-interferes with native behavior and does not fully satisfy the feature intent."
+    }
+  ],
+  "appliedUpdates": [],
+  "suggestedGuidanceUpdates": [],
+  "rejectedObservations": [],
+  "previousRound": null
+}

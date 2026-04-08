@@ -1,0 +1,22 @@
+{
+  "featureId": "fix-escape-unwind-with-text-control-focus",
+  "reviewedAt": "2026-04-08T00:00:00Z",
+  "commitId": "674f213",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The change correctly restores Escape-based unwind while focus is in the search input, but it now handles Escape for all <select> controls unconditionally. That can steal the first Escape press from the browser's native select UI, so the implementation does not fully satisfy the requirement to avoid unnecessary interference with native behavior.",
+    "issues": [
+      {
+        "file": "app.js",
+        "line": 795,
+        "severity": "blocking",
+        "description": "`shouldHandleEscapeForDashboardUnwind()` returns true for focused `<select>` elements, so the global window Escape handler will call `unwindEscapeState()` and `preventDefault()` whenever scope/expanded-row/filter-panel state is active. Native selects commonly use Escape to dismiss their own open popup first; intercepting that same keypress can close dashboard state instead, which violates the feature intent to keep unwind working in relevant controls without over-interfering with native browser behavior."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Reviewed the feature transcript skeleton, handoff, committed diff, and surrounding keyboard/unwind code. The feature passes for search-input focus, but the select-control path is over-broad and can override native Escape behavior, so the review fails with one blocking issue."
+}
