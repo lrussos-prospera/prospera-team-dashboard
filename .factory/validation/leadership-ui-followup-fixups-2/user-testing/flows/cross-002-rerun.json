@@ -1,0 +1,73 @@
+{
+  "groupId": "cross-002-rerun",
+  "milestone": "leadership-ui-followup-fixups-2",
+  "testedAt": "2026-04-08T09:43:40Z",
+  "surface": "browser-ui",
+  "isolation": {
+    "appUrl": "http://127.0.0.1:3100/index.html?qaFixture=canonical-blocked-mixed",
+    "browserSession": "cross-002-rerun",
+    "fixture": "canonical-blocked-mixed",
+    "port": 3100
+  },
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-CROSS-002",
+      "title": "Department scope plus search plus reset returns to overview coherently",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Open the fixture-backed dashboard in overview state",
+          "expected": "Overview summary, blocked section, and full table render in place",
+          "observed": "Dashboard loaded at the same URL with executive summary for all departments, blocked items for Ana Cruz and Mia Park, and 4 total updates across Governance and Operations."
+        },
+        {
+          "action": "Click the Governance department header",
+          "expected": "The page scopes to Governance only",
+          "observed": "The dataset narrowed to 2 Governance updates."
+        },
+        {
+          "action": "Search for 'permit' while Governance scope is active",
+          "expected": "The results narrow to the Leo Tan row and scoped/search UI is visible",
+          "observed": "The page showed 1 Governance update for Leo Tan / Permit risk watch, with the clear active scope control visible in the scoped state."
+        },
+        {
+          "action": "Press Reset",
+          "expected": "The dashboard returns to the true default overview state",
+          "observed": "Reset removed the active department scope UI, cleared the search narrowing, restored the executive summary to All Departments with 2 blocked / 4 total updates, brought back the blocked section for Ana Cruz and Mia Park, and restored all 4 table rows."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui-followup-fixups-2/cross-002-rerun/VAL-CROSS-002-department-scope-search.png",
+          "leadership-ui-followup-fixups-2/cross-002-rerun/VAL-CROSS-002-reset-restored-overview.png"
+        ],
+        "observed": [
+          "Scoped/search state showed Governance narrowed to the Leo Tan 'Permit risk watch' row and displayed the clear active scope control.",
+          "After Reset, the clear active scope control disappeared.",
+          "After Reset, the scoped department indicator/badge was absent.",
+          "After Reset, the executive summary returned to ALL DEPARTMENTS with 2 BLOCKED and 4 TOTAL UPDATES.",
+          "After Reset, the blocked items section returned with Ana Cruz and Mia Park only.",
+          "After Reset, the full table returned with Ana Cruz, Leo Tan, Mia Park, and Zoe Klein rows."
+        ],
+        "consoleErrors": "none",
+        "network": "agent-browser network logger reported 'No requests captured' during this fixture-backed localhost flow."
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [
+    {
+      "description": "agent-browser network capture did not log the localhost fixture request and returned 'No requests captured' for this manual flow.",
+      "resolved": true,
+      "resolution": "Relied on screenshot evidence, stable URL confirmation, and DOM text verification for the scoped/search and reset states while still checking console/errors output.",
+      "affectedAssertions": [
+        "VAL-CROSS-002"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 1 assertion: VAL-CROSS-002 passed because Reset removed the Governance scope UI, restored the default All Departments overview, brought back the blocked section for Ana Cruz and Mia Park, and restored all 4 table rows."
+}
