@@ -497,8 +497,9 @@ function badge(raw, normalized) {
   return `<span class="badge badge-other">${esc(raw)}</span>`;
 }
 
-function buildRowKey(row, index) {
-  return `${(row['Department'] || 'other').toLowerCase()}-${(row['Responsible'] || 'unknown').toLowerCase()}-${index}`.replace(
+function buildRowKey(row, fallbackIndex) {
+  const persistentId = row.__rowId || fallbackIndex;
+  return `${(row['Department'] || 'other').toLowerCase()}-${(row['Responsible'] || 'unknown').toLowerCase()}-${persistentId}`.replace(
     /[^a-z0-9-]+/g,
     '-'
   );
@@ -899,7 +900,10 @@ async function fetchSheetData() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const csv = await response.text();
-    const rows = parseCSV(csv);
+    const rows = parseCSV(csv).map((row, index) => ({
+      ...row,
+      __rowId: index,
+    }));
     if (!rows.length) {
       appState.rows = [];
       setLifecyclePhase('no-data', 'No data found in sheet');

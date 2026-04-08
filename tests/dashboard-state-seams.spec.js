@@ -518,6 +518,36 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('#filter-toggle')).toHaveAttribute('aria-expanded', 'false');
   });
 
+  test('escape unwind keeps expansion bound to the same row after scope clears', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'escape-unwind-derived-ui');
+    await page.goto('/');
+
+    await page.locator('[data-hook="goal-card"][data-goal="Infrastructure"]').click();
+    await expect(page.locator('[data-hook="scope-indicator"]')).toContainText('Infrastructure');
+
+    const scopedRow = page.locator('[data-hook="table-row-summary"]', {
+      hasText: 'Follow-up permits',
+    });
+    await scopedRow.click();
+    await expect(scopedRow).toHaveAttribute('aria-expanded', 'true');
+
+    await page.locator('#filter-toggle').click();
+    await expect(page.locator('#filter-panel')).toBeVisible();
+    await page.locator('#search').focus();
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+    await expect(page.locator('[data-hook="table-row-summary"][aria-expanded="true"]')).toHaveCount(
+      1
+    );
+    await expect(
+      page.locator('[data-hook="table-row-summary"][aria-expanded="true"] .td-topic')
+    ).toHaveText('Follow-up permits');
+    await expect(page.locator('#filter-panel')).toBeVisible();
+  });
+
   test('reduced motion mode preserves interaction behavior', async ({ page }) => {
     await mockSheetCsv(page, 'all-blocked');
     await page.emulateMedia({ reducedMotion: 'reduce' });
