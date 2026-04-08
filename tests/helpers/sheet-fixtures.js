@@ -7,6 +7,10 @@ function readFixture(name) {
   return fs.readFileSync(path.join(__dirname, '..', 'fixtures', `${name}.csv`), 'utf8');
 }
 
+function getFixtureCsv(name) {
+  return readFixture(name);
+}
+
 async function mockSheetCsv(page, fixtureName) {
   const csv = readFixture(fixtureName);
   await page.route(SHEET_ROUTE, async (route) => {
@@ -29,6 +33,12 @@ async function mockSheetCsvSequence(page, sequence) {
   await page.route(SHEET_ROUTE, async (route) => {
     const step = sequence[Math.min(index, sequence.length - 1)];
     index += 1;
+
+    if (step.delayMs) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, step.delayMs);
+      });
+    }
 
     if (step.type === 'abort') {
       await route.abort(step.errorCode || 'failed');
@@ -54,6 +64,7 @@ async function mockSheetCsvBody(page, body) {
 }
 
 module.exports = {
+  getFixtureCsv,
   mockSheetCsv,
   failSheetCsv,
   mockSheetCsvSequence,

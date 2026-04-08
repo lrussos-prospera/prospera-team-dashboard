@@ -274,6 +274,8 @@ function setLifecyclePhase(phase, errorMessage = '') {
   const isError = phase === 'error';
   const isNoData = phase === 'no-data';
 
+  syncVisibility(phase === 'loaded');
+
   els.csvBadge.className = `data-badge${isLoading ? ' loading' : ''}${isError || isNoData ? ' error' : ''}`;
   els.csvDateLabel.textContent =
     phase === 'loading'

@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { mockSheetCsv } = require('./helpers/sheet-fixtures');
+const { getFixtureCsv, mockSheetCsv, mockSheetCsvSequence } = require('./helpers/sheet-fixtures');
 
 test.describe('dashboard state and render seams', () => {
   test('loaded dashboard exposes stable hooks for summary, controls, scope, blocked, and rows', async ({
@@ -177,7 +177,19 @@ test.describe('dashboard state and render seams', () => {
     await page.locator('#search').fill('permit');
 
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
+
+    const loadState = page.locator('[data-hook="loading-state"]');
+    const summary = page.locator('[data-hook="summary"]');
+    const tableRows = page.locator('[data-hook="table-row-summary"]');
     await page.locator('#refresh-btn').click();
+
+    await expect(loadState).toBeVisible();
+    await expect(summary).toBeHidden();
+
+    await expect(tableRows).toHaveCount(1);
+    await expect(summary).toBeVisible();
+    await expect(loadState).toBeHidden();
+    await expect(page.locator('[data-hook="error-state"]')).toHaveCount(0);
 
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
     await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
@@ -219,41 +231,125 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
   });
 
-  test('immediate refresh after typing search preserves typed term and narrowed rows before debounce delay', async ({
+  test('refresh during narrowed state settles atomically without lingering loading state', async ({
     page,
   }) => {
-    await mockSheetCsv(page, 'all-blocked');
+    const allBlockedCsv = getFixtureCsv('all-blocked');
+    await mockSheetCsvSequence(page, [
+      {
+        type: 'fulfill',
+        body: allBlockedCsv,
+      },
+      {
+        type: 'fulfill',
+        delayMs: 250,
+        body: allBlockedCsv,
+      },
+    ]);
+
     await page.goto('/');
 
+    await page.locator('[data-hook="table-group-header"][data-department="Governance"]').click();
     await page.locator('#filter-toggle').click();
-    await page.locator('#filter-dept').selectOption('Governance');
+    await page.locator('#search').fill('permit');
 
-    await page.evaluate(() => {
-      const search = document.getElementById('search');
-      const refresh = document.getElementById('refresh-btn');
-      search.value = 'permit';
-      search.dispatchEvent(new Event('input', { bubbles: true }));
-      refresh.click();
-    });
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
+    await expect(page.locator('#scope-indicator-text')).toContainText(
+      'Scoped to department: Governance'
+    );
 
-    await page.waitForTimeout(75);
+    const loadingState = page.locator('[data-hook="loading-state"]');
+    await page.locator('#refresh-btn').click();
 
-    const postRefreshState = await page.evaluate(() => ({
-      searchValue: document.getElementById('search').value,
-      filterBadge: document.getElementById('filter-badge').textContent.trim(),
-      summaryTotal: document.querySelector('[data-hook="summary-total"] .hero-stat-value')
-        ?.textContent,
-      visibleRows: [...document.querySelectorAll('[data-hook="table-row-summary"]')].map((row) =>
-        row.textContent.trim()
-      ),
-    }));
+    await expect(loadingState).toBeVisible();
+    await expect(page.locator('[data-hook="summary"]')).toBeHidden();
 
-    expect(postRefreshState).toEqual({
-      searchValue: 'permit',
-      filterBadge: '1',
-      summaryTotal: '1',
-      visibleRows: [expect.stringContaining('Permit backlog')],
-    });
+    await expect(loadingState).toBeHidden();
+    await expect(page.locator('[data-hook="error-state"]')).toHaveCount(0);
+    await expect(page.locator('[data-hook="summary"]')).toBeVisible();
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
+    await expect(page.locator('#search')).toHaveValue('permit');
+    await expect(page.locator('#scope-indicator-text')).toContainText(
+      'Scoped to department: Governance'
+    );
+    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(1);
+    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
+    await expect(page.locator('[data-hook="blocked-section"] .blocked-list')).toHaveCount(1);
+  });
+
+  test('refresh failure surfaces error state without misleading stale content overlay', async ({
+    page,
+  }) => {
+    const allBlockedCsv = getFixtureCsv('all-blocked');
+    await mockSheetCsvSequence(page, [
+      {
+        type: 'fulfill',
+        body: allBlockedCsv,
+      },
+      {
+        type: 'abort',
+      },
+    ]);
+
+    await page.goto('/');
+
+    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
+    await expect(page.locator('#scope-indicator-text')).toContainText(
+      'Scoped to goal: Legal Framework'
+    );
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('2');
+
+    await page.locator('#refresh-btn').click();
+
+    await expect(page.locator('[data-hook="error-state"]')).toBeVisible();
+    await expect(page.locator('[data-hook="loading-state"]')).toHaveCount(0);
+    await expect(page.locator('[data-hook="summary"]')).toBeHidden();
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+    await expect(page.locator('[data-hook="blocked-section"]')).toBeHidden();
+    await expect(page.locator('[data-hook="detail-table"]')).toBeHidden();
+  });
+
+  test('retry after refresh failure recovers to coherent loaded narrowed state with no lingering status UI', async ({
+    page,
+  }) => {
+    const allBlockedCsv = getFixtureCsv('all-blocked');
+    await mockSheetCsvSequence(page, [
+      {
+        type: 'fulfill',
+        body: allBlockedCsv,
+      },
+      {
+        type: 'abort',
+      },
+      {
+        type: 'fulfill',
+        body: allBlockedCsv,
+      },
+    ]);
+
+    await page.goto('/');
+
+    await page.locator('[data-hook="table-group-header"][data-department="Governance"]').click();
+    await page.locator('#filter-toggle').click();
+    await page.locator('#search').fill('permit');
+
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
+
+    await page.locator('#refresh-btn').click();
+    await expect(page.locator('[data-hook="error-state"]')).toBeVisible();
+
+    await page.locator('[data-hook="retry-btn"]').click();
+
+    await expect(page.locator('[data-hook="loading-state"]')).toHaveCount(0);
+    await expect(page.locator('[data-hook="error-state"]')).toHaveCount(0);
+    await expect(page.locator('[data-hook="summary"]')).toBeVisible();
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
+    await expect(page.locator('#scope-indicator-text')).toContainText(
+      'Scoped to department: Governance'
+    );
+    await expect(page.locator('#search')).toHaveValue('permit');
+    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(1);
+    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
   });
 
   test('table expansion keeps one expanded detail row at a time', async ({ page }) => {
