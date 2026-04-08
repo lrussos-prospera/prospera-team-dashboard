@@ -42,6 +42,7 @@ High-level system structure, relationships, data flow, and invariants.
 ## Refactor Direction
 
 Workers may perform a larger internal cleanup, but should preserve these boundaries:
+
 - keep runtime browser-only and static
 - preserve the live Google Sheets integration
 - preserve the single-page mental model
@@ -51,6 +52,7 @@ Workers may perform a larger internal cleanup, but should preserve these boundar
 ## Browser Validation Shape
 
 The mission’s quality bar depends on behavior-focused browser validation. The architecture should therefore support:
+
 - deterministic scope/filter/search state
 - deterministic freshness/staleness calculation
 - durable interactive selectors for key UI regions

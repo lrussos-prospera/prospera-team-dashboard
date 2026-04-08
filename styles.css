@@ -19,7 +19,7 @@
   /* Modern Colors - OKLCH for consistency */
   --color-brand: oklch(45% 0.12 250); /* Deep navy */
   --color-accent: oklch(70% 0.1 190); /* Teal */
-  
+
   /* Semantic colors - tinted neutrals */
   --color-bg: oklch(97% 0.01 250);
   --color-surface: #ffffff;
@@ -121,7 +121,7 @@ h1 {
 /* Specific component polish */
 .hero-zone {
   border: 1px solid var(--color-border);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
 }
 .hero-pct {
   font-family: var(--font-body);
@@ -131,7 +131,8 @@ h1 {
   color: var(--brand-navy);
 }
 
-.goals-section h2, .blocked-heading {
+.goals-section h2,
+.blocked-heading {
   font-family: var(--font-body);
   font-size: 1.3rem;
   font-weight: 800;
@@ -363,7 +364,9 @@ main {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--color-border);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
 }
@@ -515,7 +518,7 @@ main {
   background: var(--brand-dark-teal);
   border-color: var(--brand-dark-teal);
 }
-.filter-toggle[aria-expanded="true"] {
+.filter-toggle[aria-expanded='true'] {
   background: var(--brand-gold);
   border-color: var(--brand-gold);
   color: var(--brand-navy);
@@ -534,7 +537,7 @@ main {
   font-weight: 700;
   line-height: 1;
 }
-.filter-toggle[aria-expanded="true"] .filter-badge {
+.filter-toggle[aria-expanded='true'] .filter-badge {
   background: rgba(31, 78, 134, 0.2);
   color: var(--brand-navy);
 }
@@ -590,7 +593,7 @@ main {
 .table-wrap {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   border: 1px solid var(--color-border);
   overflow: hidden;
 }
@@ -681,7 +684,7 @@ tbody tr:not(.group-header):not(.expand-row) {
 .expand-grid {
   display: grid;
   /* Align columns roughly with table columns: Responsible(Team), Topic(Details) */
-  grid-template-columns: 200px 1fr; 
+  grid-template-columns: 200px 1fr;
   gap: 48px;
 }
 .expand-grid:not(:first-child) {

@@ -9,6 +9,7 @@ Testing surface, tools, and runtime validation notes.
 ## Validation Surface
 
 ### Browser UI
+
 - Primary validation surface is the local dashboard served over HTTP.
 - Default validation tool: `agent-browser` for user-facing browser assertions.
 - Automated behavior-focused browser tests will be added in-repo during the mission and should cover the same critical flows as the validation contract.
@@ -24,6 +25,7 @@ Testing surface, tools, and runtime validation notes.
 ## Validation Concurrency
 
 ### Browser UI
+
 - Max concurrent validators: **2**
 - Rationale:
   - Machine capacity is high (16 CPU cores, 64 GB RAM), but this project depends on a live remote Google Sheets endpoint.
