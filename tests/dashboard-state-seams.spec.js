@@ -254,6 +254,14 @@ test.describe('dashboard state and render seams', () => {
 
     await expect(page.locator('#search')).toHaveValue('');
     await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+    await expect(page.locator('[data-hook="scope-indicator"]')).toHaveAttribute(
+      'aria-hidden',
+      'true'
+    );
+    await expect(page.locator('#scope-indicator-text')).toHaveText('');
+    await expect(
+      page.locator('[data-hook="table-group-header"][data-department="Governance"]')
+    ).toHaveAttribute('aria-pressed', 'false');
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('4');
     await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('2');
     await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(2);

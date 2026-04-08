@@ -393,10 +393,13 @@ function renderScopeIndicator() {
   const { scope } = appState.view;
   if (!scope.value) {
     els.scopeIndicator.style.display = 'none';
+    els.scopeIndicator.setAttribute('aria-hidden', 'true');
+    els.scopeIndicatorText.textContent = '';
     return;
   }
 
   els.scopeIndicator.style.display = '';
+  els.scopeIndicator.setAttribute('aria-hidden', 'false');
   els.scopeIndicatorText.textContent =
     scope.type === 'department'
       ? `Scoped to department: ${scope.value}`
