@@ -1,51 +1,92 @@
 const SHEET_URL =
   'https://docs.google.com/spreadsheets/d/1bUY_Us-Vjq4JSYsnxrVXfAX6qRGjxZRgXR31me3Nc0U/gviz/tq?tqx=out:csv&gid=1636341361';
 
-let allRows = [];
+const DATE_STALE_THRESHOLD_DAYS = 7;
 
-document.getElementById('viewed-date').textContent = new Date().toLocaleDateString('en-US', {
-  weekday: 'long',
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-});
+const appState = {
+  rows: [],
+  lifecycle: {
+    phase: 'idle', // idle | loading | loaded | error
+    errorMessage: '',
+    refreshedLabel: 'Loading…',
+  },
+  view: {
+    scopeGoal: '',
+    filters: {
+      dept: '',
+      team: '',
+      person: '',
+      status: '',
+      goal: '',
+      search: '',
+    },
+    filterPanelOpen: false,
+    expandedRowKey: null,
+  },
+};
 
-async function fetchSheetData() {
-  const badge = document.getElementById('csv-badge');
-  const label = document.getElementById('csv-date-label');
-  const btn = document.getElementById('refresh-btn');
-  const stateBox = document.getElementById('state-box');
+const els = {
+  viewedDate: document.getElementById('viewed-date'),
+  csvBadge: document.getElementById('csv-badge'),
+  csvDateLabel: document.getElementById('csv-date-label'),
+  refreshBtn: document.getElementById('refresh-btn'),
+  stateBox: document.getElementById('state-box'),
 
-  badge.className = 'data-badge loading';
-  label.textContent = 'Loading…';
-  btn.classList.add('spinning');
+  summary: document.getElementById('summary'),
+  goalsSection: document.getElementById('goals-section'),
+  goalsGrid: document.getElementById('goals-grid'),
+  scopeIndicator: document.getElementById('scope-indicator'),
+  scopeIndicatorText: document.getElementById('scope-indicator-text'),
+  scopeClearBtn: document.getElementById('scope-clear-btn'),
+  blockedSection: document.getElementById('blocked-section'),
+  controls: document.getElementById('controls'),
+  resultCount: document.getElementById('result-count'),
+  tableWrap: document.getElementById('table-wrap'),
+  tableBody: document.getElementById('table-body'),
 
-  try {
-    const res = await fetch(SHEET_URL);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    const rows = parseCSV(text);
-    if (!rows.length) throw new Error('No data found in sheet');
+  filterDept: document.getElementById('filter-dept'),
+  filterTeam: document.getElementById('filter-team'),
+  filterPerson: document.getElementById('filter-person'),
+  filterStatus: document.getElementById('filter-status'),
+  filterGoal: document.getElementById('filter-goal'),
+  search: document.getElementById('search'),
+  filterToggle: document.getElementById('filter-toggle'),
+  filterBadge: document.getElementById('filter-badge'),
+  filterPanel: document.getElementById('filter-panel'),
+  resetBtn: document.getElementById('reset-btn'),
+};
 
-    loadData(rows);
+function initializeViewedDate() {
+  els.viewedDate.textContent = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
 
-    badge.className = 'data-badge';
-    label.textContent =
-      'Live · refreshed ' +
-      new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  } catch (err) {
-    badge.className = 'data-badge error';
-    label.textContent = 'Could not load data';
+function esc(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
-    stateBox.style.display = '';
-    stateBox.innerHTML = `
-        <div class="state-icon">⚠️</div>
-        <p>Could not load data from Google Sheets.<br><small style="color:#94a3b8">${esc(err.message)}</small></p>
-        <button class="retry-btn" onclick="fetchSheetData()">Try again</button>
-      `;
-  } finally {
-    btn.classList.remove('spinning');
-  }
+function normalizeStatus(raw) {
+  const s = String(raw).toLowerCase().trim();
+  if (s.includes('done')) return 'done';
+  if (s.includes('doing') || s.includes('in progress') || s.includes('progress')) return 'doing';
+  if (s.includes('block')) return 'blocked';
+  return 'other';
+}
+
+function parseRowDate(rawValue) {
+  if (!rawValue) return null;
+  const parsed = new Date(rawValue);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function daysSince(date) {
+  if (!date) return Number.POSITIVE_INFINITY;
+  const ms = Date.now() - date.getTime();
+  return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
 
 function parseCSV(text) {
@@ -53,6 +94,7 @@ function parseCSV(text) {
   const headerFields = [];
   let hCurrent = '';
   let hInQuotes = false;
+
   for (let i = 0; i < lines[0].length; i++) {
     const ch = lines[0][i];
     if (ch === '"') {
@@ -65,6 +107,7 @@ function parseCSV(text) {
     }
   }
   headerFields.push(hCurrent.trim());
+
   const headers = headerFields.map((h) => h.replace(/^"|"$/g, ''));
 
   return lines
@@ -73,6 +116,7 @@ function parseCSV(text) {
       const fields = [];
       let current = '';
       let inQuotes = false;
+
       for (let i = 0; i < line.length; i++) {
         const ch = line[i];
         if (ch === '"') {
@@ -90,124 +134,193 @@ function parseCSV(text) {
       headers.forEach((h, i) => {
         row[h] = (fields[i] || '').replace(/^"|"$/g, '');
       });
+      row._status = normalizeStatus(row.Status);
+      row._date = parseRowDate(row['Added/updated']);
       return row;
     })
-    .filter((r) => Object.values(r).some((v) => v));
+    .filter((r) => headers.some((header) => Boolean(r[header])));
 }
 
-function normalizeStatus(raw) {
-  const s = String(raw).toLowerCase().trim();
-  if (s.includes('done')) return 'done';
-  if (s.includes('doing') || s.includes('in progress') || s.includes('progress')) return 'doing';
-  if (s.includes('block')) return 'blocked';
-  return 'other';
-}
+function deriveViewRows() {
+  const { rows } = appState;
+  const { scopeGoal, filters } = appState.view;
 
-function loadData(rows) {
-  allRows = rows;
-  populateFilters(rows);
-  renderTable(rows);
-  updateFilterBadge();
-
-  document.getElementById('state-box').style.display = 'none';
-  document.getElementById('summary').style.display = '';
-  document.getElementById('goals-section').style.display = '';
-  document.getElementById('controls').style.display = '';
-  document.getElementById('result-count').style.display = '';
-  document.getElementById('table-wrap').style.display = '';
-}
-
-function populateTeamOptions(department = '', selectedTeam = '') {
-  const teamSel = document.getElementById('filter-team');
-  while (teamSel.options.length > 1) teamSel.remove(1);
-
-  const teams = [
-    ...new Set(
-      allRows
-        .filter((r) => !department || r['Department'] === department)
-        .map((r) => r['Team'])
-        .filter(Boolean)
-    ),
-  ].sort();
-
-  teams.forEach((team) => {
-    const opt = document.createElement('option');
-    opt.value = team;
-    opt.textContent = team;
-    teamSel.appendChild(opt);
-  });
-
-  if (selectedTeam && teams.includes(selectedTeam)) teamSel.value = selectedTeam;
-}
-
-function populateFilters(rows) {
-  const fill = (id, key) => {
-    const sel = document.getElementById(id);
-    while (sel.options.length > 1) sel.remove(1);
-    const values = [...new Set(rows.map((r) => r[key]).filter(Boolean))].sort();
-    values.forEach((v) => {
-      const opt = document.createElement('option');
-      opt.value = v;
-      opt.textContent = v;
-      sel.appendChild(opt);
-    });
-  };
-  fill('filter-dept', 'Department');
-  fill('filter-person', 'Responsible');
-  fill('filter-goal', 'Goal');
-  populateTeamOptions();
-
-  const statusSel = document.getElementById('filter-status');
-  while (statusSel.options.length > 1) statusSel.remove(1);
-  [
-    ['done', 'Done'],
-    ['doing', 'In Progress'],
-    ['blocked', 'Blocked'],
-  ].forEach(([val, label]) => {
-    const opt = document.createElement('option');
-    opt.value = val;
-    opt.textContent = label;
-    statusSel.appendChild(opt);
+  return rows.filter((r) => {
+    if (scopeGoal && (r['Goal'] || 'No Goal') !== scopeGoal) return false;
+    if (filters.dept && r['Department'] !== filters.dept) return false;
+    if (filters.team && r['Team'] !== filters.team) return false;
+    if (filters.person && r['Responsible'] !== filters.person) return false;
+    if (filters.status && r._status !== filters.status) return false;
+    if (filters.goal && (r['Goal'] || 'No Goal') !== filters.goal) return false;
+    if (filters.search) {
+      const blob = Object.values(r).join(' ').toLowerCase();
+      if (!blob.includes(filters.search.toLowerCase())) return false;
+    }
+    return true;
   });
 }
 
-function renderSummary(rows) {
+function deriveSummary(rows) {
   const counts = rows.reduce(
     (acc, r) => {
-      const s = normalizeStatus(r.Status);
-      if (s in acc) acc[s]++;
+      if (r._status in acc) acc[r._status]++;
       return acc;
     },
     { done: 0, doing: 0, blocked: 0 }
   );
-  const { done, doing, blocked } = counts;
-  const total = rows.length;
-  const pct = total ? Math.round((done / total) * 100) : 0;
-  const doneClass = done > 0 ? 'status-done' : '';
-  const blockedClass = blocked > 0 ? 'status-blocked' : '';
 
-  document.getElementById('summary').innerHTML = `
-    <div class="hero-zone">
-      <div class="hero-pct">${pct}<span class="hero-pct-symbol">%</span></div>
+  const total = rows.length;
+  const pct = total ? Math.round((counts.done / total) * 100) : 0;
+
+  return {
+    ...counts,
+    total,
+    pct,
+  };
+}
+
+function deriveGoalBuckets(rows) {
+  const buckets = {};
+  rows.forEach((r) => {
+    const goal = r['Goal'] || 'No Goal';
+    if (!buckets[goal]) {
+      buckets[goal] = {
+        total: 0,
+        done: 0,
+        blockedOwners: new Set(),
+        latestDate: null,
+      };
+    }
+    const bucket = buckets[goal];
+    bucket.total++;
+    if (r._status === 'done') bucket.done++;
+    if (r._status === 'blocked' && r['Responsible']) bucket.blockedOwners.add(r['Responsible']);
+    if (r._date && (!bucket.latestDate || r._date > bucket.latestDate)) bucket.latestDate = r._date;
+  });
+
+  return Object.entries(buckets)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([goal, value]) => {
+      const pct = value.total ? Math.round((value.done / value.total) * 100) : 0;
+      const latestAgeDays = daysSince(value.latestDate);
+      return {
+        goal,
+        total: value.total,
+        done: value.done,
+        pct,
+        blockedOwners: [...value.blockedOwners].sort(),
+        stale: latestAgeDays > DATE_STALE_THRESHOLD_DAYS,
+      };
+    });
+}
+
+function deriveBlockedRows(rows) {
+  return rows.filter((r) => r._status === 'blocked');
+}
+
+function deriveRecencyLabel(rows) {
+  const validDates = rows
+    .map((r) => r._date)
+    .filter(Boolean)
+    .sort((a, b) => b - a);
+  const latestDate = validDates[0] || null;
+  const ageDays = daysSince(latestDate);
+
+  if (!latestDate) {
+    return 'Live · update date unavailable';
+  }
+
+  if (ageDays > DATE_STALE_THRESHOLD_DAYS) {
+    return `Live · stale (${ageDays}d old)`;
+  }
+
+  return (
+    'Live · refreshed ' +
+    new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  );
+}
+
+function setLifecyclePhase(phase, errorMessage = '') {
+  appState.lifecycle.phase = phase;
+  appState.lifecycle.errorMessage = errorMessage;
+
+  const isLoading = phase === 'loading';
+  const isError = phase === 'error';
+
+  els.csvBadge.className = `data-badge${isLoading ? ' loading' : ''}${isError ? ' error' : ''}`;
+  els.csvDateLabel.textContent =
+    phase === 'loading'
+      ? 'Loading…'
+      : isError
+        ? 'Could not load data'
+        : appState.lifecycle.refreshedLabel;
+
+  if (isLoading) {
+    els.refreshBtn.classList.add('spinning');
+  } else {
+    els.refreshBtn.classList.remove('spinning');
+  }
+
+  if (isLoading) {
+    els.stateBox.style.display = '';
+    els.stateBox.innerHTML = `
+      <div class="state-icon">⏳</div>
+      <p id="state-msg">Fetching latest data from Google Sheets…</p>
+    `;
+  } else if (isError) {
+    els.stateBox.style.display = '';
+    els.stateBox.innerHTML = `
+      <div class="state-icon">⚠️</div>
+      <p>Could not load data from Google Sheets.<br><small style="color:#94a3b8">${esc(errorMessage)}</small></p>
+      <button class="retry-btn" data-hook="retry-btn">Try again</button>
+    `;
+    const retryBtn = els.stateBox.querySelector('[data-hook="retry-btn"]');
+    if (retryBtn) retryBtn.addEventListener('click', fetchSheetData);
+  } else {
+    els.stateBox.style.display = 'none';
+  }
+}
+
+function syncVisibility(isLoaded) {
+  const display = isLoaded ? '' : 'none';
+  els.summary.style.display = display;
+  els.goalsSection.style.display = display;
+  els.controls.style.display = display;
+  els.resultCount.style.display = display;
+  els.tableWrap.style.display = display;
+  if (!isLoaded) {
+    els.scopeIndicator.style.display = 'none';
+    els.blockedSection.style.display = 'none';
+  }
+}
+
+function renderSummary(rows) {
+  const summary = deriveSummary(rows);
+  const doneClass = summary.done > 0 ? 'status-done' : '';
+  const blockedClass = summary.blocked > 0 ? 'status-blocked' : '';
+
+  els.summary.innerHTML = `
+    <div class="hero-zone" data-hook="hero-zone">
+      <div class="hero-pct" data-hook="summary-percent">${summary.pct}<span class="hero-pct-symbol">%</span></div>
       <div class="hero-label">Complete</div>
       <div class="hero-stats">
-        <div class="hero-stat">
-          <span class="hero-stat-value ${doneClass}">${done}</span>
+        <div class="hero-stat" data-hook="summary-done">
+          <span class="hero-stat-value ${doneClass}">${summary.done}</span>
           <span class="hero-stat-label">Done</span>
         </div>
         <div class="hero-stat-divider"></div>
-        <div class="hero-stat">
-          <span class="hero-stat-value">${doing}</span>
+        <div class="hero-stat" data-hook="summary-doing">
+          <span class="hero-stat-value">${summary.doing}</span>
           <span class="hero-stat-label">In Progress</span>
         </div>
         <div class="hero-stat-divider"></div>
-        <div class="hero-stat">
-          <span class="hero-stat-value ${blockedClass}">${blocked}</span>
+        <div class="hero-stat" data-hook="summary-blocked">
+          <span class="hero-stat-value ${blockedClass}">${summary.blocked}</span>
           <span class="hero-stat-label">Blocked</span>
         </div>
         <div class="hero-stat-divider"></div>
-        <div class="hero-stat">
-          <span class="hero-stat-value">${total}</span>
+        <div class="hero-stat" data-hook="summary-total">
+          <span class="hero-stat-value">${summary.total}</span>
           <span class="hero-stat-label">Total Updates</span>
         </div>
       </div>
@@ -215,267 +328,391 @@ function renderSummary(rows) {
   `;
 }
 
-function renderGoals(rows) {
-  const goals = {};
-  rows.forEach((r) => {
-    const g = r['Goal'] || 'No Goal';
-    if (!goals[g]) goals[g] = { total: 0, done: 0 };
-    goals[g].total++;
-    if (normalizeStatus(r.Status) === 'done') goals[g].done++;
-  });
-
-  const grid = document.getElementById('goals-grid');
-  grid.innerHTML = '';
-  Object.entries(goals)
-    .sort()
-    .forEach(([goal, data]) => {
-      const pct = data.total ? Math.round((data.done / data.total) * 100) : 0;
-      const div = document.createElement('div');
-      div.className = `goal-card ${pct < 25 ? 'status-low' : ''}`;
-      div.innerHTML = `
-        <div class="goal-title">${esc(goal)}</div>
-        <div class="goal-meta">
-          <div class="goal-pct-large">${pct}%</div>
-          <div class="goal-count">${data.done} / ${data.total} <span style="font-size:0.7em">DONE</span></div>
-        </div>
-        <div class="progress-mini">
-          <div class="progress-mini-fill" style="width:${pct}%"></div>
-        </div>
-      `;
-      grid.appendChild(div);
-    });
-}
-
-function renderBlocked(rows) {
-  const section = document.getElementById('blocked-section');
-  const blocked = rows.filter((r) => normalizeStatus(r.Status) === 'blocked');
-
-  if (blocked.length === 0) {
-    section.style.display = 'none';
+function renderScopeIndicator() {
+  if (!appState.view.scopeGoal) {
+    els.scopeIndicator.style.display = 'none';
     return;
   }
 
-  section.style.display = '';
-  section.innerHTML = `
+  els.scopeIndicator.style.display = '';
+  els.scopeIndicatorText.textContent = `Scoped to goal: ${appState.view.scopeGoal}`;
+}
+
+function scopeToGoal(goal) {
+  appState.view.scopeGoal = appState.view.scopeGoal === goal ? '' : goal;
+  appState.view.expandedRowKey = null;
+  renderApp();
+}
+
+function renderGoals(rows) {
+  const goals = deriveGoalBuckets(rows);
+  els.goalsGrid.innerHTML = '';
+
+  goals.forEach((goalData) => {
+    const div = document.createElement('button');
+    const isScoped = appState.view.scopeGoal === goalData.goal;
+    div.type = 'button';
+    div.className = `goal-card ${goalData.pct < 25 ? 'status-low' : ''}${isScoped ? ' goal-card-active' : ''}`;
+    div.setAttribute('data-hook', 'goal-card');
+    div.setAttribute('data-goal', goalData.goal);
+    div.setAttribute('aria-pressed', String(isScoped));
+
+    const blockedOwnersText = goalData.blockedOwners.length
+      ? `<div class="goal-signals" data-hook="goal-blocked-owners">Blocked: ${esc(goalData.blockedOwners.join(', '))}</div>`
+      : '';
+    const staleText = goalData.stale
+      ? `<div class="goal-signals stale" data-hook="goal-stale">Stale (&gt; ${DATE_STALE_THRESHOLD_DAYS}d)</div>`
+      : '';
+
+    div.innerHTML = `
+      <div class="goal-title">${esc(goalData.goal)}</div>
+      <div class="goal-meta">
+        <div class="goal-pct-large">${goalData.pct}%</div>
+        <div class="goal-count">${goalData.done} / ${goalData.total} <span style="font-size:0.7em">DONE</span></div>
+      </div>
+      ${blockedOwnersText}
+      ${staleText}
+      <div class="progress-mini"><div class="progress-mini-fill" style="width:${goalData.pct}%"></div></div>
+    `;
+
+    div.addEventListener('click', () => scopeToGoal(goalData.goal));
+    els.goalsGrid.appendChild(div);
+  });
+}
+
+function renderBlocked(rows) {
+  const blocked = deriveBlockedRows(rows);
+
+  if (!blocked.length) {
+    els.blockedSection.style.display = 'none';
+    els.blockedSection.innerHTML = '';
+    return;
+  }
+
+  els.blockedSection.style.display = '';
+  els.blockedSection.innerHTML = `
     <h2 class="blocked-heading">Blocked Items</h2>
-    <div class="blocked-list">
+    <div class="blocked-list" data-hook="blocked-list">
       ${blocked
         .map(
           (r) => `
-        <div class="blocked-item">
-          <div class="blocked-item-header">
-            <span class="blocked-item-person">${esc(r['Responsible'])}</span>
-            <span class="blocked-item-topic">${esc(r['Topic'])}</span>
-          </div>
-          ${r['Details'] ? `<div class="blocked-item-details">${esc(r['Details'])}</div>` : ''}
-        </div>
-      `
+            <div class="blocked-item" data-hook="blocked-item" data-person="${esc(r['Responsible'] || '')}">
+              <div class="blocked-item-header">
+                <span class="blocked-item-person">${esc(r['Responsible'])}</span>
+                <span class="blocked-item-topic">${esc(r['Topic'])}</span>
+              </div>
+              ${r['Details'] ? `<div class="blocked-item-details">${esc(r['Details'])}</div>` : ''}
+            </div>
+          `
         )
         .join('')}
     </div>
   `;
 }
 
-function badge(raw) {
-  const norm = normalizeStatus(raw);
-  if (norm === 'done') return `<span class="badge badge-done">Done</span>`;
-  if (norm === 'doing') return `<span class="badge badge-doing">In Progress</span>`;
-  if (norm === 'blocked') return `<span class="badge badge-blocked">Blocked</span>`;
+function badge(raw, normalized) {
+  if (normalized === 'done') return '<span class="badge badge-done">Done</span>';
+  if (normalized === 'doing') return '<span class="badge badge-doing">In Progress</span>';
+  if (normalized === 'blocked') return '<span class="badge badge-blocked">Blocked</span>';
   return `<span class="badge badge-other">${esc(raw)}</span>`;
 }
 
-function esc(str) {
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function buildRowKey(row, index) {
+  return `${(row['Department'] || 'other').toLowerCase()}-${(row['Responsible'] || 'unknown').toLowerCase()}-${index}`.replace(
+    /[^a-z0-9-]+/g,
+    '-'
+  );
+}
+
+function toggleExpandedRow(rowKey) {
+  appState.view.expandedRowKey = appState.view.expandedRowKey === rowKey ? null : rowKey;
+  renderApp();
 }
 
 function renderTable(rows) {
-  const tbody = document.getElementById('table-body');
-  const count = document.getElementById('result-count');
-
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">No updates match your filters.</td></tr>`;
-    count.textContent = 'No results';
+    els.tableBody.innerHTML =
+      '<tr><td colspan="5" class="empty">No updates match your filters.</td></tr>';
+    els.resultCount.textContent = 'No results';
     return;
   }
 
-  count.textContent = `Showing ${rows.length} update${rows.length !== 1 ? 's' : ''}`;
+  els.resultCount.textContent = `Showing ${rows.length} update${rows.length !== 1 ? 's' : ''}`;
 
-  const grouped = {};
-  rows.forEach((r) => {
-    const dept = r['Department'] || 'Other';
-    if (!grouped[dept]) grouped[dept] = [];
-    grouped[dept].push(r);
-  });
+  const grouped = rows.reduce((acc, row) => {
+    const dept = row['Department'] || 'Other';
+    if (!acc[dept]) acc[dept] = [];
+    acc[dept].push(row);
+    return acc;
+  }, {});
 
-  tbody.innerHTML = '';
-
-  const toggleRowDetails = (summaryRow) => {
-    const next = summaryRow.nextElementSibling;
-    if (!next || !next.classList.contains('expand-row')) return;
-
-    const isOpen = next.style.display !== 'none';
-    next.style.display = isOpen ? 'none' : 'table-row';
-    summaryRow.setAttribute('aria-expanded', String(!isOpen));
-    summaryRow.querySelector('.expand-icon').style.transform = isOpen ? '' : 'rotate(90deg)';
-  };
+  els.tableBody.innerHTML = '';
 
   Object.entries(grouped)
-    .sort()
+    .sort(([a], [b]) => a.localeCompare(b))
     .forEach(([dept, deptRows]) => {
-      const gh = document.createElement('tr');
-      gh.className = 'group-header';
-      gh.innerHTML = `<td colspan="5">${esc(dept)} &mdash; ${deptRows.length} update${deptRows.length !== 1 ? 's' : ''}</td>`;
-      tbody.appendChild(gh);
+      const groupHeader = document.createElement('tr');
+      groupHeader.className = 'group-header';
+      groupHeader.setAttribute('data-hook', 'table-group-header');
+      groupHeader.setAttribute('data-department', dept);
+      groupHeader.innerHTML = `<td colspan="5">${esc(dept)} &mdash; ${deptRows.length} update${deptRows.length !== 1 ? 's' : ''}</td>`;
+      els.tableBody.appendChild(groupHeader);
 
-      deptRows.forEach((r) => {
-        const tr = document.createElement('tr');
-        const rowId = `details-${dept.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${tbody.children.length}`;
-        tr.tabIndex = 0;
-        tr.setAttribute('role', 'button');
-        tr.setAttribute('aria-expanded', 'false');
-        tr.setAttribute('aria-controls', rowId);
-        tr.setAttribute(
-          'aria-label',
-          `Toggle details for ${r['Responsible'] || 'team member'}: ${r['Topic'] || 'update'}`
-        );
-        tr.innerHTML = `
-	          <td class="td-person"><span class="expand-icon" aria-hidden="true">›</span>${esc(r['Responsible'])}</td>
-	          <td class="td-topic">${esc(r['Topic'])}</td>
-	          <td>${badge(r['Status'])}</td>
-	          <td class="td-goal">${esc(r['Goal'])}</td>
-	          <td class="td-date">${esc(r['Added/updated'])}</td>
-	        `;
-        tbody.appendChild(tr);
+      deptRows.forEach((row, index) => {
+        const rowKey = buildRowKey(row, `${dept}-${index}`);
+        const isExpanded = appState.view.expandedRowKey === rowKey;
 
-        const expandTr = document.createElement('tr');
-        expandTr.className = 'expand-row';
-        expandTr.id = rowId;
-        expandTr.style.display = 'none';
-        expandTr.innerHTML = `
-	          <td colspan="5">
-              <div class="expand-wrapper">
-                <div class="expand-content">
-                  <div class="expand-grid">
-                    ${r['Team'] ? `<div class="expand-item expand-team"><span class="expand-label">Team</span><div class="expand-field">${esc(r['Team'])}</div></div>` : ''}
-                    ${r['Details'] ? `<div class="expand-item expand-details"><span class="expand-label">Details</span><div class="expand-field">${esc(r['Details'])}</div></div>` : ''}
-                    ${r['Notes'] ? `<div class="expand-item expand-notes"><span class="expand-label">Notes</span><div class="expand-field">${esc(r['Notes'])}</div></div>` : ''}
-                  </div>
-                  <div class="expand-grid expand-mobile-only">
-                    ${r['Goal'] ? `<div class="expand-item"><span class="expand-label">Goal</span><div class="expand-field">${esc(r['Goal'])}</div></div>` : ''}
-                    ${r['Added/updated'] ? `<div class="expand-item"><span class="expand-label">Updated</span><div class="expand-field">${esc(r['Added/updated'])}</div></div>` : ''}
-                  </div>
+        const summaryRow = document.createElement('tr');
+        summaryRow.tabIndex = 0;
+        summaryRow.setAttribute('role', 'button');
+        summaryRow.setAttribute('aria-expanded', String(isExpanded));
+        summaryRow.setAttribute('aria-controls', `details-${rowKey}`);
+        summaryRow.setAttribute('data-hook', 'table-row-summary');
+        summaryRow.setAttribute('data-row-key', rowKey);
+        summaryRow.innerHTML = `
+          <td class="td-person"><span class="expand-icon" aria-hidden="true" style="transform:${isExpanded ? 'rotate(90deg)' : 'none'}">›</span>${esc(row['Responsible'])}</td>
+          <td class="td-topic">${esc(row['Topic'])}</td>
+          <td>${badge(row.Status, row._status)}</td>
+          <td class="td-goal">${esc(row['Goal'])}</td>
+          <td class="td-date">${esc(row['Added/updated'])}</td>
+        `;
+
+        const detailRow = document.createElement('tr');
+        detailRow.className = 'expand-row';
+        detailRow.id = `details-${rowKey}`;
+        detailRow.setAttribute('data-hook', 'table-row-detail');
+        detailRow.setAttribute('data-row-key', rowKey);
+        detailRow.style.display = isExpanded ? 'table-row' : 'none';
+        detailRow.innerHTML = `
+          <td colspan="5">
+            <div class="expand-wrapper">
+              <div class="expand-content">
+                <div class="expand-grid">
+                  ${row['Team'] ? `<div class="expand-item expand-team"><span class="expand-label">Team</span><div class="expand-field">${esc(row['Team'])}</div></div>` : ''}
+                  ${row['Details'] ? `<div class="expand-item expand-details"><span class="expand-label">Details</span><div class="expand-field">${esc(row['Details'])}</div></div>` : ''}
+                  ${row['Notes'] ? `<div class="expand-item expand-notes"><span class="expand-label">Notes</span><div class="expand-field">${esc(row['Notes'])}</div></div>` : ''}
+                </div>
+                <div class="expand-grid expand-mobile-only">
+                  ${row['Goal'] ? `<div class="expand-item"><span class="expand-label">Goal</span><div class="expand-field">${esc(row['Goal'])}</div></div>` : ''}
+                  ${row['Added/updated'] ? `<div class="expand-item"><span class="expand-label">Updated</span><div class="expand-field">${esc(row['Added/updated'])}</div></div>` : ''}
                 </div>
               </div>
-            </td>
-	        `;
-        tbody.appendChild(expandTr);
+            </div>
+          </td>
+        `;
 
-        tr.addEventListener('click', () => toggleRowDetails(tr));
-        tr.addEventListener('keydown', (event) => {
+        const onToggle = () => toggleExpandedRow(rowKey);
+        summaryRow.addEventListener('click', onToggle);
+        summaryRow.addEventListener('keydown', (event) => {
           if (event.key !== 'Enter' && event.key !== ' ') return;
           event.preventDefault();
-          toggleRowDetails(tr);
+          onToggle();
         });
+
+        els.tableBody.appendChild(summaryRow);
+        els.tableBody.appendChild(detailRow);
       });
     });
-
-  renderSummary(rows);
-  renderGoals(rows);
-  renderBlocked(rows);
-}
-
-function applyFilters() {
-  const dept = document.getElementById('filter-dept').value;
-  const team = document.getElementById('filter-team').value;
-  const person = document.getElementById('filter-person').value;
-  const status = document.getElementById('filter-status').value;
-  const goal = document.getElementById('filter-goal').value;
-  const search = document.getElementById('search').value.toLowerCase();
-
-  const filtered = allRows.filter((r) => {
-    if (dept && r['Department'] !== dept) return false;
-    if (team && r['Team'] !== team) return false;
-    if (person && r['Responsible'] !== person) return false;
-    if (status && normalizeStatus(r['Status']) !== status) return false;
-    if (goal && r['Goal'] !== goal) return false;
-    if (search) {
-      const blob = Object.values(r).join(' ').toLowerCase();
-      if (!blob.includes(search)) return false;
-    }
-    return true;
-  });
-
-  renderTable(filtered);
-  updateFilterBadge();
-}
-
-const FILTER_IDS = [
-  'filter-dept',
-  'filter-team',
-  'filter-person',
-  'filter-status',
-  'filter-goal',
-  'search',
-];
-
-function resetFilters() {
-  FILTER_IDS.forEach((id) => (document.getElementById(id).value = ''));
-  populateTeamOptions();
-  renderTable(allRows);
-  updateFilterBadge();
 }
 
 function updateFilterBadge() {
   const count = [
-    'filter-dept',
-    'filter-team',
-    'filter-person',
-    'filter-status',
-    'filter-goal',
-  ].filter((id) => document.getElementById(id).value !== '').length;
-  const badge = document.getElementById('filter-badge');
-  badge.textContent = count > 0 ? count : '';
-  badge.style.display = count > 0 ? '' : 'none';
+    appState.view.filters.dept,
+    appState.view.filters.team,
+    appState.view.filters.person,
+    appState.view.filters.status,
+    appState.view.filters.goal,
+  ].filter((value) => value !== '').length;
+
+  els.filterBadge.textContent = count > 0 ? String(count) : '';
+  els.filterBadge.style.display = count > 0 ? '' : 'none';
 }
 
-let debounceTimer;
-FILTER_IDS.forEach((id) => {
-  const el = document.getElementById(id);
-  if (el.tagName === 'INPUT') {
-    el.addEventListener('input', () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(applyFilters, 200);
+function populateTeamOptions() {
+  while (els.filterTeam.options.length > 1) els.filterTeam.remove(1);
+
+  const teams = [
+    ...new Set(
+      appState.rows
+        .filter(
+          (r) => !appState.view.filters.dept || r['Department'] === appState.view.filters.dept
+        )
+        .map((r) => r['Team'])
+        .filter(Boolean)
+    ),
+  ].sort();
+
+  teams.forEach((team) => {
+    const option = document.createElement('option');
+    option.value = team;
+    option.textContent = team;
+    els.filterTeam.appendChild(option);
+  });
+
+  if (appState.view.filters.team && teams.includes(appState.view.filters.team)) {
+    els.filterTeam.value = appState.view.filters.team;
+  } else if (appState.view.filters.team && !teams.includes(appState.view.filters.team)) {
+    appState.view.filters.team = '';
+    els.filterTeam.value = '';
+  }
+}
+
+function populateFilterOptions() {
+  const fill = (el, key) => {
+    while (el.options.length > 1) el.remove(1);
+    const values = [
+      ...new Set(
+        appState.rows.map((r) => r[key] || (key === 'Goal' ? 'No Goal' : '')).filter(Boolean)
+      ),
+    ].sort();
+    values.forEach((value) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      el.appendChild(option);
     });
-  } else {
-    el.addEventListener('input', applyFilters);
+  };
+
+  fill(els.filterDept, 'Department');
+  fill(els.filterPerson, 'Responsible');
+  fill(els.filterGoal, 'Goal');
+
+  while (els.filterStatus.options.length > 1) els.filterStatus.remove(1);
+  [
+    ['done', 'Done'],
+    ['doing', 'In Progress'],
+    ['blocked', 'Blocked'],
+  ].forEach(([value, label]) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    els.filterStatus.appendChild(option);
+  });
+
+  populateTeamOptions();
+}
+
+function renderApp() {
+  const isLoaded = appState.lifecycle.phase === 'loaded';
+  syncVisibility(isLoaded);
+  if (!isLoaded) return;
+
+  renderScopeIndicator();
+
+  const viewRows = deriveViewRows();
+  renderSummary(viewRows);
+  renderGoals(viewRows);
+  renderBlocked(viewRows);
+  renderTable(viewRows);
+  updateFilterBadge();
+
+  appState.lifecycle.refreshedLabel = deriveRecencyLabel(appState.rows);
+  els.csvDateLabel.textContent = appState.lifecycle.refreshedLabel;
+}
+
+function resetFilters() {
+  appState.view.filters = {
+    dept: '',
+    team: '',
+    person: '',
+    status: '',
+    goal: '',
+    search: '',
+  };
+  appState.view.scopeGoal = '';
+  appState.view.expandedRowKey = null;
+
+  els.filterDept.value = '';
+  els.filterTeam.value = '';
+  els.filterPerson.value = '';
+  els.filterStatus.value = '';
+  els.filterGoal.value = '';
+  els.search.value = '';
+
+  populateTeamOptions();
+  renderApp();
+}
+
+function syncFilterStateFromControls() {
+  appState.view.filters.dept = els.filterDept.value;
+  appState.view.filters.team = els.filterTeam.value;
+  appState.view.filters.person = els.filterPerson.value;
+  appState.view.filters.status = els.filterStatus.value;
+  appState.view.filters.goal = els.filterGoal.value;
+  appState.view.filters.search = els.search.value;
+}
+
+async function fetchSheetData() {
+  setLifecyclePhase('loading');
+
+  try {
+    const response = await fetch(SHEET_URL);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const csv = await response.text();
+    const rows = parseCSV(csv);
+    if (!rows.length) throw new Error('No data found in sheet');
+
+    appState.rows = rows;
+    populateFilterOptions();
+
+    setLifecyclePhase('loaded');
+    renderApp();
+  } catch (error) {
+    setLifecyclePhase('error', error instanceof Error ? error.message : 'Unknown error');
+    syncVisibility(false);
   }
-});
+}
 
-document.getElementById('filter-toggle').addEventListener('click', () => {
-  const panel = document.getElementById('filter-panel');
-  const toggle = document.getElementById('filter-toggle');
-  const isOpen = panel.style.display !== 'none';
-  panel.style.display = isOpen ? 'none' : '';
-  toggle.setAttribute('aria-expanded', String(!isOpen));
-});
+let searchDebounceTimer;
 
-document.getElementById('reset-btn').addEventListener('click', resetFilters);
+function bindEvents() {
+  els.filterDept.addEventListener('change', () => {
+    syncFilterStateFromControls();
+    populateTeamOptions();
+    appState.view.expandedRowKey = null;
+    renderApp();
+  });
 
-document.getElementById('refresh-btn').addEventListener('click', fetchSheetData);
+  [els.filterTeam, els.filterPerson, els.filterStatus, els.filterGoal].forEach((el) => {
+    el.addEventListener('input', () => {
+      syncFilterStateFromControls();
+      appState.view.expandedRowKey = null;
+      renderApp();
+    });
+  });
 
-// Quick Search: Focus search on "/" or just typing
-window.addEventListener('keydown', (e) => {
-  if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
-    e.preventDefault();
-    document.getElementById('search').focus();
-  }
-});
+  els.search.addEventListener('input', () => {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      syncFilterStateFromControls();
+      appState.view.expandedRowKey = null;
+      renderApp();
+    }, 200);
+  });
 
-document.getElementById('filter-dept').addEventListener('change', () => {
-  const dept = document.getElementById('filter-dept').value;
-  const currentTeam = document.getElementById('filter-team').value;
-  populateTeamOptions(dept, currentTeam);
-  applyFilters();
-});
+  els.filterToggle.addEventListener('click', () => {
+    appState.view.filterPanelOpen = !appState.view.filterPanelOpen;
+    els.filterPanel.style.display = appState.view.filterPanelOpen ? '' : 'none';
+    els.filterToggle.setAttribute('aria-expanded', String(appState.view.filterPanelOpen));
+  });
 
+  els.resetBtn.addEventListener('click', resetFilters);
+  els.refreshBtn.addEventListener('click', fetchSheetData);
+  els.scopeClearBtn.addEventListener('click', () => {
+    appState.view.scopeGoal = '';
+    appState.view.expandedRowKey = null;
+    renderApp();
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === '/' && document.activeElement.tagName !== 'INPUT') {
+      event.preventDefault();
+      els.search.focus();
+    }
+  });
+}
+
+initializeViewedDate();
+bindEvents();
 fetchSheetData();

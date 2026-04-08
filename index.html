@@ -46,20 +46,43 @@
       <div
         class="summary-grid"
         id="summary"
+        data-hook="summary"
         role="region"
         aria-label="Summary statistics"
         aria-live="polite"
         style="display: none"
       ></div>
 
-      <div class="goals-section" id="goals-section" style="display: none">
+      <div class="goals-section" id="goals-section" data-hook="goal-cards" style="display: none">
         <h2>Progress by Goal</h2>
-        <div class="goals-grid" id="goals-grid"></div>
+        <div class="goals-grid" id="goals-grid" data-hook="goals-grid"></div>
       </div>
 
-      <section id="blocked-section" class="blocked-section" style="display: none"></section>
+      <div
+        class="scope-indicator"
+        id="scope-indicator"
+        data-hook="scope-indicator"
+        style="display: none"
+      >
+        <span id="scope-indicator-text"></span>
+        <button
+          type="button"
+          id="scope-clear-btn"
+          class="scope-clear-btn"
+          aria-label="Clear active scope"
+        >
+          Clear scope
+        </button>
+      </div>
 
-      <div class="controls" id="controls" style="display: none">
+      <section
+        id="blocked-section"
+        class="blocked-section"
+        data-hook="blocked-section"
+        style="display: none"
+      ></section>
+
+      <div class="controls" id="controls" data-hook="controls" style="display: none">
         <div class="search-bar">
           <input
             type="text"
@@ -113,9 +136,15 @@
         </div>
       </div>
 
-      <div class="result-count" id="result-count" aria-live="polite" style="display: none"></div>
+      <div
+        class="result-count"
+        id="result-count"
+        data-hook="result-count"
+        aria-live="polite"
+        style="display: none"
+      ></div>
 
-      <div class="table-wrap" id="table-wrap" style="display: none">
+      <div class="table-wrap" id="table-wrap" data-hook="detail-table" style="display: none">
         <table>
           <thead>
             <tr>
@@ -126,7 +155,7 @@
               <th scope="col">Updated</th>
             </tr>
           </thead>
-          <tbody id="table-body"></tbody>
+          <tbody id="table-body" data-hook="table-body"></tbody>
         </table>
       </div>
     </main>
