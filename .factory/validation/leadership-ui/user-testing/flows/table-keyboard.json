@@ -1,0 +1,146 @@
+{
+  "groupId": "table-keyboard",
+  "surface": "browser-ui",
+  "assertionsTested": [
+    {
+      "id": "VAL-TABLE-001",
+      "status": "pass",
+      "reason": "The detail area rendered grouped department sections such as Apps, Biz Dev, GA + Comms, Legal, PGP, Real Estate, and Supporting Services, and each header displayed its visible update count.",
+      "evidence": [
+        "evidence/leadership-ui/table-keyboard/VAL-TABLE-001-grouped-table.png",
+        "observed headers including 'Apps — 12 updates', 'Biz Dev — 2 updates', 'GA + Comms — 17 updates' in the live UI",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-TABLE-002",
+      "status": "pass",
+      "reason": "Opening a summary row revealed a detail region with secondary fields including Team and Details on desktop, and Goal and Updated values were visible in the expanded mobile detail.",
+      "evidence": [
+        "evidence/leadership-ui/table-keyboard/VAL-TABLE-002-row-expanded.png",
+        "evidence/leadership-ui/table-keyboard/VAL-RESPONSIVE-002-mobile-table-expanded.png",
+        "expanded detail text included 'Team', 'Details', 'Goal', and 'Updated'",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-TABLE-003",
+      "status": "pass",
+      "reason": "After opening the first row and then a second row, only the second row remained expanded; the DOM check reported one expanded row total.",
+      "evidence": [
+        "evidence/leadership-ui/table-keyboard/VAL-TABLE-003-second-row-open.png",
+        "DOM check after sequential opens: expandedCount=1 and expanded row text matched 'Pablo 4H Club Step 1 Done'",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-TABLE-004",
+      "status": "pass",
+      "reason": "A no-match search produced an explicit empty table state with 'No matching updates' and 'Reset narrowing', while the visible controls remained available for recovery.",
+      "evidence": [
+        "evidence/leadership-ui/table-keyboard/VAL-TABLE-004-empty-state.png",
+        "body text contained 'No updates match your current scope, search, or filters.' and 'Reset narrowing'",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-KEYBOARD-001",
+      "status": "pass",
+      "reason": "Pressing '/' from non-input context moved focus into the search field.",
+      "evidence": [
+        "evidence/leadership-ui/table-keyboard/VAL-KEYBOARD-001-search-focused-via-slash.png",
+        "focus check returned activeTag=INPUT with placeholder 'Search updates…' and aria-label 'Search updates'",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-KEYBOARD-002",
+      "status": "pass",
+      "reason": "With a row focused, Enter expanded it and Space collapsed it again, producing visible open and closed state changes.",
+      "evidence": [
+        "evidence/leadership-ui/table-keyboard/VAL-KEYBOARD-002-enter-toggle-open.png",
+        "evidence/leadership-ui/table-keyboard/VAL-KEYBOARD-002-space-toggle-closed.png",
+        "state check after Space returned expandedCount=0 while focus stayed on the row button",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-KEYBOARD-003",
+      "status": "pass",
+      "reason": "Escape unwound the active UI state in the expected order: it cleared department scope, closed an expanded row when no scope was active, and closed the filter panel visually when neither scope nor row expansion was active.",
+      "evidence": [
+        "evidence/leadership-ui/table-keyboard/VAL-KEYBOARD-003-scope-before-escape.png",
+        "evidence/leadership-ui/table-keyboard/VAL-KEYBOARD-003-escape-scope.png",
+        "evidence/leadership-ui/table-keyboard/VAL-KEYBOARD-003-escape-row.png",
+        "evidence/leadership-ui/table-keyboard/VAL-KEYBOARD-003-filter-panel-open.png",
+        "evidence/leadership-ui/table-keyboard/VAL-KEYBOARD-003-escape-filter-panel.png",
+        "scope check changed from scopeBefore=true to scopeAfterEscape=false",
+        "row escape check changed from rowExpandedBeforeEscape=1 to rowExpandedAfterEscape=0",
+        "filter toggle button ended with aria-expanded='false' and the filter panel visibility check returned false",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-KEYBOARD-004",
+      "status": "pass",
+      "reason": "When focus started on the first visible summary row, ArrowDown moved focus to the next visible row and ArrowUp moved focus back to the original row.",
+      "evidence": [
+        "evidence/leadership-ui/table-keyboard/VAL-KEYBOARD-004-arrow-navigation.png",
+        "focus text changed from 'Pablo City Park Construction' to 'Pablo 4H Club Step 1 Done' after ArrowDown and returned after ArrowUp",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-KEYBOARD-005",
+      "status": "pass",
+      "reason": "With prefers-reduced-motion enabled, keyboard interactions still worked: a row could be opened and closed and '/' still focused search while reduced motion emulation was active.",
+      "evidence": [
+        "evidence/leadership-ui/table-keyboard/VAL-KEYBOARD-005-reduced-motion-state.png",
+        "media check returned reducedMotion=true; final state showed active search input and expandedCount=0 after Enter/Escape/'/' sequence",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-RESPONSIVE-001",
+      "status": "pass",
+      "reason": "At 390px width, the hero metrics stacked vertically and the goal cards reflowed to a single-column mobile layout while remaining readable and tappable.",
+      "evidence": [
+        "evidence/leadership-ui/table-keyboard/VAL-RESPONSIVE-001-mobile-hero-goals.png",
+        "evidence/leadership-ui/table-keyboard/mobile-annotated.png",
+        "mobile viewport used: 390x844",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-RESPONSIVE-002",
+      "status": "pass",
+      "reason": "At mobile width, the collapsed table showed only Responsible, Topic, and Status, and the expanded row exposed Goal and Updated inside the detail panel.",
+      "evidence": [
+        "evidence/leadership-ui/table-keyboard/VAL-RESPONSIVE-002-mobile-table-collapsed.png",
+        "evidence/leadership-ui/table-keyboard/VAL-RESPONSIVE-002-mobile-table-expanded.png",
+        "mobile body text showed collapsed header 'RESPONSIBLE TOPIC STATUS' and expanded detail labels 'GOAL' and 'UPDATED'",
+        "console-errors:none"
+      ]
+    },
+    {
+      "id": "VAL-RESPONSIVE-003",
+      "status": "pass",
+      "reason": "At mobile width, tapping the Apps department header scoped the page in place, the scope indicator and controls remained usable, the blocked section remained present when relevant, and the URL stayed unchanged.",
+      "evidence": [
+        "evidence/leadership-ui/table-keyboard/VAL-RESPONSIVE-003-mobile-scoped-detail.png",
+        "mobile check returned hasScopeIndicator=true, hasFiltersLabel=true, hasAppsGroup=true, hasBlockedSection=true",
+        "url remained http://127.0.0.1:3100/index.html",
+        "console-errors:none"
+      ]
+    }
+  ],
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "frictions": [
+    "agent-browser request logging showed 'No requests captured' at the end of the session, so network evidence for the already-loaded page was not available from the final log view.",
+    "A shell quoting issue interrupted one chained browser command; the affected checks were rerun successfully in separate commands within the same session."
+  ],
+  "blockers": [],
+  "summary": "Validated 12 assertions for the leadership-ui table, keyboard, reduced-motion, and mobile behaviors. All 12 assigned assertions passed in the shared local browser session."
+}

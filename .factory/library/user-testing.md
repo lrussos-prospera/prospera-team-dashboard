@@ -42,3 +42,14 @@ Testing surface, tools, and runtime validation notes.
 - One-row-at-a-time expansion behavior
 - Keyboard interactions and reduced-motion behavior
 - Mobile layout and content preservation in expansion
+
+## Flow Validator Guidance: Browser UI
+
+- Use the shared local app at `http://127.0.0.1:3100/index.html` unless your assignment explicitly requires a different path.
+- Keep validation within the browser surface; do not modify app source, test fixtures, or shared runtime data during a flow-validation run.
+- Each subagent must use its own isolated browser session/workspace and save reports only to its assigned `.factory/validation/<milestone>/user-testing/flows/<group-id>.json` path.
+- Shared-state risk is low because the dashboard is a static app backed by live-sheet fetches, but validators can still interfere through simultaneous refresh-heavy traffic; respect the max concurrency of 2 and avoid unnecessary repeated refresh/retry loops.
+- If an assertion requires network failure or empty-data simulation, prefer the existing Playwright/browser interception patterns over changing the production sheet URL.
+- Capture concrete evidence for each assertion group: the specific user actions performed, the observed UI state, any console/network anomalies, and the final pass/fail/blocked decision for each assigned assertion.
+- Do not create or rely on URL-based state, alternate ports, or route transitions; the single-page invariant is part of the contract under test.
+- If the shared web server becomes unhealthy, stop and report the blocker instead of restarting unrelated services from inside a flow-validator run.

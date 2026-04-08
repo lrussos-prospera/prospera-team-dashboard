@@ -1,0 +1,243 @@
+{
+  "groupId": "load-semantics",
+  "surface": "browser",
+  "assertionsTested": [
+    {
+      "id": "VAL-LOAD-021",
+      "status": "fail",
+      "reason": "Stale-goal semantics were not fully unambiguous: in the custom-data run the page-level freshness badge read 'Live · current (0d old)' while the first goal card simultaneously showed 'Stale (> 7d)', creating conflicting visible recency signals on the same screen.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/stale-goal-clarity.png",
+        "evidence/leadership-ui/load-semantics/goal-stale-and-blocked.png",
+        "Observed UI text combination after custom-data refresh: csv label 'Live · current (0d old)' with goal 1 text 'Blocked: Ada' and 'Stale (> 7d)'.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-022",
+      "status": "pass",
+      "reason": "After a simulated fetch failure, removing the failure and pressing Try again restored the dashboard cleanly and cleared the prior error presentation.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/error-not-misleading-after-prior-success.png",
+        "evidence/leadership-ui/load-semantics/error-cleared-after-retry.png",
+        "Post-retry DOM check: state box hidden, status surfaces [], summary visible block, controls visible block.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-023",
+      "status": "pass",
+      "reason": "Refresh and retry transitions never left stacked status surfaces behind; the failure state showed exactly one error surface and the recovered/refresh-complete states showed none.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/no-duplicate-status-ui.png",
+        "evidence/leadership-ui/load-semantics/error-not-misleading-after-prior-success.png",
+        "Error-state DOM check: statusSurfaces ['error-state']; recovered/custom-refresh DOM checks: statusSurfaces [].",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-024",
+      "status": "pass",
+      "reason": "With custom data where goal 1 had blocked work and only stale dates, the goal card simultaneously showed its 50% progress plus both 'Blocked: Ada' and 'Stale (> 7d)' without obscuring progress information.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/goal-stale-and-blocked.png",
+        "Custom goal 1 text: '50% / 1 of 2 done / Blocked: Ada / Stale (> 7d)'.",
+        "Blocked section also listed Ada / Settlement blocker below the cards.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-025",
+      "status": "pass",
+      "reason": "Filtering to the Apps department preserved the four-goal strategic overview while rendering goal 1 as a non-scopable empty card with 'No updates in current view'.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/four-goal-overview-with-empty-goal.png",
+        "DOM check after Department=Apps: 4 goal cards still rendered; goal 1 had scopable=false and text 'No updates in current view'.",
+        "Result count under this narrowed overview: 'Showing 12 updates'.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-026",
+      "status": "pass",
+      "reason": "Refreshing while the Status=Blocked filter produced zero rows kept the page in a clear, recoverable zero-results state with controls and the selected filter still visible.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/refresh-zero-results-state.png",
+        "Post-refresh DOM check: status filter value 'blocked', result count 'No matching updates', controls visible block, filter badge '1'.",
+        "Blocked section remained hidden and the empty-state recovery action stayed visible.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-027",
+      "status": "pass",
+      "reason": "Neither the simulated error state nor zero-results states rendered any phantom or duplicate blocked section.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/no-match-state.png",
+        "evidence/leadership-ui/load-semantics/error-not-misleading-after-prior-success.png",
+        "DOM checks in both states reported blocked section display 'none'.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-029",
+      "status": "pass",
+      "reason": "Refreshing from a valid goal-scoped state preserved the same scoped subset, scope indicator, and active goal card instead of silently returning to overview.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/refresh-keeps-valid-scope.png",
+        "Post-refresh DOM check: scope text 'Scoped to goal: 3. 1k residents / 100 businesses / 10k entities', active goal unchanged, result count 'Showing 36 updates'.",
+        "URL stayed http://127.0.0.1:3100/index.html.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-030",
+      "status": "pass",
+      "reason": "Refreshing from a valid filtered state preserved the Department=Real Estate and Team=Clubs filters along with the coherent filter badge count.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/refresh-keeps-valid-filters.png",
+        "Post-refresh DOM check: dept 'Real Estate', team 'Clubs', filter badge '2', result count 'Showing 7 updates'.",
+        "Controls remained visible and usable immediately after refresh completion.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-031",
+      "status": "pass",
+      "reason": "The app clearly distinguished user-created no-match states from no-data source states: no-match kept controls visible with 'No updates match your current scope, search, or filters', while no-data hid dashboard content and showed 'No usable update rows were returned from the source'.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/no-match-state.png",
+        "evidence/leadership-ui/load-semantics/no-data-state.png",
+        "No-match DOM check: controls visible block; no-data DOM check: controls and summary hidden, csv label 'No source data'.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-032",
+      "status": "pass",
+      "reason": "Entering the error state and recovering via retry both happened in the same scrollable document with no route change or page-context switch.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/error-not-misleading-after-prior-success.png",
+        "evidence/leadership-ui/load-semantics/error-recovery-in-place.png",
+        "Observed URL before failure, during error, and after recovery: http://127.0.0.1:3100/index.html.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-033",
+      "status": "pass",
+      "reason": "Search covered intended update content beyond the visible topic field: searching 'Wyoming' returned the Trey 'US Legislative Progress' row because that term appears in the row details text.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/search-domain-behavior.png",
+        "Search value used: 'Wyoming'.",
+        "Observed result count 'Showing 1 update' with visible topic 'US Legislative Progress'.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-034",
+      "status": "pass",
+      "reason": "When search produced zero results, the typed search text remained visible in the search box so the user could refine or clear it.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/search-zero-results-text-retained.png",
+        "Search value after zero-results state remained 'zzzz_nonexistent_query'.",
+        "Result count read 'No matching updates' while controls stayed visible.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-035",
+      "status": "pass",
+      "reason": "When the Status=Blocked filter produced zero results, the selected filter value stayed visible and the filter badge remained coherent.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/filter-zero-results-values-retained.png",
+        "Post-filter DOM check: filter-status value 'blocked', filter badge '1', result count 'No matching updates'.",
+        "Empty-state message remained explicit and recoverable.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-036",
+      "status": "pass",
+      "reason": "Clearing the zero-results filter restored coherent derived signals, including result count and summary metrics for the restored full subset.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/recovered-derived-signals.png",
+        "After Reset all filters: result count 'Showing 101 updates', summary Done 22 / In Progress 71 / Blocked 0 / Total 101.",
+        "All filter values returned to empty strings.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-037",
+      "status": "pass",
+      "reason": "Rows and goal subsets with invalid or missing dates remained stale after refresh instead of being presented as fresh; only the goal with a valid same-day date showed current freshness.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/invalid-dates-after-refresh.png",
+        "Custom-data post-refresh goal texts showed goal 2 and goal 3 as 'Stale (> 7d)' even though their dates were invalid/missing, while goal 4 with 2026-04-08 omitted stale treatment.",
+        "Page-level recency label after custom refresh: 'Live · current (0d old)'.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-038",
+      "status": "pass",
+      "reason": "Across loaded, error, retry recovery, no-match, no-data, scoped refresh, filtered refresh, and custom-data refresh states, the browser location stayed unchanged.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/error-not-misleading-after-prior-success.png",
+        "evidence/leadership-ui/load-semantics/no-data-state.png",
+        "evidence/leadership-ui/load-semantics/refresh-keeps-valid-scope.png",
+        "Observed URL in every tested lifecycle stage: http://127.0.0.1:3100/index.html",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-039",
+      "status": "pass",
+      "reason": "Refreshing with an expanded row left one coherent expanded detail region tied to the matching summary row and did not create orphaned or mismatched expansion remnants.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/no-stale-expansion-after-refresh.png",
+        "Post-refresh DOM check: expandedCount 1 and summaryMatchesExpanded true for row key 'real-estate-amanda--eal-state-0'.",
+        "No extra expanded remnants were present.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-040",
+      "status": "pass",
+      "reason": "After refresh completed, the controls area remained immediately usable with active filters still visible and no extra interaction required to restore them.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/post-refresh-usable-controls.png",
+        "Post-refresh DOM check: controls visible block with dept 'Real Estate' and team 'Clubs' still selected.",
+        "Filter badge and result count were already coherent on first settled frame.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-041",
+      "status": "pass",
+      "reason": "When a fetch failed after prior successful content existed, the error presentation hid prior summary/controls/blocked metrics instead of implying they were current data.",
+      "evidence": [
+        "evidence/leadership-ui/load-semantics/error-not-misleading-after-prior-success.png",
+        "Error-state DOM check: summaryVisible 'none', controlsVisible 'none', blockedVisible 'none', only error-state surface present.",
+        "Visible copy during failure was limited to the Sheets error message and Try again action.",
+        "Console errors: none"
+      ]
+    }
+  ],
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "frictions": [
+    {
+      "description": "Browser-level network route mocking did not reliably override the live Google Sheets request for empty/custom CSV cases in this session, so I used page-runtime fetch patching plus fetchSheetData() to simulate no-data and custom stale/blocked/invalid-date responses through the same browser surface.",
+      "affectedAssertions": [
+        "VAL-LOAD-021",
+        "VAL-LOAD-024",
+        "VAL-LOAD-031",
+        "VAL-LOAD-037",
+        "VAL-LOAD-038"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 20 load-semantics browser assertions: 19 passed and 1 failed. The dashboard preserved scope/filter/search state coherently across refresh and distinguished no-data from no-match, but stale-goal recency messaging still presented conflicting visible age signals."}

@@ -1,0 +1,224 @@
+{
+  "groupId": "load-edgecases",
+  "surface": "browser-ui",
+  "assertionsTested": [
+    {
+      "id": "VAL-LOAD-009",
+      "status": "pass",
+      "reason": "With an all-blocked mocked dataset, the hero summary recomputed to 0% complete with 4 blocked items and showed blocked callouts instead of a success presentation.",
+      "evidence": [
+        "load-edgecases/all-blocked-state.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-010",
+      "status": "pass",
+      "reason": "In a department-scoped subset, goal cards with no visible items rendered a no-updates treatment and exposed aria-disabled/data-scopable=false rather than remaining interactive.",
+      "evidence": [
+        "load-edgecases/scoped-empty-goal-and-blocked-owners.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-011",
+      "status": "pass",
+      "reason": "A live narrowed state using department, status, and search survived refresh with the same controls still applied and the same constrained row set visible after reload completion.",
+      "evidence": [
+        "load-edgecases/live-refresh-preserves-narrowing-before.png",
+        "load-edgecases/live-refresh-loading.png",
+        "load-edgecases/live-refresh-preserves-narrowing-after.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-012",
+      "status": "pass",
+      "reason": "Rows with invalid or missing Added/updated values did not make the page-level freshness badge look fresh beyond the valid 7-day boundary; invalid values stayed visibly invalid/blank and did not override the valid-date-derived badge.",
+      "evidence": [
+        "load-edgecases/invalid-date-threshold-state.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-013",
+      "status": "pass",
+      "reason": "After applying live narrowing and reloading, the page returned to the default overview with empty search/filters, no scope indicator, and the full 101-row result set.",
+      "evidence": [
+        "load-edgecases/live-reload-default-overview.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-014",
+      "status": "fail",
+      "reason": "Browser history was not a no-op: Back from the dashboard returned to about:blank before Forward restored the dashboard, so browser navigation did alter page state instead of remaining inert within the single-page app.",
+      "evidence": [
+        "load-edgecases/live-history-noop.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-015",
+      "status": "pass",
+      "reason": "An empty CSV response produced a dedicated no-data state with no summary/controls shell shown, rather than pretending that successful dashboard content was loaded.",
+      "evidence": [
+        "load-edgecases/no-data-state.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-016",
+      "status": "pass",
+      "reason": "When a scoped live state was narrowed to zero visible rows by search text, the scope indicator remained visible and the empty-state copy repeated the active scope so the user could explain and dismiss it.",
+      "evidence": [
+        "load-edgecases/live-scope-zero-results.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-017",
+      "status": "pass",
+      "reason": "In the scoped zero-results state, summary metrics dropped to 0 done / 0 in progress / 0 blocked / 0 total and the blocked section disappeared for that subset.",
+      "evidence": [
+        "load-edgecases/live-scope-zero-results.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-018",
+      "status": "pass",
+      "reason": "Refresh only changed freshness messaging when the mocked dataset changed recency; on the unchanged live sheet, refresh preserved the existing freshness label semantics rather than resetting them just because a fetch occurred.",
+      "evidence": [
+        "load-edgecases/live-refresh-preserves-narrowing-before.png",
+        "load-edgecases/live-refresh-preserves-narrowing-after.png",
+        "load-edgecases/invalid-date-threshold-state.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-019",
+      "status": "pass",
+      "reason": "The 7-day threshold was applied consistently: the page-level freshness badge treated 2026-04-01 as current (7d old), while a goal with latest valid date 2026-03-31 showed stale treatment (> 7d).",
+      "evidence": [
+        "load-edgecases/invalid-date-threshold-state.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-020",
+      "status": "pass",
+      "reason": "Goal stale indicators were derived per goal subset in the mocked threshold dataset: goal 2 showed stale from its own 2026-03-31 row while goal 1 stayed non-stale from its 2026-04-01 row.",
+      "evidence": [
+        "load-edgecases/invalid-date-threshold-state.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-042",
+      "status": "fail",
+      "reason": "During a mocked refresh failure, the page collapsed from the normal top-to-bottom header/summary/goals/controls/detail reading order to only the refresh button plus retry surface, so the reading order was not preserved across load transitions.",
+      "evidence": [
+        "load-edgecases/live-reading-order-navigation.png",
+        "load-edgecases/live-error-reading-order.png",
+        "load-edgecases/live-retry-recovered-reading-order.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-043",
+      "status": "pass",
+      "reason": "A hard reload cleared immediately prior search/filter/scope state and returned to the default overview without any URL-encoded restoration.",
+      "evidence": [
+        "load-edgecases/live-reload-default-overview.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-044",
+      "status": "pass",
+      "reason": "Repeated refreshes showed only the canonical blocked section; no second blocked-summary surface appeared in the live or mocked blocked states.",
+      "evidence": [
+        "load-edgecases/all-blocked-state.png",
+        "load-edgecases/live-refresh-preserves-narrowing-after.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-045",
+      "status": "pass",
+      "reason": "A user-created no-match state presented recoverable empty-state copy ('No updates match your current scope, search, or filters') instead of error language or a failed-load surface.",
+      "evidence": [
+        "load-edgecases/live-scope-zero-results.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-046",
+      "status": "pass",
+      "reason": "The no-data state did not expose scope/filter explanation or any implied narrowing; summary, controls, and scope indicator were hidden while the explicit source-empty message was shown.",
+      "evidence": [
+        "load-edgecases/no-data-state.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-047",
+      "status": "blocked",
+      "reason": "I could validate stale goal treatment and scoped dimming separately, but I could not produce a browser state where a non-selected dimmed card also remained stale instead of becoming an empty-state card, so this exact coexistence case was not directly testable in the current implementation.",
+      "evidence": [
+        "load-edgecases/live-stale-goals-while-scoped.png",
+        "load-edgecases/invalid-date-threshold-state.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-048",
+      "status": "pass",
+      "reason": "In the Apps-scoped mocked subset, the goal-card blocked-owner signal narrowed correctly to only the visible blocked owner ('Alice') and did not retain blocked owners from broader state.",
+      "evidence": [
+        "load-edgecases/scoped-empty-goal-and-blocked-owners.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-049",
+      "status": "pass",
+      "reason": "After applying live department and status filters plus search, refresh preserved the same two active non-search filters and the badge still read 2 with the narrowed row set intact.",
+      "evidence": [
+        "load-edgecases/live-refresh-preserves-narrowing-before.png",
+        "load-edgecases/live-refresh-preserves-narrowing-after.png"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-050",
+      "status": "pass",
+      "reason": "Across normal load, no-match, no-data, refresh, and retry states, the dashboard never introduced route-like navigation controls beyond the single page; the only buttons were refresh, filters/reset, scope clear, and retry.",
+      "evidence": [
+        "load-edgecases/live-reading-order-navigation.png",
+        "load-edgecases/no-data-state.png",
+        "load-edgecases/live-error-reading-order.png"
+      ]
+    }
+  ],
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "frictions": [
+    {
+      "description": "The agent-browser shell command parser repeatedly broke when heredoc evals were chained with additional browser commands using &&.",
+      "resolved": true,
+      "resolution": "Ran browser eval/setup and follow-up click/assertion steps as separate commands against the same session.",
+      "affectedAssertions": [
+        "VAL-LOAD-011",
+        "VAL-LOAD-019",
+        "VAL-LOAD-042"
+      ]
+    },
+    {
+      "description": "Request-level network routing did not override the Google Sheets fetch in this session.",
+      "resolved": true,
+      "resolution": "Used browser-runtime mocking by temporarily replacing window.fetch and driving the existing Refresh control for the custom CSV cases.",
+      "affectedAssertions": [
+        "VAL-LOAD-009",
+        "VAL-LOAD-010",
+        "VAL-LOAD-012",
+        "VAL-LOAD-015",
+        "VAL-LOAD-019",
+        "VAL-LOAD-020",
+        "VAL-LOAD-048"
+      ]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "The exact coexistence state for stale treatment on a non-selected dimmed goal card could not be produced because non-selected cards in scoped views became empty-state cards rather than retaining stale treatment.",
+      "affectedAssertions": [
+        "VAL-LOAD-047"
+      ],
+      "quickFixAttempted": "Tested both the live stale dataset and a custom recency mock while scoping goals/departments, but dimmed cards still resolved to empty-state cards instead of stale cards."
+    }
+  ],
+  "summary": "Tested 21 load-edgecase assertions: 18 passed, 2 failed, and 1 was blocked. Confirmed failures are browser history changing page state (VAL-LOAD-014) and load-transition reading order collapsing during in-place error UI (VAL-LOAD-042)."
+}

@@ -1,0 +1,246 @@
+{
+  "groupId": "overview-scope",
+  "surface": "browser-ui",
+  "assertionsTested": [
+    {
+      "id": "VAL-OVERVIEW-001",
+      "status": "pass",
+      "reason": "Overview showed the executive summary with completion percentage and visible Done, In Progress, Blocked, and Total counts in the default state.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/01-overview-annotated.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/02-overview-full.png",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-OVERVIEW-002",
+      "status": "pass",
+      "reason": "Summary metrics recomputed from 22/71/0/101 in overview to 6/31/0/41 in goal scope and then to 0/1/0/1 under combined department+team+status+search narrowing.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/02-overview-full.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/03-goal-scope-goal2.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/07-combined-filters-search.png",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-OVERVIEW-003",
+      "status": "fail",
+      "reason": "Goal cards showed labels, progress, and stale signals, but they never surfaced blocked counts or blocked-owner names even though six visible rows were marked 'At risk'.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/02-overview-full.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/10-reset-restored-overview.png",
+        "visibleAtRiskRows:6",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-OVERVIEW-004",
+      "status": "pass",
+      "reason": "Clicking goal card 2 scoped the page in place: summary changed to 41 updates, the table narrowed to that goal, the scope indicator appeared, and the selected/non-selected goal cards received active vs dimmed styling.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/03-goal-scope-goal2.png",
+        "goalCardClasses:goal-card-active+goal-card-dimmed",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-OVERVIEW-005",
+      "status": "pass",
+      "reason": "Reset returned the dashboard from scoped/narrowed states to the full overview with the original 101-row dataset and cleared visible scope state.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/05-reset-annotated.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/10-reset-restored-overview.png",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-OVERVIEW-006",
+      "status": "fail",
+      "reason": "Freshness did not reliably reflect sheet-update recency: the header badge stayed at 'Live · update date unavailable' even though rows had dated updates and goal cards were marked stale.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/02-overview-full.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/09-refresh-settled-state.png",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-BLOCKED-001",
+      "status": "fail",
+      "reason": "The dedicated blocked section stayed hidden in overview even though six visible rows were labeled 'At risk', so the canonical blocked callout was absent.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/02-overview-full.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/10-reset-restored-overview.png",
+        "blockedSectionVisible:false",
+        "visibleAtRiskRows:6",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-BLOCKED-002",
+      "status": "fail",
+      "reason": "Blocked visibility never responded to active subsets because the blocked section remained hidden in overview, goal scope, department scope, and combined filtered states.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/03-goal-scope-goal2.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/04-department-scope-ga-comms.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/07-combined-filters-search.png",
+        "blockedSectionVisible:false",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-BLOCKED-003",
+      "status": "blocked",
+      "reason": "The current dataset never produced a fully complete goal card, so there was no qualifying complete/no-blocked goal to verify this assertion against.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/02-overview-full.png",
+        "goalCompletionPercentages:[0,15,22,44]",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-SCOPE-001",
+      "status": "pass",
+      "reason": "The search input stayed visible and narrowed visible results without form submission, reducing the active GA + Comms subset to one matching row for 'settlement'.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/07-combined-filters-search.png",
+        "resultCount:Showing 1 update",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-SCOPE-002",
+      "status": "pass",
+      "reason": "After choosing Department = GA + Comms, the Team filter narrowed from the global list to the valid department teams only: Comms, Gov't Affairs, and RTB.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/06-dept-filter-cascade.png",
+        "teamOptionsAfter:[All,Comms,Gov't Affairs,RTB]",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-SCOPE-003",
+      "status": "pass",
+      "reason": "Department, Team, Status, and Search applied conjunctively and produced exactly one matching row: Jorge Colindres / Govt Settlement Talks.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/07-combined-filters-search.png",
+        "resultCount:Showing 1 update",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-SCOPE-004",
+      "status": "pass",
+      "reason": "Clicking the GA + Comms department header scoped the detail view in place, updated summary metrics, and showed a matching department scope indicator.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/04-department-scope-ga-comms.png",
+        "scopeText:Scoped to department: GA + Comms",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-SCOPE-005",
+      "status": "pass",
+      "reason": "Scoped states displayed a visible indicator with explanatory text and a clear 'Clear scope' dismiss action.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/03-goal-scope-goal2.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/04-department-scope-ga-comms.png",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-SCOPE-006",
+      "status": "pass",
+      "reason": "Reset cleared search text, filter values, and scope together, restoring the default overview counts and removing the filter badge and scope indicator.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/07-combined-filters-search.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/10-reset-restored-overview.png",
+        "filterBadgeAfterReset:empty",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-SCOPE-007",
+      "status": "pass",
+      "reason": "Goal scope, department scope, combined filters/search, reset, and refresh all stayed on the same location: http://127.0.0.1:3100/index.html with no hash or query changes.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/08-refresh-narrowed-state.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/09-refresh-settled-state.png",
+        "urlBefore:http://127.0.0.1:3100/index.html",
+        "urlAfter:http://127.0.0.1:3100/index.html",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-CROSS-001",
+      "status": "fail",
+      "reason": "Goal scope updated summary, table, and scope indicator together, but the blocked section did not update to that subset and stayed hidden despite 'At risk' rows within goal 2.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/02-overview-full.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/03-goal-scope-goal2.png",
+        "blockedSectionVisible:false",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-CROSS-002",
+      "status": "fail",
+      "reason": "Department scope + search + reset returned summary and table to overview, but the blocked section never surfaced either before or after reset even though overview still contained visible 'At risk' rows.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/07-combined-filters-search.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/10-reset-restored-overview.png",
+        "blockedSectionVisible:false",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-CROSS-003",
+      "status": "fail",
+      "reason": "Refreshing during a narrowed state left an incoherent post-refresh UI: the loading message persisted over loaded content, scope text remained while scope visibility was false, and the narrowed filters stayed active.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/08-refresh-narrowed-state.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/09-refresh-settled-state.png",
+        "stateMessageAfterRefresh:Fetching latest data from Google Sheets…",
+        "scopeVisible:false+scopeText:Scoped to department: GA + Comms",
+        "consoleErrors:none"
+      ]
+    },
+    {
+      "id": "VAL-CROSS-004",
+      "status": "pass",
+      "reason": "The end-to-end interaction path stayed within one document with no navigation event: load, goal scope, department scope, search/filter, refresh, and reset all occurred in place.",
+      "evidence": [
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/01-overview-annotated.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/03-goal-scope-goal2.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/07-combined-filters-search.png",
+        "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui/overview-scope/10-reset-restored-overview.png",
+        "urlStable:http://127.0.0.1:3100/index.html",
+        "consoleErrors:none"
+      ]
+    }
+  ],
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "frictions": [
+    {
+      "description": "The live sheet fetch was slow to settle and the loading banner remained visible over already-rendered content during manual checks, which made refresh-state timing harder to judge.",
+      "resolved": true,
+      "resolution": "Waited for network idle and captured both in-progress and settled screenshots before deciding outcomes.",
+      "affectedAssertions": [
+        "VAL-OVERVIEW-006",
+        "VAL-CROSS-003"
+      ]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "The current dataset did not include a fully complete goal card, so the complete-goal/no-blocked-callout case could not be exercised.",
+      "affectedAssertions": [
+        "VAL-BLOCKED-003"
+      ],
+      "quickFixAttempted": "Surveyed all four goal cards in overview; percentages were 0%, 15%, 22%, and 44%, so no qualifying goal existed."
+    }
+  ],
+  "summary": "Validated 20 assertions for overview/scope on the live browser UI: 11 passed, 8 failed, and 1 was blocked. Main failures were blocked-risk handling (at-risk rows never surfaced as blocked), freshness header accuracy, and refresh coherence while narrowed."
+}

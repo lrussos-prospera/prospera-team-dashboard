@@ -1,0 +1,121 @@
+{
+  "groupId": "load-basics",
+  "surface": "browser",
+  "assertionsTested": [
+    {
+      "id": "VAL-LOAD-001",
+      "status": "fail",
+      "reason": "On repeated fresh opens, the browser-rendered dashboard content was already visible in the first captured frame, so the app did not present an observable loading-only state before summary/goals/controls/table content appeared.",
+      "evidence": [
+        "evidence/leadership-ui/load-basics/loading-state.png",
+        "First frame at http://127.0.0.1:3100/index.html already showed goal cards, controls, and table rows instead of a loading-only surface.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-002",
+      "status": "pass",
+      "reason": "Successful sheet fetch rendered the full dashboard in place on the same document with summary, goal cards, controls, result count, and grouped detail rows visible.",
+      "evidence": [
+        "evidence/leadership-ui/load-basics/loaded-overview.png",
+        "Browser URL remained http://127.0.0.1:3100/index.html after load.",
+        "Network observed GET https://docs.google.com/spreadsheets/d/1bUY_Us-Vjq4JSYsnxrVXfAX6qRGjxZRgXR31me3Nc0U/gviz/tq?tqx=out:csv&gid=1636341361 during successful load.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-003",
+      "status": "pass",
+      "reason": "Clicking refresh showed an in-progress state and then returned to the normal loaded dashboard without leaving duplicate error or loading UI behind.",
+      "evidence": [
+        "evidence/leadership-ui/load-basics/refresh-in-progress.png",
+        "evidence/leadership-ui/load-basics/refresh-complete.png",
+        "Refresh was triggered from the in-page ↻ control and the URL stayed http://127.0.0.1:3100/index.html.",
+        "Network observed a second GET to the Google Sheets CSV endpoint after refresh.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-004",
+      "status": "pass",
+      "reason": "When the sheet request was browser-intercepted and aborted, the page showed a dedicated error surface with a visible Try again action instead of a blank screen.",
+      "evidence": [
+        "evidence/leadership-ui/load-basics/error-state.png",
+        "Failure was simulated by aborting the Google Sheets CSV request in-browser, then invoking refresh.",
+        "Error state remained at http://127.0.0.1:3100/index.html with visible Try again button.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-005",
+      "status": "pass",
+      "reason": "After removing the abort route, activating Try again recovered from the error state back to the normal loaded dashboard in place.",
+      "evidence": [
+        "evidence/leadership-ui/load-basics/error-state.png",
+        "evidence/leadership-ui/load-basics/retry-recovered.png",
+        "Retry sequence: aborted sheet request -> error UI -> unroute intercept -> click Try again -> dashboard restored.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-006",
+      "status": "pass",
+      "reason": "Initial load, simulated failure, retry recovery, and manual refresh all stayed on the same page URL with no path, hash, or query changes.",
+      "evidence": [
+        "evidence/leadership-ui/load-basics/loaded-overview.png",
+        "evidence/leadership-ui/load-basics/error-state.png",
+        "evidence/leadership-ui/load-basics/retry-recovered.png",
+        "evidence/leadership-ui/load-basics/refresh-complete.png",
+        "Observed URL at each stage: http://127.0.0.1:3100/index.html",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-007",
+      "status": "pass",
+      "reason": "Entering a non-matching search query produced an explicit no-results state while keeping the search box and reset controls visible so the user could understand and change the narrowing state.",
+      "evidence": [
+        "evidence/leadership-ui/load-basics/zero-results.png",
+        "Search query used: zzzz_nonexistent_query",
+        "Observed no-results message with search input still populated and controls still visible.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-008",
+      "status": "pass",
+      "reason": "The zero-results state exposed a visible Reset narrowing recovery action and recovery restored the default loaded overview.",
+      "evidence": [
+        "evidence/leadership-ui/load-basics/zero-results.png",
+        "evidence/leadership-ui/load-basics/zero-results-recovered.png",
+        "Recovery affordance shown: Reset narrowing button in the empty state; clicking it returned the full dashboard.",
+        "Console errors: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-028",
+      "status": "pass",
+      "reason": "From first render onward the app behaved as a single in-place document with no routed shells or navigation transitions before interaction began.",
+      "evidence": [
+        "evidence/leadership-ui/load-basics/initial-single-page-state.png",
+        "Initial observed URL: http://127.0.0.1:3100/index.html",
+        "No intermediate route, query, or hash changes occurred before interaction.",
+        "Console errors: none"
+      ]
+    }
+  ],
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "frictions": [
+    {
+      "description": "The live local page rendered loaded dashboard content too quickly to capture a loading-only frame, so VAL-LOAD-001 had to be judged from repeated first-frame screenshots rather than a clean isolated loading overlay capture. A separate zero-results recovery wait also used a text string that did not match the app's exact restored copy, so recovery was verified by direct snapshot/screenshot instead.",
+      "affectedAssertions": [
+        "VAL-LOAD-001",
+        "VAL-LOAD-008"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 9 browser load-basics assertions: 8 passed and 1 failed. The dashboard satisfied success, refresh, error/retry, URL stability, single-page, and zero-results recovery behaviors, but I could not observe a loading-only initial state before loaded content appeared."
+}
