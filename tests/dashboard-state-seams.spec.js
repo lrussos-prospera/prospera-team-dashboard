@@ -209,24 +209,59 @@ test.describe('dashboard state and render seams', () => {
   test('department scope plus search plus reset returns to overview coherently', async ({
     page,
   }) => {
-    await mockSheetCsv(page, 'all-blocked');
+    await mockSheetCsv(page, 'canonical-blocked-mixed');
     await page.goto('/');
 
+    const legalGoal = page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]');
+    const infraGoal = page.locator('[data-hook="goal-card"][data-goal="Infrastructure"]');
+
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('4');
+    await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('2');
+    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(2);
+    await expect(page.locator('[data-hook="blocked-section"]')).toContainText('Ana Cruz');
+    await expect(page.locator('[data-hook="blocked-section"]')).toContainText('Mia Park');
+    await expect(page.locator('[data-hook="blocked-section"]')).not.toContainText('Leo Tan');
+    await expect(page.locator('[data-hook="blocked-section"]')).not.toContainText('Zoe Klein');
+    await expect(legalGoal).toContainText('Blocked: Ana Cruz');
+    await expect(legalGoal).not.toContainText('Leo Tan');
+    await expect(infraGoal).toContainText('Blocked: Mia Park');
+    await expect(infraGoal).not.toContainText('Zoe Klein');
+
     await page.locator('[data-hook="table-group-header"][data-department="Governance"]').click();
+
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('2');
+    await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('1');
+    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(1);
+    await expect(page.locator('[data-hook="blocked-section"]')).toContainText('Ana Cruz');
+    await expect(page.locator('[data-hook="blocked-section"]')).not.toContainText('Leo Tan');
+    await expect(legalGoal).toContainText('Blocked: Ana Cruz');
+    await expect(legalGoal).not.toContainText('Leo Tan');
+
     await page.locator('#filter-toggle').click();
     await page.locator('#search').fill('permit');
 
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
-    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(1);
+    await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('0');
+    await expect(page.locator('[data-hook="blocked-section"]')).toBeHidden();
+    await expect(legalGoal).not.toContainText('Blocked:');
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
 
     await page.locator('#reset-btn').click();
 
     await expect(page.locator('#search')).toHaveValue('');
     await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
-    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('3');
-    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(3);
-    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(3);
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('4');
+    await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('2');
+    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(2);
+    await expect(page.locator('[data-hook="blocked-section"]')).toContainText('Ana Cruz');
+    await expect(page.locator('[data-hook="blocked-section"]')).toContainText('Mia Park');
+    await expect(page.locator('[data-hook="blocked-section"]')).not.toContainText('Leo Tan');
+    await expect(page.locator('[data-hook="blocked-section"]')).not.toContainText('Zoe Klein');
+    await expect(legalGoal).toContainText('Blocked: Ana Cruz');
+    await expect(legalGoal).not.toContainText('Leo Tan');
+    await expect(infraGoal).toContainText('Blocked: Mia Park');
+    await expect(infraGoal).not.toContainText('Zoe Klein');
+    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(4);
   });
 
   test('cross-area scope plus search plus reset keeps blocked surfaces tied to canonical blocked rows', async ({
