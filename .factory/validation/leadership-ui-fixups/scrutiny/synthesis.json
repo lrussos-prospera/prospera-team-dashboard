@@ -1,6 +1,6 @@
 {
   "milestone": "leadership-ui-fixups",
-  "round": 1,
+  "round": 2,
   "status": "fail",
   "validatorsRun": {
     "test": {
@@ -20,22 +20,27 @@
     }
   },
   "reviewsSummary": {
-    "total": 3,
-    "passed": 2,
+    "total": 1,
+    "passed": 0,
     "failed": 1,
     "failedFeatures": [
-      "fix-escape-unwind-with-text-control-focus"
+      "fix-escape-vs-native-select-popup"
     ]
   },
   "blockingIssues": [
     {
-      "featureId": "fix-escape-unwind-with-text-control-focus",
+      "featureId": "fix-escape-vs-native-select-popup",
       "severity": "blocking",
-      "description": "`shouldHandleEscapeForDashboardUnwind()` returns true for focused `<select>` elements, so the global Escape handler can intercept the first Escape press intended to dismiss the browser’s native select popup. That over-interferes with native behavior and does not fully satisfy the feature intent."
+      "description": "The reviewed fix exempts focused native `<select>` elements from dashboard unwind entirely, which preserves the first Escape for native dismissal but breaks the broader unwind contract while focus remains on the select."
+    },
+    {
+      "featureId": "fix-escape-vs-native-select-popup",
+      "severity": "blocking",
+      "description": "The updated regression test accepts the filter panel remaining open on Escape from the focused select and only closes it on a later Escape, so the test encodes the regression instead of proving the intended behavior."
     }
   ],
   "appliedUpdates": [],
   "suggestedGuidanceUpdates": [],
   "rejectedObservations": [],
-  "previousRound": null
+  "previousRound": ".factory/validation/leadership-ui-fixups/scrutiny/synthesis.round-1.json"
 }

@@ -1,0 +1,28 @@
+{
+  "featureId": "fix-escape-vs-native-select-popup",
+  "reviewedAt": "2026-04-08T00:00:00Z",
+  "commitId": "ca8bd4ff49c1533f2ff48c0391a68c7a8448b842",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The fix resolves the original blocking issue of the dashboard stealing the first Escape from a focused native <select>, but it does so by exempting focused selects from dashboard unwind entirely in the reviewed commit. That means the broader Escape unwind contract is no longer preserved while focus remains on the select: the filter panel only closes after the test moves focus away or sends a second Escape on the same select, so the fix is incomplete.",
+    "issues": [
+      {
+        "file": "app.js",
+        "line": 805,
+        "severity": "blocking",
+        "description": "The reviewed fix changes `shouldHandleEscapeForDashboardUnwind()` so focused `<select>` elements are exempt from dashboard unwind. That prevents the first Escape from being stolen, but it also stops the required unwind behavior from resuming while the select still has focus. The feature description requires preserving the broader unwind contract while deferring native select handling appropriately; fully exempting selects means the filter panel cannot close from the still-focused select after native dismissal."
+      },
+      {
+        "file": "tests/dashboard-state-seams.spec.js",
+        "line": 328,
+        "severity": "blocking",
+        "description": "The updated regression test validates the fix by asserting that Escape with `#filter-status` focused leaves the filter panel open, but it only gets the panel to close after another Escape. This encodes the regression instead of proving the required behavior: the first Escape should be reserved for native popup dismissal, but subsequent Escape handling must still unwind dashboard state without forcing focus to move elsewhere first."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/leadership-ui-fixups/scrutiny/reviews/fix-escape-unwind-with-text-control-focus.json",
+  "summary": "Reviewed the prior failed feature, the fix feature handoff/transcript skeleton, both diffs, and the current Escape-handling/test flow. The new fix stops stealing the first Escape from native selects, but it does not adequately preserve the dashboard unwind contract afterward, so this fix review fails with blocking issues."
+}
