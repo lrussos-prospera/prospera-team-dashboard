@@ -69,6 +69,7 @@ const elements = {
   drilldownTitle: document.getElementById('drilldown-title'),
   drilldownSubtitle: document.getElementById('drilldown-subtitle'),
   drilldownHero: document.getElementById('drilldown-hero'),
+  drilldownTrendPanel: document.getElementById('drilldown-trend-panel'),
   drilldownFilters: document.getElementById('drilldown-filters'),
   drilldownResultCount: document.getElementById('drilldown-result-count'),
   drilldownTableWrap: document.getElementById('drilldown-table-wrap'),
@@ -1449,6 +1450,83 @@ function renderDrilldownTable(rows) {
   });
 }
 
+function renderDrilldownTrendPanel(level, entity, filters) {
+  const container = elements.drilldownTrendPanel;
+  if (!container) return;
+
+  if (appState.history.status !== 'loaded') {
+    container.style.display = 'none';
+    return;
+  }
+
+  const period = filters.period || '1w';
+  const periodDays = PERIOD_DAYS[period];
+  const cutoff = Date.now() - periodDays * 24 * 60 * 60 * 1000;
+  const historyRows = getHistoryForEntity(level, entity).filter(
+    (r) => r.timestamp.getTime() >= cutoff
+  );
+
+  container.style.display = '';
+  const isOpen = isTrendPanelOpen();
+
+  container.innerHTML = `
+    <button type="button" class="trend-panel-toggle" aria-expanded="${isOpen}" data-hook="trend-panel-toggle">
+      ${isOpen ? 'Hide' : 'Show'} Trends
+      <span class="trend-panel-chevron">${isOpen ? '▾' : '▸'}</span>
+    </button>
+    <div class="trend-panel-content${isOpen ? ' trend-panel-open' : ''}">
+      <div class="trend-panel-period" id="drilldown-trend-period"></div>
+      <div class="trend-panel-charts" id="drilldown-trend-charts"></div>
+    </div>
+  `;
+
+  container.querySelector('.trend-panel-toggle').addEventListener('click', () => {
+    setTrendPanelOpen(!isOpen);
+    renderDrilldownTrendPanel(level, entity, filters);
+  });
+
+  if (!isOpen) return;
+
+  const periodEl = document.getElementById('drilldown-trend-period');
+  renderPeriodToggle(periodEl, period, (newPeriod) => {
+    const newFilters = { ...filters, period: newPeriod };
+    if (newPeriod === '1w') delete newFilters.period;
+    navigateTo(appState.route.view, appState.route.param, newFilters);
+  });
+
+  const chartsEl = document.getElementById('drilldown-trend-charts');
+  if (historyRows.length < 2) {
+    chartsEl.innerHTML =
+      '<p class="trend-panel-empty">Not enough data for this period. Try a wider range.</p>';
+    return;
+  }
+
+  if (level === 'goal') {
+    chartsEl.innerHTML = `
+      <div class="trend-panel-chart" id="trend-chart-pct"></div>
+      <div class="trend-panel-chart" id="trend-chart-blocked"></div>
+    `;
+    renderFrappeLineChart('trend-chart-pct', historyRows, 'pct', '% Complete');
+    renderFrappeLineChart('trend-chart-blocked', historyRows, 'blocked', 'Blocked');
+  } else if (level === 'department') {
+    chartsEl.innerHTML = `
+      <div class="trend-panel-chart" id="trend-chart-pct"></div>
+      <div class="trend-panel-chart" id="trend-chart-workload"></div>
+    `;
+    renderFrappeLineChart('trend-chart-pct', historyRows, 'pct', '% Complete');
+    renderFrappeLineChart('trend-chart-workload', historyRows, 'total', 'Total Items');
+  } else if (level === 'employee') {
+    chartsEl.innerHTML = `
+      <div class="trend-panel-chart" id="trend-chart-pct"></div>
+      <div class="trend-panel-chart" id="trend-chart-done"></div>
+      <div class="trend-panel-chart" id="trend-chart-blocked"></div>
+    `;
+    renderFrappeLineChart('trend-chart-pct', historyRows, 'pct', '% Complete');
+    renderFrappeLineChart('trend-chart-done', historyRows, 'done', 'Done');
+    renderFrappeLineChart('trend-chart-blocked', historyRows, 'blocked', 'Blocked');
+  }
+}
+
 function renderGoalDrilldown(goalName, filters) {
   const allGoalRows = appState.rows.filter((row) => (row['Goal'] || 'No Goal') === goalName);
 
@@ -1501,10 +1579,15 @@ function renderGoalDrilldown(goalName, filters) {
       </div>`
     : '';
 
+  const drilldownPeriod = filters.period || '1w';
+  const goalHistoryForDelta = getHistoryForEntity('goal', goalName);
+  const goalDelta = computeDelta(goalHistoryForDelta, drilldownPeriod);
+  const deltaBadgeHtml = appState.history.status === 'loaded' ? renderDeltaBadge(goalDelta) : '';
+
   elements.drilldownHero.innerHTML = `
     <div class="drilldown-hero-card">
       <div class="drilldown-progress-section">
-        <div class="drilldown-progress-pct">${allSummary.pct}<span class="drilldown-progress-symbol">%</span></div>
+        <div class="drilldown-progress-pct">${allSummary.pct}<span class="drilldown-progress-symbol">%</span>${deltaBadgeHtml}</div>
         <div class="drilldown-progress-bar">
           <div class="drilldown-progress-fill" style="width:${allSummary.pct}%"></div>
         </div>
@@ -1517,6 +1600,8 @@ function renderGoalDrilldown(goalName, filters) {
       ${blockedCallout}
     </div>
   `;
+
+  renderDrilldownTrendPanel('goal', goalName, filters);
 
   // Filters
   const uniqueDepts = [...new Set(allGoalRows.map((r) => r['Department']).filter(Boolean))].sort();
@@ -1540,6 +1625,10 @@ function renderTrendsDrilldown(filters) {
   const periodDays = PERIOD_DAYS[period];
 
   renderBreadcrumb([{ label: 'Overview', hash: '#/' }, { label: 'Trends' }]);
+
+  if (elements.drilldownTrendPanel) {
+    elements.drilldownTrendPanel.style.display = 'none';
+  }
 
   elements.drilldownTitle.textContent = 'Performance Trends';
   const uniqueTimestamps = new Set(appState.history.raw.map((r) => r.timestamp.getTime())).size;
@@ -1742,13 +1831,21 @@ function renderDepartmentDrilldown(deptName, filters) {
     </div>
   </div>`;
 
+  const drilldownPeriod = filters.period || '1w';
+  const deptHistoryForDelta = getHistoryForEntity('department', deptName);
+  const deptDelta = computeDelta(deptHistoryForDelta, drilldownPeriod);
+  const deltaBadgeHtml = appState.history.status === 'loaded' ? renderDeltaBadge(deptDelta) : '';
+
   elements.drilldownHero.innerHTML = `
     <div class="drilldown-hero-card">
+      ${deltaBadgeHtml ? `<div class="drilldown-delta">${deltaBadgeHtml}</div>` : ''}
       ${renderDrilldownSummaryStats(summary)}
       ${teamGrid}
       ${personList}
     </div>
   `;
+
+  renderDrilldownTrendPanel('department', deptName, filters);
 
   // Filters
   const uniqueTeams = [...new Set(allDeptRows.map((r) => r['Team']).filter(Boolean))].sort();
@@ -1821,8 +1918,14 @@ function renderEmployeeDrilldown(personName, filters) {
     ? `Last updated ${daysAgo} day${daysAgo !== 1 ? 's' : ''} ago`
     : 'Update date unavailable';
 
+  const drilldownPeriod = filters.period || '1w';
+  const empHistoryForDelta = getHistoryForEntity('employee', personName);
+  const empDelta = computeDelta(empHistoryForDelta, drilldownPeriod);
+  const deltaBadgeHtml = appState.history.status === 'loaded' ? renderDeltaBadge(empDelta) : '';
+
   elements.drilldownHero.innerHTML = `
     <div class="drilldown-hero-card">
+      ${deltaBadgeHtml ? `<div class="drilldown-delta">${deltaBadgeHtml}</div>` : ''}
       ${renderDrilldownSummaryStats(summary)}
       <div class="drilldown-section" data-hook="drilldown-goals">
         <div class="drilldown-section-label">Goals</div>
@@ -1831,6 +1934,8 @@ function renderEmployeeDrilldown(personName, filters) {
       <div class="drilldown-staleness" data-hook="drilldown-staleness">${stalenessText}</div>
     </div>
   `;
+
+  renderDrilldownTrendPanel('employee', personName, filters);
 
   // Filters (minimal for employee)
   renderDrilldownFilters([

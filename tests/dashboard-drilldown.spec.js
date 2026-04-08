@@ -395,3 +395,58 @@ test.describe('trends drilldown view', () => {
     await expect(page).toHaveURL(/\/#\/$/);
   });
 });
+
+test.describe('drilldown trend panels', () => {
+  test('goal drilldown shows collapsible trend panel', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/#/goal/Legal+Framework');
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    await expect(page.locator('[data-hook="trend-panel-toggle"]')).toBeVisible();
+  });
+
+  test('trend panel toggle opens and closes', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/#/goal/Legal+Framework');
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    const toggle = page.locator('[data-hook="trend-panel-toggle"]');
+    await expect(toggle).toBeVisible();
+    await toggle.click();
+    await expect(page.locator('.trend-panel-open')).toBeVisible();
+    await toggle.click();
+    await expect(page.locator('.trend-panel-open')).toHaveCount(0);
+  });
+
+  test('department drilldown shows trend panel', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/#/department/Governance');
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    await expect(page.locator('[data-hook="trend-panel-toggle"]')).toBeVisible();
+  });
+
+  test('employee drilldown shows trend panel', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/#/employee/Ana+Cruz');
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    await expect(page.locator('[data-hook="trend-panel-toggle"]')).toBeVisible();
+  });
+
+  test('trend panel hidden when no history data', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    // History aborted by default
+    await page.goto('/#/goal/Legal+Framework');
+    await expect(page.locator('.drilldown-title')).toHaveText('Legal Framework');
+    await expect(page.locator('[data-hook="trend-panel-toggle"]')).toHaveCount(0);
+  });
+
+  test('delta badge on goal drilldown hero', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/#/goal/Legal+Framework');
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    await expect(page.locator('.drilldown-hero-card .delta-badge').first()).toBeVisible();
+  });
+});
