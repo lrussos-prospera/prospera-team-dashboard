@@ -1,0 +1,21 @@
+{
+  "featureId": "misc-add-manual-fixture-toggle-for-browser-qa",
+  "reviewedAt": "2026-04-08T09:02:02.935600+00:00",
+  "commitId": "dd9e90b",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Pass. The implementation adds a localhost-only, allowlisted `?qaFixture=` runtime path in `app.js` that loads deterministic fixture CSVs for manual QA while preserving the default live Google Sheets fetch path when the param is absent, invalid, or used off localhost. Lifecycle messaging and recency labels clearly identify fixture mode, and `tests/dashboard-harness.spec.js` adds behavior coverage proving the manual toggle works without Playwright network interception.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "The shared testing guidance is now stale: it still says Playwright route interception is the dependable path for deterministic fixture-backed scenarios because agent-browser route mocking is unreliable, but this feature introduced a localhost-only `?qaFixture=` runtime path specifically so manual QA can exercise fixture scenarios without brittle interception.",
+      "evidence": ".factory/library/user-testing.md states 'Playwright route interception ... is currently the dependable path' under Flow Validator Guidance, while app.js:919-957 adds localhost-gated `readManualQaFixtureSelection()` / fixture loading and tests/dashboard-harness.spec.js:10-21 covers `/?qaFixture=all-blocked` without route mocking."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Reviewed commit dd9e90b and the worker transcript/handoff for `misc-add-manual-fixture-toggle-for-browser-qa`. The feature meets its intent, appears safe for production behavior because it is gated to localhost hosts and an explicit fixture allowlist, and adds appropriate regression coverage. One non-blocking shared-state observation: `.factory/library/user-testing.md` has not yet been updated to mention the new manual-QA fixture toggle path."
+}
