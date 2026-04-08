@@ -1,0 +1,20 @@
+{
+  "milestone": "foundation-fixups-2",
+  "round": 1,
+  "status": "pass",
+  "assertionsSummary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "appliedUpdates": [],
+  "previousRound": null,
+  "notes": [
+    "No completed non-validator features in milestone foundation-fixups-2 declared fulfills assertions, so no user-testable validation-contract assertions were selected for this round.",
+    "Because no assertions were selected, no environment setup or flow validator subagents were required, and validation-state.json was left unchanged."
+  ]
+}
