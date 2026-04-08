@@ -286,6 +286,19 @@ No gesture-based navigation. Scroll is the only navigation model on mobile.
 - Add interaction animations (scope transitions, row expand, page load choreography)
 - Add `Escape` key handling and scope dismiss UX
 - Add stale-data indicators
+- Require a robust behavior-focused browser testing system as part of Phase 1 delivery
+
+#### Phase 1 Testing Requirement & Quality Bar
+
+Phase 1 is not complete without durable browser-level behavior coverage for the single-page dashboard.
+
+- Tests must prioritize high-value user-visible behavior (not low-value unit test sprawl)
+- The primary automated gate is behavior-focused browser testing against deterministic scenarios, with focused smoke coverage on the real dashboard surface
+- Coverage must include at minimum: load/error/retry states, scoped summary recomputation, goal-card blocked/stale signals, blocked-section visibility rules, search/filter/scope/reset semantics, one-row-at-a-time row expansion, keyboard flows, reduced-motion handling, and responsive mobile-table behavior
+- Tests must assert single-page constraints (in-place rendering, no routing, no URL-state navigation)
+- Any Phase 1 interaction change should add or update relevant browser tests in the same change set
+
+Manual browser QA remains required for visual hierarchy, motion quality, and leadership-readability polish.
 
 ### Phase 2: Light schema improvement
 
