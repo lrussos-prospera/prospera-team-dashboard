@@ -688,6 +688,22 @@ function populateTeamOptions() {
   }
 }
 
+function setSelectValueFromState(selectEl, value, onInvalid) {
+  if (!value) {
+    selectEl.value = '';
+    return;
+  }
+
+  const hasOption = [...selectEl.options].some((option) => option.value === value);
+  if (hasOption) {
+    selectEl.value = value;
+    return;
+  }
+
+  if (typeof onInvalid === 'function') onInvalid();
+  selectEl.value = '';
+}
+
 function populateFilterOptions() {
   const fill = (el, key) => {
     while (el.options.length > 1) el.remove(1);
@@ -720,7 +736,20 @@ function populateFilterOptions() {
     els.filterStatus.appendChild(option);
   });
 
+  setSelectValueFromState(els.filterDept, appState.view.filters.dept, () => {
+    appState.view.filters.dept = '';
+    appState.view.filters.team = '';
+  });
   populateTeamOptions();
+  setSelectValueFromState(els.filterPerson, appState.view.filters.person, () => {
+    appState.view.filters.person = '';
+  });
+  setSelectValueFromState(els.filterStatus, appState.view.filters.status, () => {
+    appState.view.filters.status = '';
+  });
+  setSelectValueFromState(els.filterGoal, appState.view.filters.goal, () => {
+    appState.view.filters.goal = '';
+  });
 }
 
 function renderApp() {

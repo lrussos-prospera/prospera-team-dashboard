@@ -190,6 +190,35 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="blocked-section"] .blocked-list')).toHaveCount(1);
   });
 
+  test('refresh restores visible non-search filter control values from active state', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'all-blocked');
+    await page.goto('/');
+
+    await page.locator('#filter-toggle').click();
+    await page.locator('#filter-dept').selectOption('Governance');
+    await page.locator('#filter-team').selectOption('Policy');
+    await page.locator('#filter-person').selectOption('Ana Cruz');
+    await page.locator('#filter-status').selectOption('blocked');
+    await page.locator('#filter-goal').selectOption('Legal Framework');
+
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
+    await expect(page.locator('#filter-badge')).toHaveText('5');
+    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
+
+    await page.locator('#refresh-btn').click();
+
+    await expect(page.locator('#filter-dept')).toHaveValue('Governance');
+    await expect(page.locator('#filter-team')).toHaveValue('Policy');
+    await expect(page.locator('#filter-person')).toHaveValue('Ana Cruz');
+    await expect(page.locator('#filter-status')).toHaveValue('blocked');
+    await expect(page.locator('#filter-goal')).toHaveValue('Legal Framework');
+    await expect(page.locator('#filter-badge')).toHaveText('5');
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
+    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
+  });
+
   test('table expansion keeps one expanded detail row at a time', async ({ page }) => {
     await mockSheetCsv(page, 'stale-data');
     await page.goto('/');
