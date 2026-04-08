@@ -1,0 +1,15 @@
+{
+  "featureId": "fix-reset-clears-department-scope-ui",
+  "reviewedAt": "2026-04-08T09:30:02.210731Z",
+  "commitId": "2bfbe10",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The fix correctly closes the remaining reset bug by clearing the scope indicator’s semantic state when scope is removed and by extending the regression test to assert the overview presentation no longer retains stale department-scope UI after department-scope + search + Reset. The surrounding reset path already clears underlying scope state, and this change brings the rendered accessibility/indicator state back into alignment with that underlying model.",
+    "issues": []
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Reviewed commit 2bfbe10, the worker handoff, transcript skeleton, and the touched runtime/test files. The implementation satisfies the feature intent and VAL-CROSS-002 expectations with no blocking or non-blocking code issues identified, and I did not find any shared-state gaps requiring updates to AGENTS.md, services.yaml, library docs, or the skill file."
+}
