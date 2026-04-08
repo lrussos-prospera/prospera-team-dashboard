@@ -366,7 +366,7 @@ function renderGoals(rows) {
     const div = document.createElement('button');
     const isScoped = appState.view.scopeGoal === activeGoalData.goal;
     const isScopable = activeGoalData.total > 0;
-    const isInteractive = isScoped || isScopable;
+    const isInteractive = isScopable;
     div.type = 'button';
     div.className = `goal-card ${isScopable && activeGoalData.pct < 25 ? 'status-low' : ''}${isScoped ? ' goal-card-active' : ''}${
       !isScopable ? ' goal-card-empty' : ''
