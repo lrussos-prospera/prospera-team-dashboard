@@ -1,0 +1,52 @@
+{
+  "milestone": "leadership-ui-followup",
+  "round": 1,
+  "status": "fail",
+  "validatorsRun": {
+    "test": {
+      "passed": true,
+      "command": "npx playwright test --workers=2 --pass-with-no-tests",
+      "exitCode": 0
+    },
+    "typecheck": {
+      "passed": true,
+      "command": "echo \"No separate typecheck for static JS app\"",
+      "exitCode": 0
+    },
+    "lint": {
+      "passed": true,
+      "command": "npx prettier --check index.html styles.css app.js",
+      "exitCode": 0
+    }
+  },
+  "reviewsSummary": {
+    "total": 5,
+    "passed": 3,
+    "failed": 2,
+    "failedFeatures": [
+      "unify-page-and-goal-freshness-semantics",
+      "align-canonical-blocked-status-surfaces-and-validation-scenarios"
+    ]
+  },
+  "blockingIssues": [
+    {
+      "featureId": "unify-page-and-goal-freshness-semantics",
+      "severity": "blocking",
+      "description": "app.js:775 still sets the header freshness badge from appState.rows while goal-card stale treatment renders from the active subset, so narrowed/scoped views can still show contradictory freshness semantics; the new test only covers overview state and misses that regression path."
+    },
+    {
+      "featureId": "align-canonical-blocked-status-surfaces-and-validation-scenarios",
+      "severity": "blocking",
+      "description": "tests/dashboard-state-seams.spec.js:207 adds mixed blocked-status coverage for goal scoping, but the required department-scope + search + reset path from VAL-CROSS-002 still uses the all-blocked fixture, so regressions that count generic At risk rows as blocked under department scoping can still slip through."
+    }
+  ],
+  "appliedUpdates": [],
+  "suggestedGuidanceUpdates": [],
+  "rejectedObservations": [
+    {
+      "observation": "The blocked-status reviewer noted that the worker handoff/transcript overstates VAL-CROSS-002 coverage because the mixed-fixture scenario covers goal scoping, not the contract's department-scope flow.",
+      "reason": "rejected as handoff-specific rather than durable shared-state guidance for services.yaml, library/, AGENTS.md, or skills"
+    }
+  ],
+  "previousRound": null
+}

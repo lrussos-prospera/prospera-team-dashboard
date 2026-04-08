@@ -1,0 +1,22 @@
+{
+  "featureId": "unify-page-and-goal-freshness-semantics",
+  "reviewedAt": "2026-04-08T08:06:41Z",
+  "commitId": "0be025b",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The fix improves overview freshness coherence by using goal-bucket ages, but it still computes the header badge from the full dataset instead of the active visible subset. Because goal cards render stale treatment from the narrowed rows while the header still uses all rows, scoped or filtered views can still show contradictory freshness semantics.",
+    "issues": [
+      {
+        "file": "app.js",
+        "line": 775,
+        "severity": "blocking",
+        "description": "`renderApp()` sets `appState.lifecycle.refreshedLabel = deriveRecencyLabel(appState.rows)`, while `renderGoals(viewRows)` derives stale markers from the active subset. In narrowed views this means hidden stale rows can keep the header on `Live · stale (...)` even when every visible goal card is current, so the page-level badge and per-goal stale treatment still do not derive from the same visible recency signals required by the feature. The new mixed-recency test only covers overview state and misses this regression path."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Reviewed the worker transcript skeleton, handoff, skill, mission guidance, and commit `0be025b`. The implementation partially fixes overview freshness semantics, but it leaves a blocking correctness gap in narrowed/scoped views because the header still uses all rows while visible goal cards use the active subset, so the assigned feature should not pass yet."
+}

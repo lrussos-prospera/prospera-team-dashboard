@@ -1,0 +1,28 @@
+{
+  "featureId": "align-canonical-blocked-status-surfaces-and-validation-scenarios",
+  "reviewedAt": "2026-04-08T08:07:05Z",
+  "commitId": "ab23a28",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The commit adds useful deterministic coverage for canonical blocked semantics in overview and goal-scoped flows, but it does not fully cover the feature’s required cross-area scoped/reset behavior. The newly added mixed blocked vs at-risk scenario never exercises the department-scope path required by VAL-CROSS-002, so the handoff overstates the validation now in place.",
+    "issues": [
+      {
+        "file": "tests/dashboard-state-seams.spec.js",
+        "line": 207,
+        "severity": "blocking",
+        "description": "The new canonical-blocked cross-area test scopes by goal card, not by department header, so it does not validate the required department-scope + search + reset path from VAL-CROSS-002 against mixed canonical Blocked and generic At risk rows. The only department-scope reset test still uses the all-blocked fixture at lines 184-202, which cannot catch regressions where department-scoped blocked surfaces accidentally include generic risk rows."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "The handoff and transcript claim the feature added deterministic coverage for VAL-CROSS-002, but the committed mixed-fixture scenario covers goal scoping rather than the contract’s department-scope flow. This could mislead later workers or validators who rely on handoff coverage summaries.",
+      "evidence": "Handoff coverage says: 'Added deterministic behavior coverage for VAL-BLOCKED-001, VAL-BLOCKED-002, VAL-OVERVIEW-003, VAL-CROSS-001, and VAL-CROSS-002 semantics.' However, tests/dashboard-state-seams.spec.js:207-235 uses [data-hook=\"goal-card\"] scoping, while the actual department-scope test remains at lines 184-202 and still uses the all-blocked fixture."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Reviewed the feature handoff, transcript skeleton, mission guidance, skill file, and commit ab23a28. The change successfully adds deterministic canonical blocked-status coverage for overview and goal-scope behavior, but it fails review because it does not add equivalent deterministic coverage for the required department-scope/search/reset flow, leaving VAL-CROSS-002 vulnerable to regressions that still treat generic At risk rows as blocked."
+}
