@@ -87,6 +87,25 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
   });
 
+  test('page freshness follows same stale basis as visible goal cards in mixed-recency overview', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'mixed-recency');
+    await page.goto('/');
+
+    const headerLabel = page.locator('#csv-date-label');
+    await expect(headerLabel).toContainText('stale');
+    await expect(headerLabel).not.toContainText('current');
+    await expect(headerLabel).not.toContainText('update date unavailable');
+
+    await expect(page.locator('[data-hook="goal-card"][data-goal="Compliance"]')).toContainText(
+      'Stale (> 7d)'
+    );
+    await expect(
+      page.locator('[data-hook="goal-card"][data-goal="Operations"] [data-hook="goal-stale"]')
+    ).toHaveCount(0);
+  });
+
   test('department filter cascades team options and combined filters apply conjunctively', async ({
     page,
   }) => {

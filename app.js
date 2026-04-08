@@ -214,6 +214,7 @@ function deriveGoalBuckets(rows) {
         pct,
         blockedOwners: [...value.blockedOwners].sort(),
         stale: latestAgeDays > DATE_STALE_THRESHOLD_DAYS,
+        latestAgeDays,
       };
     });
 }
@@ -223,22 +224,24 @@ function deriveBlockedRows(rows) {
 }
 
 function deriveRecencyLabel(rows) {
-  const validDates = rows
-    .map((r) => r._date)
-    .filter(Boolean)
-    .sort((a, b) => b - a);
-  const latestDate = validDates[0] || null;
-  const ageDays = daysSince(latestDate);
+  const goalBuckets = deriveGoalBuckets(rows);
+  const validGoalAges = goalBuckets
+    .map((bucket) => bucket.latestAgeDays)
+    .filter((ageDays) => Number.isFinite(ageDays));
 
-  if (!latestDate) {
+  if (!validGoalAges.length) {
     return 'Live · update date unavailable';
   }
 
-  if (ageDays > DATE_STALE_THRESHOLD_DAYS) {
-    return `Live · stale (${ageDays}d old)`;
+  const hasStaleGoal = validGoalAges.some((ageDays) => ageDays > DATE_STALE_THRESHOLD_DAYS);
+
+  if (hasStaleGoal) {
+    const stalestAgeDays = Math.max(...validGoalAges);
+    return `Live · stale (${stalestAgeDays}d old)`;
   }
 
-  return `Live · current (${ageDays}d old)`;
+  const freshestAgeDays = Math.min(...validGoalAges);
+  return `Live · current (${freshestAgeDays}d old)`;
 }
 
 function isNarrowedViewActive() {
