@@ -1,0 +1,26 @@
+{
+  "featureId": "canonicalize-live-smoke-hardening",
+  "reviewedAt": "2026-04-08T03:29:15Z",
+  "commitId": "1163eb64db8d99ec6b8edf06010e5c9c6b476394",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The fix feature fully folds the previously proven live-sheet smoke hardening into the canonical harness. Compared with the original failed feature commit b1b64b0, the updated harness now uses the later stable pattern from d3efe66: a 25s loaded-or-explicit-error terminal-state wait and one controlled reload fallback before failing, while preserving the same live-surface assertion and leaving deterministic fixture coverage unchanged.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The static-dashboard-worker skill still requires manual browser verification and the TDD flow still assumes an interactive confirmation loop, but both reviewed workers had to deviate because mission Exec mode is non-interactive. This mismatch continues to generate avoidable procedure deviations even for straightforward harness-test fixes.",
+      "evidence": "Both handoffs (`stabilize-live-dashboard-baseline-smoke-test` session 139ae88b-2334-4251-9bd2-36a936cb3c06 and `canonicalize-live-smoke-hardening` session 502e1bc2-d35b-4d0a-93c2-74eb5dffcfaf) set `skillFeedback.followedProcedure=false` and explicitly cite the TDD confirmation step as incompatible with non-interactive Exec-mode worker runs; `.factory/skills/static-dashboard-worker/SKILL.md` step 4 requires TDD and step 8 requires manual browser verification."
+    },
+    {
+      "area": "knowledge",
+      "observation": "The proven live-smoke hardening pattern originally landed in a misc follow-up commit and then had to be recopied into the canonical harness later. Shared mission knowledge did not capture that this 25s-plus-one-reload behavior had become the reliable baseline expectation for startup smoke coverage.",
+      "evidence": "Prior review `stabilize-live-dashboard-baseline-smoke-test.json` documents that b1b64b0's 20s single-window poll was still flaky; later commit d3efe66 introduced the 25s timeout plus one controlled reload fallback; fix commit 1163eb6 then ports that exact pattern into `tests/dashboard-harness.spec.js:53-98`."
+    }
+  ],
+  "addressesFailureFrom": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/foundation/scrutiny/reviews/stabilize-live-dashboard-baseline-smoke-test.json",
+  "summary": "Pass: the rerun fix adequately resolves the original smoke-test reliability failure. The canonical harness now matches the later proven hardening by waiting 25 seconds for a loaded-or-explicit-error terminal state and retrying once via controlled reload, which closes the specific 20-second/no-reload flake called out in the prior failed review without weakening live-surface coverage."
+}

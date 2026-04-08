@@ -1,11 +1,11 @@
 {
   "milestone": "foundation",
-  "round": 1,
-  "status": "fail",
+  "round": 2,
+  "status": "pass",
   "validatorsRun": {
     "test": {
       "passed": true,
-      "command": "python3 -m http.server 3100 --directory \"/Users/treygoff/Code/prospera-team-dashboard\" >/tmp/prospera-foundation-web.log 2>&1 & SERVER_PID=$!; sleep 2; curl -sf http://127.0.0.1:3100 >/dev/null && npx playwright test --workers=2 --pass-with-no-tests; TEST_EXIT=$?; kill $SERVER_PID; wait $SERVER_PID 2>/dev/null; exit $TEST_EXIT",
+      "command": "npx playwright test --workers=2 --pass-with-no-tests",
       "exitCode": 0
     },
     "typecheck": {
@@ -20,63 +20,26 @@
     }
   },
   "reviewsSummary": {
-    "total": 5,
-    "passed": 2,
-    "failed": 3,
-    "failedFeatures": [
-      "add-browser-test-harness",
-      "stabilize-live-dashboard-baseline-smoke-test",
-      "refactor-dashboard-state-and-render-seams"
-    ]
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "failedFeatures": []
   },
-  "blockingIssues": [
-    {
-      "featureId": "add-browser-test-harness",
-      "severity": "blocking",
-      "description": "playwright.config.js hard-codes /Users/treygoff/Code/prospera-team-dashboard as the served directory, so the browser-test harness is not portable to other local clones or CI workspaces."
-    },
-    {
-      "featureId": "stabilize-live-dashboard-baseline-smoke-test",
-      "severity": "blocking",
-      "description": "tests/dashboard-harness.spec.js still left the live Google Sheets smoke test flaky enough to require later hardening (longer timeout plus one controlled reload fallback), so the feature did not actually make commands.test reliable during worker startup."
-    },
-    {
-      "featureId": "refactor-dashboard-state-and-render-seams",
-      "severity": "blocking",
-      "description": "app.js renders goal cards from the already narrowed active subset, so scoped or filtered states drop unrelated goals entirely instead of preserving the required four-goal overview framing with empty-goal treatment."
-    },
-    {
-      "featureId": "refactor-dashboard-state-and-render-seams",
-      "severity": "blocking",
-      "description": "Because goal cards only exist for goals with rows in the active subset, the implementation never produces the required rendered-but-not-scopable empty-goal state when narrowing removes a goal's rows."
-    }
-  ],
-  "appliedUpdates": [
-    {
-      "target": "library",
-      "description": "Documented that installing @playwright/test does not install browser binaries and local validation may require `npx playwright install chromium`.",
-      "sourceFeature": "add-browser-test-harness"
-    },
-    {
-      "target": "library",
-      "description": "Documented that the live Google Sheets smoke path can settle slowly enough to need extended waits or one controlled reload before concluding failure.",
-      "sourceFeature": "stabilize-live-dashboard-baseline-smoke-test"
-    }
-  ],
+  "blockingIssues": [],
+  "appliedUpdates": [],
   "suggestedGuidanceUpdates": [
     {
-      "target": "skill: tdd",
-      "suggestion": "Add an explicit non-interactive mission-worker branch so the skill does not assume it can pause for user confirmation before proposing or refining tests.",
-      "evidence": "The reviewer for stabilize-live-dashboard-baseline-smoke-test found that the worker had to deviate because the TDD skill expected interactive confirmation, which is incompatible with Exec-mode mission workers.",
+      "target": "skill: tdd / static-dashboard-worker",
+      "suggestion": "Clarify Exec-mode handling so mission workers are not treated as procedural deviations when TDD or validation steps assume user confirmation or manual browser verification that non-interactive workers cannot perform.",
+      "evidence": "The rerun review for canonicalize-live-smoke-hardening and the fix review for refactor-dashboard-state-and-render-seams both cite handoffs where workers marked followedProcedure=false because the TDD confirmation loop and related manual-verification expectations do not fit non-interactive Exec-mode runs.",
       "isSystemic": true
-    },
-    {
-      "target": "skill: static-dashboard-worker",
-      "suggestion": "Clarify or tighten how workers report compliance with the browser-tests-first step, because the reviewed refactor feature performed substantial runtime edits before adding its new Playwright file while still marking followedProcedure=true.",
-      "evidence": "The reviewer for refactor-dashboard-state-and-render-seams traced runtime edits to index.html, app.js, and styles.css before the worker created tests/dashboard-state-seams.spec.js, indicating the current rubric does not reliably catch this deviation.",
-      "isSystemic": false
     }
   ],
-  "rejectedObservations": [],
-  "previousRound": null
+  "rejectedObservations": [
+    {
+      "observation": "Document the 25s-plus-one-reload live-smoke hardening pattern as shared mission knowledge.",
+      "reason": "already-documented in .factory/library/user-testing.md"
+    }
+  ],
+  "previousRound": ".factory/validation/foundation/scrutiny/synthesis.json@round1"
 }

@@ -1,0 +1,21 @@
+{
+  "featureId": "refactor-dashboard-state-and-render-seams-fix-review",
+  "reviewedAt": "2026-04-08T00:00:00Z",
+  "commitId": "2ad31808f57955ff6ed75370d374de90ad93f8fb",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Reviewed the original failed feature plus both follow-up fix commits. The first fix changes goal-card rendering to derive the visible frame from the full dataset while sourcing per-card metrics from the active narrowed subset, which restores persistent overview framing and renders zero-row goals with explicit empty/non-scopable treatment. The second fix removes the remaining special-case interactivity for scoped empty cards, so a goal that narrows to zero rows becomes non-interactive while scope dismissal still works through dedicated controls. I did not find a residual correctness gap in the original two failures.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The worker for the second fix reported a justified deviation from the tdd skill because the skill expected a user-approval planning step that is incompatible with non-interactive Exec Mode. The handoff already suggests updating the skill to explicitly allow implicit approval in Exec Mode.",
+      "evidence": "worker-transcripts.jsonl entry for 03bfb970-6a2c-428a-a082-c7f2c84fd8a4 and handoff 2026-04-08T02-59-57-168Z__fix-empty-goal-card-interactivity-after-narrowing__03bfb970-6a2c-428a-a082-c7f2c84fd8a4.json show skillFeedback.followedProcedure=false with suggestedChanges requesting an Exec-mode note for the tdd skill."
+    }
+  ],
+  "addressesFailureFrom": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/foundation/scrutiny/reviews/refactor-dashboard-state-and-render-seams.json",
+  "summary": "Pass: both original goal-card regressions from refactor-dashboard-state-and-render-seams are resolved. app.js now preserves the full goal-card frame under narrowing by iterating the full-set goal buckets while rendering zero-row cards as empty/non-scopable (app.js:347-404), and the later fix makes even previously scoped zero-row cards non-interactive by gating interactivity solely on active rows (app.js:366-378). Updated browser coverage exercises both the full-frame empty-card state and the scoped-then-narrowed-to-zero regression path with control-based scope dismissal (tests/dashboard-state-seams.spec.js:40-85)."
+}

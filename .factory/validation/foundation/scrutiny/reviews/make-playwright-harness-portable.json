@@ -1,0 +1,15 @@
+{
+  "featureId": "make-playwright-harness-portable",
+  "reviewedAt": "2026-04-08T03:29:31.151257Z",
+  "commitId": "2bcb4125b438cc1f4af62e1346086f1e6c5d3167",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The fix fully addresses the original blocking portability defect. The original harness hard-coded `/Users/treygoff/Code/prospera-team-dashboard` in `playwright.config.js`, which made `npx playwright test` dependent on one specific checkout path. The fix replaces that with dynamically derived paths: `playwright.config.js` now serves `path.resolve(__dirname)`, `.factory/init.sh` resolves the repo root relative to the script location, and `.factory/services.yaml` serves `$(git rev-parse --show-toplevel)`. Together these changes remove the machine-specific path assumption while preserving the existing port-3100 startup model and harness behavior.",
+    "issues": []
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/foundation/scrutiny/reviews/add-browser-test-harness.json",
+  "summary": "Review passed. I examined the prior failed review, both feature metadata records, both worker transcript skeletons, both handoffs, and both diffs. The original blocking failure was the absolute path embedded in `playwright.config.js`; the fix removes that hard-coded path and updates the related harness setup to derive paths from the current checkout or git worktree instead. No remaining hard-coded `/Users/treygoff/Code/prospera-team-dashboard` references were present in the harness-related files, so the portability failure is fully resolved. Report written to .factory/validation/foundation/scrutiny/reviews/make-playwright-harness-portable.json."
+}
