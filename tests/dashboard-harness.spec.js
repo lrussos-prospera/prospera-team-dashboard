@@ -21,6 +21,28 @@ test.describe('dashboard browser harness fixtures', () => {
     await expect(page.locator('#blocked-section .blocked-item')).toHaveCount(3);
   });
 
+  test('canonical-blocked fixture excludes generic at-risk rows from blocked surfaces', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'canonical-blocked-mixed');
+
+    await page.goto('/');
+
+    await expect(page.locator('#state-box')).toBeHidden();
+    await expect(page.locator('#summary [data-hook="summary-total"] .hero-stat-value')).toHaveText(
+      '4'
+    );
+    await expect(
+      page.locator('#summary [data-hook="summary-blocked"] .hero-stat-value')
+    ).toHaveText('2');
+    await expect(page.locator('#blocked-section')).toBeVisible();
+    await expect(page.locator('#blocked-section .blocked-item')).toHaveCount(2);
+    await expect(page.locator('#blocked-section')).toContainText('Ana Cruz');
+    await expect(page.locator('#blocked-section')).toContainText('Mia Park');
+    await expect(page.locator('#blocked-section')).not.toContainText('Leo Tan');
+    await expect(page.locator('#blocked-section')).not.toContainText('Zoe Klein');
+  });
+
   test('empty-goals fixture is deterministic and maps blanks into No Goal card', async ({
     page,
   }) => {

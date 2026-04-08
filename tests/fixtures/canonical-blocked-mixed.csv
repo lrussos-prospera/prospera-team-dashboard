@@ -1,0 +1,5 @@
+Department,Team,Responsible,Topic,Status,Goal,Added/updated,Details,Notes
+Governance,Policy,Ana Cruz,Tax-signoff blocker,Blocked,Legal Framework,2026-03-20,Waiting on legal review,
+Governance,Policy,Leo Tan,Permit risk watch,At risk,Legal Framework,2026-03-19,Monitor weekly,
+Operations,Infrastructure,Mia Park,Grid handoff stalled,Blocked,Infrastructure,2026-03-21,Vendor dependency,
+Operations,Infrastructure,Zoe Klein,Timeline pressure,At risk,Infrastructure,2026-03-18,Coordinate handoff,

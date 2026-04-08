@@ -16,6 +16,25 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(3);
   });
 
+  test('goal cards and blocked section count only canonical blocked status, not generic at-risk labels', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'canonical-blocked-mixed');
+    await page.goto('/');
+
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('4');
+    await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('2');
+    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(2);
+
+    const legalGoal = page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]');
+    await expect(legalGoal).toContainText('Blocked: Ana Cruz');
+    await expect(legalGoal).not.toContainText('Leo Tan');
+
+    const infraGoal = page.locator('[data-hook="goal-card"][data-goal="Infrastructure"]');
+    await expect(infraGoal).toContainText('Blocked: Mia Park');
+    await expect(infraGoal).not.toContainText('Zoe Klein');
+  });
+
   test('goal scope updates summary, blocked section, and table together with a visible dismissible scope indicator', async ({
     page,
   }) => {
@@ -183,6 +202,39 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('3');
     await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(3);
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(3);
+  });
+
+  test('cross-area scope plus search plus reset keeps blocked surfaces tied to canonical blocked rows', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'canonical-blocked-mixed');
+    await page.goto('/');
+
+    await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('2');
+    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(2);
+
+    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('2');
+    await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('1');
+    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(1);
+    await expect(page.locator('[data-hook="blocked-section"]')).toContainText('Ana Cruz');
+    await expect(page.locator('[data-hook="blocked-section"]')).not.toContainText('Leo Tan');
+
+    await page.locator('#filter-toggle').click();
+    await page.locator('#search').fill('risk watch');
+
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
+    await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('0');
+    await expect(page.locator('[data-hook="blocked-section"]')).toBeHidden();
+    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
+
+    await page.locator('#reset-btn').click();
+
+    await expect(page.locator('#search')).toHaveValue('');
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('4');
+    await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('2');
+    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(2);
   });
 
   test('refresh preserves coherent narrowed state without duplicate blocked surface', async ({
