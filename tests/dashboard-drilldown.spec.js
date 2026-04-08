@@ -78,3 +78,111 @@ test.describe('goal drilldown view', () => {
     await expect(page.locator('[data-hook="drilldown-row"]')).toContainText('Ana Cruz');
   });
 });
+
+test.describe('department drilldown view', () => {
+  test('shows filtered summary and table for the department', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/department/Governance');
+
+    await expect(page.locator('.drilldown-title')).toHaveText('Governance');
+    await expect(page.locator('[data-hook="drilldown-row"]')).toHaveCount(3);
+  });
+
+  test('hero zone shows per-team breakdown', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/department/Governance');
+
+    const teams = page.locator('[data-hook="drilldown-teams"] .drilldown-team-card');
+    await expect(teams).toHaveCount(2);
+  });
+
+  test('hero zone shows per-person rows with links', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/department/Governance');
+
+    const people = page.locator('[data-hook="drilldown-people"] .drilldown-person-link');
+    await expect(people).toHaveCount(2);
+    await expect(people.first()).toContainText('Ana Cruz');
+  });
+
+  test('clicking person name navigates to employee drilldown', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/department/Governance');
+
+    await page.locator('[data-hook="drilldown-people"] .drilldown-person-link').first().click();
+    await expect(page.locator('.drilldown-title')).toHaveText('Ana Cruz');
+  });
+
+  test('invalid department redirects to overview', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/department/Nonexistent');
+
+    await expect(page.locator('[data-hook="summary"]')).toBeVisible();
+  });
+
+  test('contextual team filter narrows table', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/department/Governance?team=Policy');
+
+    await expect(page.locator('[data-hook="drilldown-row"]')).toHaveCount(2);
+  });
+});
+
+test.describe('employee drilldown view', () => {
+  test('shows filtered summary and table for the person', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/employee/Ana+Cruz');
+
+    await expect(page.locator('.drilldown-title')).toHaveText('Ana Cruz');
+    await expect(page.locator('[data-hook="drilldown-row"]')).toHaveCount(2);
+  });
+
+  test('hero zone shows department and team context', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/employee/Ana+Cruz');
+
+    await expect(page.locator('.drilldown-subtitle')).toContainText('Governance');
+  });
+
+  test('hero zone shows goal distribution with links', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/employee/Ana+Cruz');
+
+    const goals = page.locator('[data-hook="drilldown-goals"] .drilldown-chip');
+    await expect(goals).toHaveCount(2);
+  });
+
+  test('breadcrumb includes department level', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/employee/Ana+Cruz');
+
+    const crumbs = page.locator('.drilldown-breadcrumb-list li');
+    await expect(crumbs).toHaveCount(3);
+    await expect(crumbs.nth(0)).toContainText('Overview');
+    await expect(crumbs.nth(1)).toContainText('Governance');
+    await expect(crumbs.nth(2)).toContainText('Ana Cruz');
+  });
+
+  test('clicking department in breadcrumb navigates to department drilldown', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/employee/Ana+Cruz');
+
+    await page.locator('.drilldown-breadcrumb-list a').nth(1).click();
+    // Navigates to department drilldown
+    await expect(page.locator('.drilldown-title')).toHaveText('Governance');
+  });
+
+  test('invalid person redirects to overview', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/employee/Nobody');
+
+    await expect(page.locator('[data-hook="summary"]')).toBeVisible();
+  });
+
+  test('contextual status filter narrows table', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/employee/Ana+Cruz?status=blocked');
+
+    await expect(page.locator('[data-hook="drilldown-row"]')).toHaveCount(1);
+  });
+});

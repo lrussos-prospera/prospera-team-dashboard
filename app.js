@@ -1261,13 +1261,246 @@ function renderDrilldownView() {
 }
 
 function renderDepartmentDrilldown(deptName, filters) {
-  // Stub — implemented in Task 5
-  navigateTo('overview');
+  const allDeptRows = appState.rows.filter((row) => (row['Department'] || 'Other') === deptName);
+
+  if (!allDeptRows.length) {
+    navigateTo('overview');
+    return;
+  }
+
+  const filteredRows = applyDrilldownFilters(allDeptRows, filters);
+  const summary = deriveSummary(allDeptRows);
+
+  // Breadcrumb
+  renderBreadcrumb([{ label: 'Overview', hash: '#/' }, { label: deptName }]);
+
+  // Header
+  const teams = [...new Set(allDeptRows.map((r) => r['Team']).filter(Boolean))];
+  const people = [...new Set(allDeptRows.map((r) => r['Responsible']).filter(Boolean))];
+  elements.drilldownTitle.textContent = deptName;
+  elements.drilldownSubtitle.textContent = `${teams.length} team${teams.length !== 1 ? 's' : ''} · ${people.length} people · ${allDeptRows.length} updates`;
+
+  // Hero — per-team breakdown
+  const teamStats = {};
+  allDeptRows.forEach((row) => {
+    const team = row['Team'] || 'Unassigned';
+    if (!teamStats[team]) teamStats[team] = { total: 0, done: 0, blocked: 0 };
+    teamStats[team].total++;
+    if (row._status === 'done') teamStats[team].done++;
+    if (row._status === 'blocked') teamStats[team].blocked++;
+  });
+
+  const teamGrid =
+    teams.length > 1
+      ? `<div class="drilldown-section">
+        <div class="drilldown-section-label">Teams</div>
+        <div class="drilldown-team-grid" data-hook="drilldown-teams">
+          ${Object.entries(teamStats)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([team, stats]) => {
+              const pct = stats.total ? Math.round((stats.done / stats.total) * 100) : 0;
+              const blockedBadge =
+                stats.blocked > 0
+                  ? `<span class="drilldown-team-blocked">${stats.blocked} blocked</span>`
+                  : '';
+              return `<div class="drilldown-team-card">
+              <div class="drilldown-team-name">${escapeHtml(team)}</div>
+              <div class="drilldown-team-meta">${stats.total} items · ${pct}% done ${blockedBadge}</div>
+            </div>`;
+            })
+            .join('')}
+        </div>
+      </div>`
+      : '';
+
+  // Per-person list
+  const personStats = {};
+  allDeptRows.forEach((row) => {
+    const person = row['Responsible'] || 'Unknown';
+    if (!personStats[person]) personStats[person] = { total: 0, done: 0, doing: 0, blocked: 0 };
+    personStats[person].total++;
+    if (row._status === 'done') personStats[person].done++;
+    if (row._status === 'doing') personStats[person].doing++;
+    if (row._status === 'blocked') personStats[person].blocked++;
+  });
+
+  const personList = `<div class="drilldown-section" data-hook="drilldown-people">
+    <div class="drilldown-section-label">People</div>
+    <div class="drilldown-person-list">
+      ${Object.entries(personStats)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([person, stats]) => {
+          const pct = stats.total ? Math.round((stats.done / stats.total) * 100) : 0;
+          return `<div class="drilldown-person-row">
+          <a href="${escapeHtml(buildHash('employee', person))}" class="drilldown-person-link">${escapeHtml(person)}</a>
+          <span class="drilldown-person-meta">${stats.total} items · ${pct}% done${stats.blocked ? ` · ${stats.blocked} blocked` : ''}</span>
+        </div>`;
+        })
+        .join('')}
+    </div>
+  </div>`;
+
+  elements.drilldownHero.innerHTML = `
+    <div class="drilldown-hero-card">
+      ${renderDrilldownSummaryStats(summary)}
+      ${teamGrid}
+      ${personList}
+    </div>
+  `;
+
+  // Filters
+  const uniqueTeams = [...new Set(allDeptRows.map((r) => r['Team']).filter(Boolean))].sort();
+  const uniquePersons = [
+    ...new Set(allDeptRows.map((r) => r['Responsible']).filter(Boolean)),
+  ].sort();
+
+  renderDrilldownFilters([
+    { key: 'status', label: 'Status', options: ['done', 'doing', 'blocked'] },
+    { key: 'team', label: 'Team', options: uniqueTeams },
+    { key: 'person', label: 'Person', options: uniquePersons },
+    { key: 'search' },
+  ]);
+
+  // Table
+  renderDrilldownTable(filteredRows);
 }
 
 function renderEmployeeDrilldown(personName, filters) {
-  // Stub — implemented in Task 6
-  navigateTo('overview');
+  const allPersonRows = appState.rows.filter((row) => row['Responsible'] === personName);
+
+  if (!allPersonRows.length) {
+    navigateTo('overview');
+    return;
+  }
+
+  const filteredRows = applyDrilldownFilters(allPersonRows, filters);
+  const summary = deriveSummary(allPersonRows);
+
+  // Derive department (most common)
+  const deptCounts = {};
+  allPersonRows.forEach((row) => {
+    const dept = row['Department'] || 'Other';
+    deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+  });
+  const primaryDept = Object.entries(deptCounts).sort((a, b) => b[1] - a[1])[0][0];
+  const team = allPersonRows[0]['Team'] || '';
+
+  // Breadcrumb: Overview > Department > Person
+  renderBreadcrumb([
+    { label: 'Overview', hash: '#/' },
+    { label: primaryDept, hash: buildHash('department', primaryDept) },
+    { label: personName },
+  ]);
+
+  // Header
+  elements.drilldownTitle.textContent = personName;
+  elements.drilldownSubtitle.textContent = `${primaryDept}${team ? ' · ' + team : ''}`;
+
+  // Goal distribution
+  const goalCounts = {};
+  allPersonRows.forEach((row) => {
+    const goal = row['Goal'] || 'No Goal';
+    goalCounts[goal] = (goalCounts[goal] || 0) + 1;
+  });
+
+  const goalChips = Object.entries(goalCounts)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(
+      ([goal, count]) =>
+        `<a href="${escapeHtml(buildHash('goal', goal))}" class="drilldown-chip">${escapeHtml(goal)} <span class="drilldown-chip-count">${count}</span></a>`
+    )
+    .join('');
+
+  // Staleness
+  const dates = allPersonRows.map((r) => r._date).filter(Boolean);
+  const mostRecent = dates.length ? new Date(Math.max(...dates.map((d) => d.getTime()))) : null;
+  const daysAgo = daysSince(mostRecent);
+  const stalenessText = Number.isFinite(daysAgo)
+    ? `Last updated ${daysAgo} day${daysAgo !== 1 ? 's' : ''} ago`
+    : 'Update date unavailable';
+
+  elements.drilldownHero.innerHTML = `
+    <div class="drilldown-hero-card">
+      ${renderDrilldownSummaryStats(summary)}
+      <div class="drilldown-section" data-hook="drilldown-goals">
+        <div class="drilldown-section-label">Goals</div>
+        <div class="drilldown-chips">${goalChips}</div>
+      </div>
+      <div class="drilldown-staleness" data-hook="drilldown-staleness">${stalenessText}</div>
+    </div>
+  `;
+
+  // Filters (minimal for employee)
+  renderDrilldownFilters([
+    { key: 'status', label: 'Status', options: ['done', 'doing', 'blocked'] },
+    { key: 'search' },
+  ]);
+
+  // Table — replace Responsible column with Department column
+  elements.drilldownTableBody.innerHTML = '';
+
+  if (!filteredRows.length) {
+    elements.drilldownTableBody.innerHTML =
+      '<tr><td colspan="5" class="empty">No updates match the current filters.</td></tr>';
+    elements.drilldownResultCount.textContent = 'No matching updates';
+    return;
+  }
+
+  elements.drilldownResultCount.textContent = `Showing ${filteredRows.length} update${filteredRows.length !== 1 ? 's' : ''}`;
+
+  filteredRows.forEach((row, index) => {
+    const rowKey = `emp-${index}`;
+    const isExpanded = appState.view.expandedRowKey === rowKey;
+
+    const summaryRow = document.createElement('tr');
+    summaryRow.tabIndex = 0;
+    summaryRow.setAttribute('role', 'button');
+    summaryRow.setAttribute('aria-expanded', String(isExpanded));
+    summaryRow.setAttribute('data-hook', 'drilldown-row');
+    summaryRow.setAttribute('data-row-key', rowKey);
+    summaryRow.innerHTML = `
+      <td class="td-person"><span class="expand-icon" aria-hidden="true">›</span>${escapeHtml(row['Department'] || '')}</td>
+      <td class="td-topic">${escapeHtml(row['Topic'])}</td>
+      <td>${badge(row.Status, row._status)}</td>
+      <td class="td-goal">${escapeHtml(row['Goal'])}</td>
+      <td class="td-date">${escapeHtml(row['Added/updated'])}</td>
+    `;
+
+    const detailRow = document.createElement('tr');
+    detailRow.className = `expand-row${isExpanded ? ' expand-row-open' : ''}`;
+    detailRow.id = `details-${rowKey}`;
+    detailRow.innerHTML = `
+      <td colspan="5">
+        <div class="expand-wrapper">
+          <div class="expand-inner">
+            <div class="expand-content">
+              <div class="expand-grid">
+                ${row['Team'] ? `<div class="expand-item"><span class="expand-label">Team</span><div class="expand-field">${escapeHtml(row['Team'])}</div></div>` : ''}
+                ${row['Details'] ? `<div class="expand-item"><span class="expand-label">Details</span><div class="expand-field">${escapeHtml(row['Details'])}</div></div>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+    `;
+
+    const onToggle = () => {
+      const isCurrentlyExpanded = appState.view.expandedRowKey === rowKey;
+      appState.view.expandedRowKey = isCurrentlyExpanded ? null : rowKey;
+      detailRow.classList.toggle('expand-row-open', !isCurrentlyExpanded);
+      summaryRow.setAttribute('aria-expanded', String(!isCurrentlyExpanded));
+    };
+    summaryRow.addEventListener('click', onToggle);
+    summaryRow.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onToggle();
+      }
+    });
+
+    elements.drilldownTableBody.appendChild(summaryRow);
+    elements.drilldownTableBody.appendChild(detailRow);
+  });
 }
 
 function renderApp() {

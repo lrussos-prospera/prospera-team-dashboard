@@ -1378,6 +1378,73 @@ header :focus-visible {
   color: var(--color-text-secondary);
 }
 
+/* Department drilldown */
+.drilldown-team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+}
+
+.drilldown-team-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+}
+
+.drilldown-team-name {
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--brand-navy);
+  margin-bottom: var(--space-xs);
+}
+
+.drilldown-team-meta {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.drilldown-team-blocked {
+  color: var(--brand-red);
+  font-weight: 800;
+}
+
+.drilldown-person-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.drilldown-person-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.drilldown-person-row:last-child {
+  border-bottom: none;
+}
+
+.drilldown-person-meta {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+/* Employee drilldown */
+.drilldown-staleness {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border-light);
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1517,6 +1584,10 @@ header :focus-visible {
 
   .drilldown-hero-card {
     padding: var(--space-xl);
+  }
+
+  .drilldown-team-grid {
+    grid-template-columns: 1fr;
   }
 }
 
