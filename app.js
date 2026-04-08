@@ -46,6 +46,8 @@ const elements = {
   goalsSection: document.getElementById('goals-section'),
   goalsGrid: document.getElementById('goals-grid'),
   blockedSection: document.getElementById('blocked-section'),
+  recentActivity: document.getElementById('recent-activity'),
+  recentActivityList: document.getElementById('recent-activity-list'),
   controls: document.getElementById('controls'),
   resultCount: document.getElementById('result-count'),
   scopedSummary: document.getElementById('scoped-summary'),
@@ -393,6 +395,7 @@ function syncVisibility(isLoaded) {
   elements.tableWrap.style.display = display;
   if (!isLoaded) {
     elements.blockedSection.style.display = 'none';
+    elements.recentActivity.style.display = 'none';
     elements.scopedSummary.style.display = 'none';
     elements.deptStrip.style.display = 'none';
     elements.drilldownView.style.display = 'none';
@@ -409,6 +412,7 @@ function syncVisibility(isLoaded) {
     elements.resultCount.style.display = 'none';
     elements.tableWrap.style.display = 'none';
     elements.blockedSection.style.display = 'none';
+    elements.recentActivity.style.display = 'none';
     elements.scopedSummary.style.display = 'none';
   }
 }
@@ -631,6 +635,36 @@ function renderBlocked(rows) {
         .join('')}
     </div>
   `;
+}
+
+function renderRecentActivity(rows) {
+  const dated = rows
+    .filter((row) => row._date)
+    .sort((a, b) => b._date - a._date)
+    .slice(0, 5);
+
+  if (!dated.length) {
+    elements.recentActivity.style.display = 'none';
+    return;
+  }
+
+  elements.recentActivity.style.display = '';
+  elements.recentActivityList.innerHTML = dated
+    .map((row) => {
+      const dateStr = row['Added/updated'] || '';
+      return `<div class="activity-item" data-hook="activity-item">
+      <div class="activity-date">${escapeHtml(dateStr)}</div>
+      <div class="activity-body">
+        <div class="activity-header">
+          <a href="${escapeHtml(buildHash('employee', row['Responsible']))}" class="activity-person" data-hook="activity-person-link">${escapeHtml(row['Responsible'])}</a>
+          ${badge(row.Status, row._status)}
+        </div>
+        <div class="activity-topic">${escapeHtml(row['Topic'])}</div>
+        <div class="activity-meta">${escapeHtml(row['Goal'] || '')}${row['Goal'] && row['Department'] ? ' · ' : ''}${escapeHtml(row['Department'] || '')}</div>
+      </div>
+    </div>`;
+    })
+    .join('');
 }
 
 function renderScopedSummary(viewRows) {
@@ -1562,6 +1596,7 @@ function renderApp() {
   renderGoals(viewRows);
   renderDepartmentStrip(viewRows);
   renderBlocked(viewRows);
+  renderRecentActivity(viewRows);
   renderScopedSummary(viewRows);
 
   if (appState._tableRenderedOnce) {
@@ -1586,6 +1621,7 @@ const REVEAL_TARGETS = [
   { key: 'goalsSection', delay: 200 },
   { key: 'deptStrip', delay: 350 },
   { key: 'blockedSection', delay: 500 },
+  { key: 'recentActivity', delay: 550 },
   { key: 'controls', delay: 650 },
   { key: 'tableWrap', delay: 650 },
   { key: 'resultCount', delay: 650 },

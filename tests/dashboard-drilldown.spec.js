@@ -223,3 +223,40 @@ test.describe('overview navigation to drilldowns', () => {
     await expect(page.locator('.drilldown-title')).toBeVisible();
   });
 });
+
+test.describe('recent activity section', () => {
+  test('shows 5 most recent items sorted by date descending', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/');
+
+    await expect(page.locator('[data-hook="recent-activity"]')).toBeVisible();
+    const items = page.locator('[data-hook="activity-item"]');
+    await expect(items).toHaveCount(5);
+  });
+
+  test('person names are clickable to employee drilldown', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/');
+
+    await page.locator('[data-hook="activity-person-link"]').first().click();
+    await expect(page.locator('.drilldown-title')).toBeVisible();
+  });
+
+  test('hidden on drilldown views', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/goal/Legal+Framework');
+
+    await expect(page.locator('[data-hook="recent-activity"]')).toBeHidden();
+  });
+
+  test('respects active filters', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/');
+
+    await page.locator('#filter-toggle').click();
+    await page.locator('#filter-status').selectOption('blocked');
+
+    const items = page.locator('[data-hook="activity-item"]');
+    await expect(items).toHaveCount(2);
+  });
+});
