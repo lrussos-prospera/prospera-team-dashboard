@@ -124,11 +124,10 @@ header {
 }
 /* Typography hierarchies */
 h1 {
-  font-family: var(--font-body);
+  font-family: var(--font-display);
   font-size: 1.5rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: white;
 }
 .subtitle {
@@ -215,7 +214,7 @@ h1 {
 main {
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 28px 24px;
+  padding: 32px 24px;
 }
 
 .state-box {
@@ -251,7 +250,7 @@ main {
 }
 
 .summary-grid {
-  margin-bottom: 28px;
+  margin-bottom: 40px;
 }
 
 .hero-zone {
@@ -289,7 +288,28 @@ main {
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--color-text-muted);
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+}
+
+.hero-progress {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.hero-progress-track {
+  width: 100%;
+  height: 14px;
+  background: var(--color-bg);
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-light);
+}
+
+.hero-progress-fill {
+  height: 100%;
+  background: var(--brand-teal);
+  border-radius: 7px;
+  transition: width 600ms var(--ease-out-quart);
 }
 
 .hero-stats {
@@ -341,15 +361,14 @@ main {
 }
 
 .goals-section {
-  margin-bottom: 28px;
+  margin-bottom: 36px;
 }
 .goals-section h2 {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: -0.01em;
   color: var(--brand-navy);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   font-family: var(--font-display);
 }
 .goals-grid {
@@ -395,14 +414,12 @@ button.goal-card {
   border-color: var(--color-border);
 }
 .goal-card .goal-title {
-  font-size: 1rem;
-  font-weight: 800;
+  font-size: 1.05rem;
+  font-weight: 700;
   font-family: var(--font-body);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
   color: var(--brand-navy);
   margin-bottom: 24px;
-  line-height: 1.3;
+  line-height: 1.35;
   flex: 1;
 }
 .goal-card .goal-meta {
@@ -429,17 +446,18 @@ button.goal-card {
   letter-spacing: 0.05em;
   color: var(--color-text-muted);
 }
-.goal-card .progress-mini {
-  position: absolute;
-  bottom: 0;
-  left: 0;
+.goal-progress {
   width: 100%;
-  height: 4px;
+  height: 8px;
   background: var(--color-bg);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 12px;
 }
-.goal-card .progress-mini-fill {
+.goal-progress-fill {
   height: 100%;
   background: var(--brand-teal);
+  border-radius: 4px;
   transition: width var(--duration-enter) var(--ease-out-quart);
 }
 .goal-signals {
@@ -457,14 +475,13 @@ button.goal-card {
 }
 
 .blocked-section {
-  margin-bottom: 28px;
+  margin-bottom: 36px;
 }
 .blocked-heading {
   font-family: var(--font-display);
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: -0.01em;
   color: var(--brand-red);
   margin-bottom: var(--space-md);
 }
@@ -652,7 +669,7 @@ button.goal-card {
   align-self: flex-end;
 }
 .reset-btn:hover {
-  background: var(--color-status-doing-bg);
+  background: var(--status-doing-bg);
   border-color: var(--brand-navy);
 }
 
@@ -1027,8 +1044,7 @@ tbody tr:not(.group-header):not(.expand-row) {
   font-size: 1.8rem;
   font-weight: 700;
   color: var(--brand-navy);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.01em;
   line-height: 1.2;
 }
 
@@ -1037,8 +1053,7 @@ tbody tr:not(.group-header):not(.expand-row) {
   font-weight: 600;
   color: var(--color-text-muted);
   margin-top: var(--space-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
 }
 
 .drilldown-hero {
@@ -1386,10 +1401,8 @@ header :focus-visible {
 }
 
 .drilldown-team-name {
-  font-weight: 800;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-weight: 700;
+  font-size: 0.9rem;
   color: var(--brand-navy);
   margin-bottom: var(--space-xs);
 }
@@ -1438,54 +1451,6 @@ header :focus-visible {
   border-top: 1px solid var(--color-border-light);
 }
 
-/* Department strip */
-.dept-strip {
-  margin-bottom: var(--space-xl);
-}
-
-.dept-strip-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-}
-
-.dept-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: 8px 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--brand-navy);
-  text-decoration: none;
-  transition:
-    border-color var(--duration-instant) var(--ease-out-quart),
-    background var(--duration-instant) var(--ease-out-quart);
-}
-
-.dept-chip:hover {
-  border-color: var(--brand-teal);
-  background: rgba(106, 190, 190, 0.06);
-}
-
-.dept-chip-name {
-  font-weight: 800;
-}
-
-.dept-chip-pct {
-  color: var(--color-text-muted);
-  font-weight: 600;
-}
-
-.dept-chip-blocked {
-  color: var(--brand-red);
-  font-weight: 800;
-  font-size: 0.75rem;
-}
-
 /* Person links in table */
 .td-person-link {
   color: var(--brand-navy);
@@ -1514,7 +1479,7 @@ header :focus-visible {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--color-text-faint);
+  color: var(--color-text-muted);
   margin-top: var(--space-md);
   transition: color var(--duration-instant) var(--ease-out-quart);
 }
@@ -1525,15 +1490,14 @@ header :focus-visible {
 
 /* Recent Activity */
 .recent-activity {
-  margin-bottom: var(--space-xl);
+  margin-bottom: 40px;
 }
 
 .recent-activity-heading {
   font-family: var(--font-display);
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: -0.01em;
   color: var(--brand-navy);
   margin-bottom: var(--space-md);
 }

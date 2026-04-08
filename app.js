@@ -54,9 +54,6 @@ const elements = {
   tableWrap: document.getElementById('table-wrap'),
   tableBody: document.getElementById('table-body'),
 
-  deptStrip: document.getElementById('dept-strip'),
-  deptStripGrid: document.getElementById('dept-strip-grid'),
-
   drilldownView: document.getElementById('drilldown-view'),
   drilldownBreadcrumbList: document.getElementById('drilldown-breadcrumb-list'),
   drilldownTitle: document.getElementById('drilldown-title'),
@@ -397,7 +394,6 @@ function syncVisibility(isLoaded) {
     elements.blockedSection.style.display = 'none';
     elements.recentActivity.style.display = 'none';
     elements.scopedSummary.style.display = 'none';
-    elements.deptStrip.style.display = 'none';
     elements.drilldownView.style.display = 'none';
   }
 
@@ -407,7 +403,6 @@ function syncVisibility(isLoaded) {
   if (isDrilldown) {
     elements.summary.style.display = 'none';
     elements.goalsSection.style.display = 'none';
-    elements.deptStrip.style.display = 'none';
     elements.controls.style.display = 'none';
     elements.resultCount.style.display = 'none';
     elements.tableWrap.style.display = 'none';
@@ -475,6 +470,9 @@ function renderSummary(rows) {
       }
     }
 
+    const progressFill = existingHeroZone.querySelector('[data-hook="summary-progress-fill"]');
+    if (progressFill) progressFill.style.width = `${summary.pct}%`;
+
     if (doneEl) {
       doneEl.className = `hero-stat-value ${doneClass}`.trim();
       animateCounterTo(doneEl, summary.done, 300);
@@ -492,6 +490,11 @@ function renderSummary(rows) {
     <div class="hero-zone" data-hook="hero-zone">
       <div class="hero-pct" data-hook="summary-percent">${summary.pct}<span class="hero-pct-symbol">%</span></div>
       <div class="hero-label">Complete</div>
+      <div class="hero-progress" data-hook="summary-progress">
+        <div class="hero-progress-track">
+          <div class="hero-progress-fill" data-hook="summary-progress-fill" style="width:${summary.pct}%"></div>
+        </div>
+      </div>
       <div class="hero-stats">
         <div class="hero-stat" data-hook="summary-done">
           <span class="hero-stat-value ${doneClass}">${summary.done}</span>
@@ -561,10 +564,10 @@ function renderGoals(rows) {
         <div class="goal-pct-large">${activeGoalData.pct}%</div>
         <div class="goal-count">${activeGoalData.done} / ${activeGoalData.total} <span style="font-size:0.7em">DONE</span></div>
       </div>
+      <div class="goal-progress"><div class="goal-progress-fill" style="width:${activeGoalData.pct}%"></div></div>
       ${emptyText}
       ${blockedOwnersText}
       ${staleText}
-      <div class="progress-mini"><div class="progress-mini-fill" style="width:${activeGoalData.pct}%"></div></div>
       ${isScopable ? '<div class="goal-card-arrow">View →</div>' : ''}
     `;
 
@@ -574,37 +577,6 @@ function renderGoals(rows) {
 
     elements.goalsGrid.appendChild(div);
   });
-}
-
-function renderDepartmentStrip(rows) {
-  const deptStats = {};
-  rows.forEach((row) => {
-    const dept = row['Department'] || 'Other';
-    if (!deptStats[dept]) deptStats[dept] = { total: 0, done: 0, blocked: 0 };
-    deptStats[dept].total++;
-    if (row._status === 'done') deptStats[dept].done++;
-    if (row._status === 'blocked') deptStats[dept].blocked++;
-  });
-
-  if (!Object.keys(deptStats).length) {
-    elements.deptStrip.style.display = 'none';
-    return;
-  }
-
-  elements.deptStrip.style.display = '';
-  elements.deptStripGrid.innerHTML = Object.entries(deptStats)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([dept, stats]) => {
-      const pct = stats.total ? Math.round((stats.done / stats.total) * 100) : 0;
-      const blockedBadge =
-        stats.blocked > 0 ? `<span class="dept-chip-blocked">${stats.blocked} blocked</span>` : '';
-      return `<a href="${escapeHtml(buildHash('department', dept))}" class="dept-chip" data-hook="dept-chip" data-department="${escapeHtml(dept)}">
-        <span class="dept-chip-name">${escapeHtml(dept)}</span>
-        <span class="dept-chip-pct">${pct}%</span>
-        ${blockedBadge}
-      </a>`;
-    })
-    .join('');
 }
 
 function renderBlocked(rows) {
@@ -766,7 +738,7 @@ function renderTable(rows) {
       <tr>
         <td colspan="5" class="empty" data-hook="no-results-state">
           <div>${emptyMessage}</div>
-          <button type="button" class="retry-btn" data-hook="empty-reset-btn">Reset narrowing</button>
+          <button type="button" class="retry-btn" data-hook="empty-reset-btn">Reset filters</button>
         </td>
       </tr>
     `;
@@ -1594,7 +1566,6 @@ function renderApp() {
   const viewRows = deriveViewRows();
   renderSummary(viewRows);
   renderGoals(viewRows);
-  renderDepartmentStrip(viewRows);
   renderBlocked(viewRows);
   renderRecentActivity(viewRows);
   renderScopedSummary(viewRows);
@@ -1619,12 +1590,11 @@ function renderApp() {
 const REVEAL_TARGETS = [
   { key: 'summary', delay: 0 },
   { key: 'goalsSection', delay: 200 },
-  { key: 'deptStrip', delay: 350 },
-  { key: 'blockedSection', delay: 500 },
-  { key: 'recentActivity', delay: 550 },
-  { key: 'controls', delay: 650 },
-  { key: 'tableWrap', delay: 650 },
-  { key: 'resultCount', delay: 650 },
+  { key: 'blockedSection', delay: 350 },
+  { key: 'recentActivity', delay: 450 },
+  { key: 'controls', delay: 550 },
+  { key: 'tableWrap', delay: 550 },
+  { key: 'resultCount', delay: 550 },
 ];
 
 function prepareRevealChoreography() {

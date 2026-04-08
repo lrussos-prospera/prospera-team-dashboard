@@ -196,14 +196,6 @@ test.describe('overview navigation to drilldowns', () => {
     await expect(page.locator('.drilldown-title')).toHaveText('Legal Framework');
   });
 
-  test('clicking department chip navigates to department drilldown', async ({ page }) => {
-    await mockSheetCsv(page, 'drilldown-mixed');
-    await page.goto('/');
-
-    await page.locator('[data-hook="dept-chip"][data-department="Governance"]').click();
-    await expect(page.locator('.drilldown-title')).toHaveText('Governance');
-  });
-
   test('clicking employee name in table navigates to employee drilldown', async ({ page }) => {
     await mockSheetCsv(page, 'drilldown-mixed');
     await page.goto('/');
