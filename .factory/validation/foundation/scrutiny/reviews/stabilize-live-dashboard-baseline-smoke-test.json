@@ -1,0 +1,33 @@
+{
+  "featureId": "stabilize-live-dashboard-baseline-smoke-test",
+  "reviewedAt": "2026-04-08T02:20:49.638094+00:00",
+  "commitId": "b1b64b03100f5f744746d64c5dd01b59283df34e",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The feature improved the smoke test by polling for loaded-or-error terminal UI, but it did not fully satisfy the requirement to make commands.test pass reliably. Subsequent mission history shows the same live-sheet smoke test still timing out and required a follow-up fix that raised the timeout and added a controlled reload fallback.",
+    "issues": [
+      {
+        "file": "tests/dashboard-harness.spec.js",
+        "line": 56,
+        "severity": "blocking",
+        "description": "The new terminal-state polling still left the baseline smoke test flaky against the live Google Sheets surface. The reviewed commit only waited 20s once before failing, and later mission history records another timeout on this same assertion plus a dedicated follow-up fix (`d3efe66`) that extended the settle window and added a one-reload fallback. Because the feature explicitly promised commands.test would pass reliably during worker startup, this remaining failure mode means the implementation did not fully meet the feature contract."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The worker marked skill procedure deviations because the TDD skill expected interactive confirmation before test design, which is incompatible with non-interactive mission Exec mode.",
+      "evidence": "Handoff skillFeedback for worker session 139ae88b-2334-4251-9bd2-36a936cb3c06 says followedProcedure=false and recommends adding a non-interactive branch for mission worker contexts."
+    },
+    {
+      "area": "knowledge",
+      "observation": "Shared mission knowledge understated how variable the live Google Sheets smoke path remained after this feature; later workers had to rediscover and patch the same timing instability with a longer timeout and one controlled reload fallback.",
+      "evidence": "Mission progress_log.jsonl entries at 2026-04-08T02:05:17.390Z and 2026-04-08T02:09:32.287Z note a rerun timeout after this feature and a separate follow-up feature `misc-stabilize-live-sheet-smoke-timeout` implementing the additional hardening in commit d3efe66."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Fail: commit b1b64b0 improved terminal-state detection, but it did not actually stabilize the live baseline smoke test to the requested reliability bar. Later mission evidence shows the same test still timing out and needing another fix (d3efe66), so the reviewed feature left a blocking flake unresolved."
+}

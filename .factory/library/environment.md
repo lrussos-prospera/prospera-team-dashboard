@@ -17,6 +17,7 @@ Environment variables, external dependencies, and setup notes.
 - The app is a static HTML/CSS/JS site and must remain single-page with no framework and no routing.
 - Local validation should serve the repo on port `3100`.
 - Browser-based testing tooling must be installed in-repo during the mission because the repo currently has no test stack.
+- Installing `@playwright/test` does not install browser binaries; if Chromium is missing locally, run `npx playwright install chromium` before relying on browser tests.
 
 ## Constraints
 

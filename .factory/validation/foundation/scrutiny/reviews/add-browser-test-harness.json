@@ -1,0 +1,28 @@
+{
+  "featureId": "add-browser-test-harness",
+  "reviewedAt": "2026-04-08T02:21:28.403012Z",
+  "commitId": "70c2e938e706427b276fa97762db49ba4d99ec79",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The feature successfully adds Playwright-based browser-test infrastructure, deterministic CSV fixtures, and behavior-focused coverage for several dashboard states. However, the committed harness is not portable because the Playwright webServer command is hard-coded to the original developer’s absolute checkout path, so the harness will fail to start in any other local clone or CI workspace.",
+    "issues": [
+      {
+        "file": "playwright.config.js",
+        "line": 15,
+        "severity": "blocking",
+        "description": "The Playwright webServer command hard-codes `/Users/treygoff/Code/prospera-team-dashboard` as the served directory. This means `npx playwright test` only works from that exact machine path; in any other checkout location the server will either fail to start or serve the wrong directory, breaking the browser-test harness the feature was supposed to add in-repo. The harness should derive the repo path dynamically (for example from the current working directory or config file location) rather than embedding a user-specific absolute path."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "The environment/library guidance does not mention that Playwright browser binaries must be installed separately from the npm package. The worker hit this immediately and had to recover by running `npx playwright install chromium` after the first focused test run failed.",
+      "evidence": "Handoff verification log at /Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/handoffs/2026-04-08T01-48-03-760Z__add-browser-test-harness__fc58ccfe-7fae-45c0-9566-856ab3c49fb3.json lines 33-37 shows the initial failure due to missing browser binaries followed by `npx playwright install chromium`; .factory/library/environment.md only says browser testing tooling must be installed in-repo, not that browser binaries are a separate prerequisite."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Review failed. The feature adds the requested Playwright harness and deterministic fixtures, but the committed config hard-codes a machine-specific absolute repo path in `playwright.config.js`, so the harness is not reliably runnable outside the original checkout. Report written to .factory/validation/foundation/scrutiny/reviews/add-browser-test-harness.json."
+}

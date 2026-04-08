@@ -1,0 +1,34 @@
+{
+  "featureId": "refactor-dashboard-state-and-render-seams",
+  "reviewedAt": "2026-04-08T02:21:07.900087+00:00",
+  "commitId": "b5794df",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The refactor successfully centralizes dashboard lifecycle/view state and adds durable DOM hooks plus seam-focused Playwright coverage, but it regresses the goal-card seam the feature was supposed to make deterministic. Goal cards are rendered from the already-filtered subset, so scoped or filtered states drop unrelated goals entirely instead of preserving the overview frame with deemphasized cards and non-scopable empty-goal treatment.",
+    "issues": [
+      {
+        "file": "app.js",
+        "line": 604,
+        "severity": "blocking",
+        "description": "renderApp passes the already narrowed viewRows into renderGoals(), and renderGoals()/deriveGoalBuckets() only build cards for goals still present in that subset. Under scope or filters, unrelated goals disappear completely instead of remaining visible but deemphasized, which breaks the required in-place scope semantics and the validation contract's empty-goal/four-goal overview behavior (VAL-OVERVIEW-004, VAL-LOAD-010, VAL-LOAD-025, VAL-LOAD-047)."
+      },
+      {
+        "file": "app.js",
+        "line": 378,
+        "severity": "blocking",
+        "description": "Every rendered goal card remains clickable because cards only exist for goals with rows in the active subset. That means the implementation never produces the required 'rendered but not scopable' empty-goal state when active filters/search remove a goal's rows, so users lose the recovery/explanation affordance the contract expects for narrowed states (VAL-LOAD-010, VAL-LOAD-016)."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The static-dashboard-worker skill says to write or update behavior-focused browser tests first when the feature is testable through automation, but this worker's transcript shows substantial runtime edits before the new Playwright file was created. The handoff still marked followedProcedure=true, so either the skill expectation or the handoff rubric is too loose to catch this deviation.",
+      "evidence": "worker-transcripts.jsonl entry for ccc18e6b-756c-4a48-8fbd-db2daab53bbd shows Edit/Execute changes to index.html, app.js, and styles.css before Create tests/dashboard-state-seams.spec.js; .factory/skills/static-dashboard-worker/SKILL.md step 4 says to write/update browser tests first when automation applies."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Fail: the refactor improved internal state seams and selectors, but goal-card rendering now collapses to only the active subset, so scoped/filtered states lose the required persistent overview framing and empty-goal semantics."
+}
