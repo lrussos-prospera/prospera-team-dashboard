@@ -236,6 +236,8 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="blocked-section"]')).not.toContainText('Leo Tan');
     await expect(legalGoal).toContainText('Blocked: Ana Cruz');
     await expect(legalGoal).not.toContainText('Leo Tan');
+    await expect(infraGoal).toContainText('No updates in current view');
+    await expect(infraGoal).not.toContainText('Blocked:');
 
     await page.locator('#filter-toggle').click();
     await page.locator('#search').fill('permit');
@@ -244,6 +246,8 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('0');
     await expect(page.locator('[data-hook="blocked-section"]')).toBeHidden();
     await expect(legalGoal).not.toContainText('Blocked:');
+    await expect(infraGoal).toContainText('No updates in current view');
+    await expect(infraGoal).not.toContainText('Blocked:');
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
 
     await page.locator('#reset-btn').click();
