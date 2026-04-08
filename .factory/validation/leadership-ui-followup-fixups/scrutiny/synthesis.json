@@ -1,7 +1,7 @@
 {
   "milestone": "leadership-ui-followup-fixups",
-  "round": 1,
-  "status": "fail",
+  "round": 2,
+  "status": "pass",
   "validatorsRun": {
     "test": {
       "passed": true,
@@ -20,27 +20,19 @@
     }
   },
   "reviewsSummary": {
-    "total": 2,
+    "total": 1,
     "passed": 1,
-    "failed": 1,
-    "failedFeatures": [
-      "fix-department-scope-canonical-blocked-coverage"
-    ]
+    "failed": 0,
+    "failedFeatures": []
   },
-  "blockingIssues": [
-    {
-      "featureId": "fix-department-scope-canonical-blocked-coverage",
-      "severity": "blocking",
-      "description": "The department-scope/search/reset review found the new mixed canonical-blocked test still does not verify that unrelated goal cards clear blocked-owner signals when department narrowing reduces them to zero rows, leaving a regression hole in goal-card blocked-signal coverage."
-    }
-  ],
+  "blockingIssues": [],
   "appliedUpdates": [],
   "suggestedGuidanceUpdates": [],
   "rejectedObservations": [
     {
-      "observation": "The feature's listed Prettier verification command includes a CSV fixture path that this repository's Prettier setup cannot parse as written.",
-      "reason": "rejected as a scrutiny shared-state update because the observation is specific to one feature's verificationSteps metadata rather than a broadly reusable services.yaml or library fact"
+      "observation": "Manual agent-browser verification could not reliably force the dashboard onto deterministic fixture data because network-route mocking did not consistently override the live Google Sheets request.",
+      "reason": "already-documented in .factory/library/user-testing.md, which already directs manual QA to prefer the localhost-only qaFixture path over brittle route interception"
     }
   ],
-  "previousRound": null
+  "previousRound": ".factory/validation/leadership-ui-followup-fixups/scrutiny/synthesis.json"
 }

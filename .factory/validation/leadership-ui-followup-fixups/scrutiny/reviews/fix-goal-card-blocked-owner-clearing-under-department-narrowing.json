@@ -1,0 +1,21 @@
+{
+  "featureId": "fix-goal-card-blocked-owner-clearing-under-department-narrowing",
+  "reviewedAt": "2026-04-08T10:24:48.811347Z",
+  "commitId": "cf09341ebbb601b253fd2c684930d527c364ab92",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The follow-up fix closes the original blocking gap. The updated department-scope mixed canonical-blocked test now explicitly verifies that the unrelated Infrastructure goal card clears its blocked-owner signal and switches to the zero-row empty-state treatment once Governance narrowing removes all matching rows, repeats that assertion after the permit search, and still verifies reset restores the broader overview blocked-owner state. That directly covers the stale blocked-owner leakage scenario called out in the prior failed review.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "Manual agent-browser verification could not reliably force the dashboard onto deterministic fixture data because network-route mocking did not consistently override the live Google Sheets request. Future workers validating fixture-specific UI behavior manually may hit the same gap unless this limitation or an alternative manual-fixture path is documented.",
+      "evidence": "Fix handoff for worker session e5a4972f-d229-4b9f-9c1b-e1dfcf29d6a6 records discovered issue: 'agent-browser network-route mocking did not reliably override the live Google Sheets request during manual verification, so deterministic behavior confirmation relied on Playwright fixture tests rather than interactive mock-driven browser checks.'"
+    }
+  ],
+  "addressesFailureFrom": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/leadership-ui-followup-fixups/scrutiny/reviews/fix-department-scope-canonical-blocked-coverage.json",
+  "summary": "Reviewed the prior failed scrutiny report, both worker transcript skeletons, both handoffs, and commits 92850c4a3f0d6b6bea58cd99382a4e6013c88ddd and cf09341ebbb601b253fd2c684930d527c364ab92. The later fix adequately addresses the original blocking issue by adding explicit zero-row assertions for the unrelated Infrastructure goal card during department narrowing and search narrowing, while preserving reset restoration checks, so this review passes."
+}
