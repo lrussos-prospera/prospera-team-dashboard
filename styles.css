@@ -1877,6 +1877,12 @@ header :focus-visible {
   .trends-hero-charts {
     grid-template-columns: 1fr;
   }
+  .period-toggle-btn {
+    padding: 10px 16px;
+  }
+  .trend-panel-charts {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Drilldown trend panel ── */

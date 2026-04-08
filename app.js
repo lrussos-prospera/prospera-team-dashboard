@@ -271,6 +271,22 @@ function renderPeriodToggle(container, currentPeriod, onChange) {
   container.querySelectorAll('.period-toggle-btn').forEach((btn) => {
     btn.addEventListener('click', () => onChange(btn.dataset.period));
   });
+  const buttons = container.querySelectorAll('.period-toggle-btn');
+  buttons.forEach((btn, i) => {
+    btn.addEventListener('keydown', (e) => {
+      let target;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        target = buttons[(i + 1) % buttons.length];
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        target = buttons[(i - 1 + buttons.length) % buttons.length];
+      }
+      if (target) {
+        e.preventDefault();
+        target.focus();
+        onChange(target.dataset.period);
+      }
+    });
+  });
 }
 
 function renderDeltaBadge(delta, metric = 'pctDelta') {
@@ -296,11 +312,13 @@ function renderFrappeLineChart(containerId, historyRows, metric, yLabel) {
     r.timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   );
   const values = daily.map((r) => r[metric]);
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   new frappe.Chart(container, {
     data: { labels, datasets: [{ values }] },
     type: 'line',
     height: 180,
     colors: ['#368496'],
+    animate: reduceMotion ? 0 : 1,
     lineOptions: { regionFill: 1, hideDots: values.length > 20 },
     axisOptions: { xIsSeries: true },
     tooltipOptions: { formatTooltipY: (d) => `${d} ${yLabel}` },
@@ -1503,23 +1521,23 @@ function renderDrilldownTrendPanel(level, entity, filters) {
 
   if (level === 'goal') {
     chartsEl.innerHTML = `
-      <div class="trend-panel-chart" id="trend-chart-pct"></div>
-      <div class="trend-panel-chart" id="trend-chart-blocked"></div>
+      <div class="trend-panel-chart" id="trend-chart-pct" aria-label="Completion trend chart"></div>
+      <div class="trend-panel-chart" id="trend-chart-blocked" aria-label="Blocked items trend chart"></div>
     `;
     renderFrappeLineChart('trend-chart-pct', historyRows, 'pct', '% Complete');
     renderFrappeLineChart('trend-chart-blocked', historyRows, 'blocked', 'Blocked');
   } else if (level === 'department') {
     chartsEl.innerHTML = `
-      <div class="trend-panel-chart" id="trend-chart-pct"></div>
-      <div class="trend-panel-chart" id="trend-chart-workload"></div>
+      <div class="trend-panel-chart" id="trend-chart-pct" aria-label="Completion trend chart"></div>
+      <div class="trend-panel-chart" id="trend-chart-workload" aria-label="Workload trend chart"></div>
     `;
     renderFrappeLineChart('trend-chart-pct', historyRows, 'pct', '% Complete');
     renderFrappeLineChart('trend-chart-workload', historyRows, 'total', 'Total Items');
   } else if (level === 'employee') {
     chartsEl.innerHTML = `
-      <div class="trend-panel-chart" id="trend-chart-pct"></div>
-      <div class="trend-panel-chart" id="trend-chart-done"></div>
-      <div class="trend-panel-chart" id="trend-chart-blocked"></div>
+      <div class="trend-panel-chart" id="trend-chart-pct" aria-label="Completion trend chart"></div>
+      <div class="trend-panel-chart" id="trend-chart-done" aria-label="Done items trend chart"></div>
+      <div class="trend-panel-chart" id="trend-chart-blocked" aria-label="Blocked items trend chart"></div>
     `;
     renderFrappeLineChart('trend-chart-pct', historyRows, 'pct', '% Complete');
     renderFrappeLineChart('trend-chart-done', historyRows, 'done', 'Done');
