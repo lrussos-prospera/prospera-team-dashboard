@@ -20,6 +20,24 @@ test.describe('dashboard browser harness fixtures', () => {
     await expect(page.locator('#blocked-section')).toBeVisible();
     await expect(page.locator('#blocked-section .blocked-item')).toHaveCount(3);
     await expect(page.locator('#csv-date-label')).toContainText('Fixture:all-blocked');
+
+    const qaFixtureDebug = await page.evaluate(() => window.__qaFixtureDebug);
+    expect(qaFixtureDebug.enabled).toBe(true);
+    expect(qaFixtureDebug.fixtureName).toBe('all-blocked');
+
+    const eventTypes = qaFixtureDebug.events.map((event) => event.type);
+    expect(eventTypes).toContain('fixture-selection');
+    expect(eventTypes).toContain('fixture-fetch-start');
+    expect(eventTypes).toContain('fixture-fetch-response');
+    expect(eventTypes).toContain('fixture-fetch-success');
+    expect(eventTypes).toContain('network-probe');
+
+    const networkProbeEvent = qaFixtureDebug.events.find((event) => event.type === 'network-probe');
+    expect(
+      networkProbeEvent.details.resources.some((resource) =>
+        resource.name.includes('/tests/fixtures/all-blocked.csv')
+      )
+    ).toBe(true);
   });
 
   test('all-blocked fixture renders risk-forward summary and blocked list', async ({ page }) => {

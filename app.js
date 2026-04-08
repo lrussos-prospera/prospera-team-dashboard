@@ -11,6 +11,119 @@ const MANUAL_QA_FIXTURE_ALLOWLIST = new Set([
   'mixed-recency',
   'stale-data',
 ]);
+const QA_FIXTURE_DEBUG_MAX_EVENTS = 120;
+
+const qaFixtureDebugState = {
+  enabled: false,
+  fixtureName: '',
+  events: [],
+  resourceErrorHookInstalled: false,
+};
+
+function pushQaFixtureDebugEvent(type, details = {}) {
+  if (!qaFixtureDebugState.enabled) return;
+
+  qaFixtureDebugState.events.push({
+    type,
+    details,
+    timestamp: new Date().toISOString(),
+  });
+
+  if (qaFixtureDebugState.events.length > QA_FIXTURE_DEBUG_MAX_EVENTS) {
+    qaFixtureDebugState.events.splice(
+      0,
+      qaFixtureDebugState.events.length - QA_FIXTURE_DEBUG_MAX_EVENTS
+    );
+  }
+
+  console.info(`[qaFixture-debug] ${type}`, details);
+}
+
+function installQaFixtureResourceErrorHook() {
+  if (qaFixtureDebugState.resourceErrorHookInstalled) return;
+
+  window.addEventListener(
+    'error',
+    (event) => {
+      if (!qaFixtureDebugState.enabled) return;
+      if (!event.target || event.target === window) return;
+
+      const target = event.target;
+      const resourceUrl = target.currentSrc || target.src || target.href || '';
+      pushQaFixtureDebugEvent('resource-load-error', {
+        tagName: target.tagName || 'UNKNOWN',
+        resourceUrl,
+      });
+    },
+    true
+  );
+
+  qaFixtureDebugState.resourceErrorHookInstalled = true;
+}
+
+function configureQaFixtureDebug(fixtureName) {
+  const enabled = Boolean(fixtureName);
+  qaFixtureDebugState.enabled = enabled;
+  qaFixtureDebugState.fixtureName = fixtureName || '';
+  qaFixtureDebugState.events = [];
+
+  if (enabled) {
+    installQaFixtureResourceErrorHook();
+  }
+
+  window.__qaFixtureDebug = {
+    enabled,
+    fixtureName: qaFixtureDebugState.fixtureName,
+    events: qaFixtureDebugState.events,
+  };
+
+  if (enabled) {
+    pushQaFixtureDebugEvent('fixture-debug-enabled', {
+      fixtureName: qaFixtureDebugState.fixtureName,
+      location: window.location.href,
+    });
+  }
+}
+
+function isLocalHostForManualFixture(hostname) {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+}
+
+function buildFixtureCsvUrl(fixtureName) {
+  return `tests/fixtures/${encodeURIComponent(fixtureName)}.csv`;
+}
+
+function reportLifecycleToQaFixtureDebug(phase, extra = {}) {
+  pushQaFixtureDebugEvent(`lifecycle-${phase}`, extra);
+}
+
+function reportNetworkProbeToQaFixtureDebug() {
+  if (!qaFixtureDebugState.enabled) return;
+
+  const resourceEntries =
+    typeof performance.getEntriesByType === 'function'
+      ? performance
+          .getEntriesByType('resource')
+          .filter(
+            (entry) =>
+              entry &&
+              typeof entry.name === 'string' &&
+              (entry.name.includes('/tests/fixtures/') ||
+                entry.name.includes('docs.google.com/spreadsheets') ||
+                entry.name.includes(window.location.origin))
+          )
+          .map((entry) => ({
+            name: entry.name,
+            initiatorType: entry.initiatorType || '',
+            transferSize: entry.transferSize ?? null,
+          }))
+      : [];
+
+  pushQaFixtureDebugEvent('network-probe', {
+    capturedResourceCount: resourceEntries.length,
+    resources: resourceEntries,
+  });
+}
 
 const appState = {
   rows: [],
@@ -282,6 +395,11 @@ function renderNoDataState(message) {
 function setLifecyclePhase(phase, errorMessage = '') {
   appState.lifecycle.phase = phase;
   appState.lifecycle.errorMessage = errorMessage;
+
+  reportLifecycleToQaFixtureDebug(phase, {
+    errorMessage,
+    sourceLabel: appState.lifecycle.sourceLabel || 'Live',
+  });
 
   const isLoading = phase === 'loading';
   const isError = phase === 'error';
@@ -921,9 +1039,7 @@ function flushPendingSearchDebounce() {
 
 function readManualQaFixtureSelection() {
   const currentHost = window.location.hostname;
-  const isLocalHost =
-    currentHost === 'localhost' || currentHost === '127.0.0.1' || currentHost === '[::1]';
-  if (!isLocalHost) return '';
+  if (!isLocalHostForManualFixture(currentHost)) return '';
 
   const params = new URLSearchParams(window.location.search);
   const fixture = params.get(MANUAL_QA_FIXTURE_PARAM);
@@ -936,18 +1052,50 @@ function fixtureSourceLabel(fixtureName) {
 }
 
 async function fetchFixtureCsv(fixtureName) {
-  const response = await fetch(`tests/fixtures/${encodeURIComponent(fixtureName)}.csv`, {
+  const fixtureUrl = buildFixtureCsvUrl(fixtureName);
+  pushQaFixtureDebugEvent('fixture-fetch-start', {
+    fixtureName,
+    fixtureUrl,
+  });
+
+  const response = await fetch(fixtureUrl, {
     cache: 'no-store',
   });
+
+  pushQaFixtureDebugEvent('fixture-fetch-response', {
+    fixtureName,
+    fixtureUrl,
+    status: response.status,
+    ok: response.ok,
+  });
+
   if (!response.ok) throw new Error(`Fixture HTTP ${response.status}`);
-  return response.text();
+
+  const text = await response.text();
+  pushQaFixtureDebugEvent('fixture-fetch-success', {
+    fixtureName,
+    fixtureUrl,
+    byteLength: text.length,
+  });
+  reportNetworkProbeToQaFixtureDebug();
+  return text;
 }
 
 async function fetchSheetData() {
   flushPendingSearchDebounce();
 
   const fixtureName = readManualQaFixtureSelection();
+  configureQaFixtureDebug(fixtureName);
+
   appState.lifecycle.sourceLabel = fixtureName ? fixtureSourceLabel(fixtureName) : 'Live';
+  if (fixtureName) {
+    pushQaFixtureDebugEvent('fixture-selection', {
+      fixtureName,
+      sourceLabel: appState.lifecycle.sourceLabel,
+      fixtureUrl: buildFixtureCsvUrl(fixtureName),
+    });
+  }
+
   setLifecyclePhase('loading');
 
   try {
