@@ -772,7 +772,7 @@ function renderApp() {
   renderTable(viewRows);
   updateFilterBadge();
 
-  appState.lifecycle.refreshedLabel = deriveRecencyLabel(appState.rows);
+  appState.lifecycle.refreshedLabel = deriveRecencyLabel(viewRows);
   els.csvDateLabel.textContent = appState.lifecycle.refreshedLabel;
 }
 

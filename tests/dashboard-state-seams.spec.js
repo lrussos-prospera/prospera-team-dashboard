@@ -125,6 +125,31 @@ test.describe('dashboard state and render seams', () => {
     ).toHaveCount(0);
   });
 
+  test('header freshness follows narrowed subset recency in scoped mixed-recency state', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'mixed-recency');
+    await page.goto('/');
+
+    const headerLabel = page.locator('#csv-date-label');
+    await expect(headerLabel).toContainText('stale');
+
+    await page.locator('[data-hook="table-group-header"][data-department="Operations"]').click();
+
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
+    await expect(page.locator('#scope-indicator-text')).toContainText(
+      'Scoped to department: Operations'
+    );
+    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
+    await expect(
+      page.locator('[data-hook="goal-card"][data-goal="Operations"] [data-hook="goal-stale"]')
+    ).toHaveCount(0);
+
+    await expect(headerLabel).toContainText('current');
+    await expect(headerLabel).not.toContainText('stale');
+    await expect(headerLabel).not.toContainText('update date unavailable');
+  });
+
   test('department filter cascades team options and combined filters apply conjunctively', async ({
     page,
   }) => {
