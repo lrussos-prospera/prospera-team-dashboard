@@ -621,4 +621,81 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(3);
     await expect(page).toHaveURL(initialUrl);
   });
+
+  test('dashboard interactions do not create intra-app history entries beyond pre-entry navigation', async ({
+    page,
+  }) => {
+    const allBlockedCsv = getFixtureCsv('all-blocked');
+    await mockSheetCsvSequence(page, [
+      {
+        type: 'fulfill',
+        body: allBlockedCsv,
+      },
+      {
+        type: 'fulfill',
+        body: allBlockedCsv,
+      },
+      {
+        type: 'abort',
+      },
+      {
+        type: 'fulfill',
+        body: allBlockedCsv,
+      },
+      {
+        type: 'fulfill',
+        body: allBlockedCsv,
+      },
+      {
+        type: 'fulfill',
+        body: allBlockedCsv,
+      },
+    ]);
+
+    await page.goto('/?history-seed=pre-entry');
+    await expect(page.locator('[data-hook="summary"]')).toBeVisible();
+
+    await page.goto('/');
+    await expect(page.locator('[data-hook="summary"]')).toBeVisible();
+
+    const marker = `history-marker-${Date.now()}`;
+    await page.evaluate((value) => {
+      window.history.replaceState({ marker: value }, '', window.location.href);
+    }, marker);
+
+    const baseline = await page.evaluate(() => ({
+      href: window.location.href,
+      length: window.history.length,
+      marker: window.history.state?.marker ?? null,
+    }));
+
+    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
+    await page.locator('#filter-toggle').click();
+    await page.locator('#search').fill('permit');
+    await page.locator('[data-hook="table-row-summary"]').first().click();
+
+    await page.locator('#refresh-btn').click();
+    await expect(page.locator('[data-hook="error-state"]')).toBeVisible();
+    await page.locator('[data-hook="retry-btn"]').click();
+    await expect(page.locator('[data-hook="summary"]')).toBeVisible();
+
+    await page.locator('#reset-btn').click();
+    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+
+    const afterInteractions = await page.evaluate(() => ({
+      href: window.location.href,
+      length: window.history.length,
+      marker: window.history.state?.marker ?? null,
+    }));
+
+    expect(afterInteractions.length).toBe(baseline.length);
+    expect(afterInteractions.marker).toBe(marker);
+    expect(afterInteractions.href).toBe(baseline.href);
+
+    await page.goBack();
+    await expect(page).toHaveURL(/history-seed=pre-entry/);
+
+    await page.goForward();
+    await expect(page).toHaveURL(baseline.href);
+  });
 });
