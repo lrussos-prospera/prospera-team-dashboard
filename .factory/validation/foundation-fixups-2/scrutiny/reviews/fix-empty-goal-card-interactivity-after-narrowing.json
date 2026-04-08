@@ -1,0 +1,21 @@
+{
+  "featureId": "fix-empty-goal-card-interactivity-after-narrowing",
+  "reviewedAt": "2026-04-08T03:03:07Z",
+  "commitId": "2ad3180",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Pass: the implementation removes the exact blocking condition from the prior narrowing fix by making goal-card interactivity depend only on whether the active subset still has rows. When a previously scoped goal is narrowed to zero rows, the card now renders as empty and non-interactive while the dedicated scope-dismiss controls remain available, and the updated browser test exercises that regression path.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The worker reported deviating from the TDD procedure because it required user approval before writing the failing test, which is incompatible with this mission's non-interactive Exec Mode. The repo skill guidance already assumes Exec Mode, so the TDD skill/procedure should explicitly allow implicit approval for red-green-refactor in non-interactive runs.",
+      "evidence": "Handoff skillFeedback for session 03bfb970-6a2c-428a-a082-c7f2c84fd8a4 says followedProcedure=false due to 'tdd planning step requiring user approval before writing tests'; suggested change: 'Add an Exec-mode note to the tdd skill allowing implicit plan approval and direct red-green execution when interactive user confirmation is unavailable.'"
+    }
+  ],
+  "addressesFailureFrom": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/foundation-fixups/scrutiny/reviews/fix-goal-card-frame-under-narrowing.json",
+  "summary": "Pass: commit 2ad3180 resolves the prior blocking scoped-empty-goal-card interactivity bug and adds targeted browser coverage for the scoped-then-narrowed-to-zero flow and control-based scope dismissal."
+}
