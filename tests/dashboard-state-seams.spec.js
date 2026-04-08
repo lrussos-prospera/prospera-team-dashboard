@@ -31,6 +31,27 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(3);
   });
 
+  test('narrowed states preserve full goal-card frame with empty non-scopable goals', async ({ page }) => {
+    await mockSheetCsv(page, 'all-blocked');
+    await page.goto('/');
+
+    await page.locator('#filter-toggle').click();
+    await page.locator('#filter-goal').selectOption('Legal Framework');
+
+    const goals = page.locator('[data-hook="goal-card"]');
+    await expect(goals).toHaveCount(2);
+
+    const emptyGoal = page.locator('[data-hook="goal-card"][data-goal="Infrastructure"]');
+    await expect(emptyGoal).toContainText('No updates in current view');
+    await expect(emptyGoal).toContainText('0 / 0 DONE');
+    await expect(emptyGoal).toHaveAttribute('aria-disabled', 'true');
+
+    await expect(page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]')).not.toHaveAttribute(
+      'aria-disabled',
+      'true'
+    );
+  });
+
   test('table expansion keeps one expanded detail row at a time', async ({ page }) => {
     await mockSheetCsv(page, 'stale-data');
     await page.goto('/');

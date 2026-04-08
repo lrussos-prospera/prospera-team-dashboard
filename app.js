@@ -345,37 +345,64 @@ function scopeToGoal(goal) {
 }
 
 function renderGoals(rows) {
-  const goals = deriveGoalBuckets(rows);
+  const frameGoals = deriveGoalBuckets(appState.rows);
+  const activeGoalMap = new Map(
+    deriveGoalBuckets(rows).map((goalData) => [goalData.goal, goalData])
+  );
+  const hasScope = Boolean(appState.view.scopeGoal);
+
   els.goalsGrid.innerHTML = '';
 
-  goals.forEach((goalData) => {
-    const div = document.createElement('button');
-    const isScoped = appState.view.scopeGoal === goalData.goal;
-    div.type = 'button';
-    div.className = `goal-card ${goalData.pct < 25 ? 'status-low' : ''}${isScoped ? ' goal-card-active' : ''}`;
-    div.setAttribute('data-hook', 'goal-card');
-    div.setAttribute('data-goal', goalData.goal);
-    div.setAttribute('aria-pressed', String(isScoped));
+  frameGoals.forEach((frameGoal) => {
+    const activeGoalData = activeGoalMap.get(frameGoal.goal) || {
+      goal: frameGoal.goal,
+      total: 0,
+      done: 0,
+      pct: 0,
+      blockedOwners: [],
+      stale: false,
+    };
 
-    const blockedOwnersText = goalData.blockedOwners.length
-      ? `<div class="goal-signals" data-hook="goal-blocked-owners">Blocked: ${esc(goalData.blockedOwners.join(', '))}</div>`
+    const div = document.createElement('button');
+    const isScoped = appState.view.scopeGoal === activeGoalData.goal;
+    const isScopable = activeGoalData.total > 0;
+    const isInteractive = isScoped || isScopable;
+    div.type = 'button';
+    div.className = `goal-card ${isScopable && activeGoalData.pct < 25 ? 'status-low' : ''}${isScoped ? ' goal-card-active' : ''}${
+      !isScopable ? ' goal-card-empty' : ''
+    }${hasScope && !isScoped ? ' goal-card-dimmed' : ''}`;
+    div.setAttribute('data-hook', 'goal-card');
+    div.setAttribute('data-goal', activeGoalData.goal);
+    div.setAttribute('aria-pressed', String(isScoped));
+    div.setAttribute('aria-disabled', String(!isInteractive));
+    div.setAttribute('data-scopable', String(isScopable));
+
+    const blockedOwnersText = activeGoalData.blockedOwners.length
+      ? `<div class="goal-signals" data-hook="goal-blocked-owners">Blocked: ${esc(activeGoalData.blockedOwners.join(', '))}</div>`
       : '';
-    const staleText = goalData.stale
+    const staleText = activeGoalData.stale
       ? `<div class="goal-signals stale" data-hook="goal-stale">Stale (&gt; ${DATE_STALE_THRESHOLD_DAYS}d)</div>`
+      : '';
+    const emptyText = !isScopable
+      ? '<div class="goal-signals goal-signals-empty" data-hook="goal-empty">No updates in current view</div>'
       : '';
 
     div.innerHTML = `
-      <div class="goal-title">${esc(goalData.goal)}</div>
+      <div class="goal-title">${esc(activeGoalData.goal)}</div>
       <div class="goal-meta">
-        <div class="goal-pct-large">${goalData.pct}%</div>
-        <div class="goal-count">${goalData.done} / ${goalData.total} <span style="font-size:0.7em">DONE</span></div>
+        <div class="goal-pct-large">${activeGoalData.pct}%</div>
+        <div class="goal-count">${activeGoalData.done} / ${activeGoalData.total} <span style="font-size:0.7em">DONE</span></div>
       </div>
+      ${emptyText}
       ${blockedOwnersText}
       ${staleText}
-      <div class="progress-mini"><div class="progress-mini-fill" style="width:${goalData.pct}%"></div></div>
+      <div class="progress-mini"><div class="progress-mini-fill" style="width:${activeGoalData.pct}%"></div></div>
     `;
 
-    div.addEventListener('click', () => scopeToGoal(goalData.goal));
+    if (isInteractive) {
+      div.addEventListener('click', () => scopeToGoal(activeGoalData.goal));
+    }
+
     els.goalsGrid.appendChild(div);
   });
 }

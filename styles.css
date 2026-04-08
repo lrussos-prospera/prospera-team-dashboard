@@ -385,6 +385,20 @@ button.goal-card {
   border-color: var(--brand-navy);
   box-shadow: 0 0 0 2px rgba(31, 78, 134, 0.12);
 }
+.goal-card-dimmed {
+  opacity: 0.58;
+}
+.goal-card-empty {
+  border-style: dashed;
+}
+.goal-card[aria-disabled='true'] {
+  cursor: default;
+}
+.goal-card[aria-disabled='true']:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+  border-color: var(--color-border);
+}
 .goal-card .goal-title {
   font-size: 1rem;
   font-weight: 800;
@@ -442,6 +456,9 @@ button.goal-card {
 }
 .goal-signals.stale {
   color: var(--brand-orange);
+}
+.goal-signals.goal-signals-empty {
+  color: var(--color-text-muted);
 }
 
 .scope-indicator {
