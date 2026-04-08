@@ -1,0 +1,14 @@
+commands:
+  install: npm install
+  format: npx prettier --check index.html styles.css app.js docs/plans/2026-04-07-leadership-dashboard-spec.md .factory/skills/static-dashboard-worker/SKILL.md .factory/library/environment.md .factory/library/architecture.md .factory/library/user-testing.md .factory/services.yaml
+  test: npx playwright test --workers=2
+  lint: npx prettier --check index.html styles.css app.js
+  typecheck: echo "No separate typecheck for static JS app"
+
+services:
+  web:
+    start: python3 -m http.server 3100 --directory "/Users/treygoff/Code/prospera-team-dashboard"
+    stop: lsof -ti :3100 | xargs kill
+    healthcheck: curl -sf http://127.0.0.1:3100
+    port: 3100
+    depends_on: []
