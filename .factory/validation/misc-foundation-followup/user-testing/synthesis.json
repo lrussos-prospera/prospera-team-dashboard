@@ -1,0 +1,20 @@
+{
+  "milestone": "misc-foundation-followup",
+  "round": 1,
+  "status": "pass",
+  "assertionsSummary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "appliedUpdates": [],
+  "previousRound": null,
+  "notes": [
+    "No completed non-validator features in milestone misc-foundation-followup declared any fulfills assertions.",
+    "No user-testing flow validators were spawned because there were no assertions to test in this milestone."
+  ]
+}
