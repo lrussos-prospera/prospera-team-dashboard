@@ -260,3 +260,68 @@ test.describe('recent activity section', () => {
     await expect(items).toHaveCount(2);
   });
 });
+
+test.describe('drilldown edge cases', () => {
+  test('Escape key on drilldown navigates back to overview', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/goal/Legal+Framework');
+    await expect(page.locator('.drilldown-title')).toHaveText('Legal Framework');
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-hook="summary"]')).toBeVisible();
+    await expect(page.locator('.drilldown-view')).toBeHidden();
+  });
+
+  test('direct URL to drilldown loads correctly on first visit', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    // Go directly to drilldown without visiting overview first
+    await page.goto('/#/employee/Mia+Park');
+    await expect(page.locator('.drilldown-title')).toHaveText('Mia Park');
+    await expect(page.locator('[data-hook="drilldown-row"]')).toHaveCount(2);
+  });
+
+  test('navigating between drilldowns updates view without overview flash', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/goal/Legal+Framework');
+    await expect(page.locator('.drilldown-title')).toHaveText('Legal Framework');
+
+    // Navigate to a different drilldown directly
+    await page.evaluate(() => {
+      window.location.hash = '#/department/Operations';
+    });
+    await expect(page.locator('.drilldown-title')).toHaveText('Operations');
+    // Overview sections should NOT have flashed visible
+    await expect(page.locator('[data-hook="summary"]')).toBeHidden();
+  });
+
+  test('drilldown hides all overview-only sections', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/goal/Legal+Framework');
+
+    await expect(page.locator('[data-hook="summary"]')).toBeHidden();
+    await expect(page.locator('#goals-section')).toBeHidden();
+    await expect(page.locator('#dept-strip')).toBeHidden();
+    await expect(page.locator('#controls')).toBeHidden();
+    await expect(page.locator('[data-hook="recent-activity"]')).toBeHidden();
+  });
+
+  test('filter state persists in URL hash', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/goal/Legal+Framework?status=blocked');
+
+    // Verify filter is applied
+    await expect(page.locator('[data-hook="drilldown-row"]')).toHaveCount(1);
+
+    // Check that URL still contains the filter
+    const url = page.url();
+    expect(url).toContain('status=blocked');
+  });
+
+  test('invalid route redirects to overview', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/invalid/something');
+
+    await expect(page.locator('[data-hook="summary"]')).toBeVisible();
+    await expect(page.locator('.drilldown-view')).toBeHidden();
+  });
+});
