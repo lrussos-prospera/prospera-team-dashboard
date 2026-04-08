@@ -792,7 +792,7 @@ function isTextEntryContext(element) {
 function shouldHandleEscapeForDashboardUnwind(element) {
   if (!element) return true;
   const tag = element.tagName;
-  return tag !== 'TEXTAREA' && !element.isContentEditable;
+  return tag !== 'TEXTAREA' && tag !== 'SELECT' && !element.isContentEditable;
 }
 
 function focusAdjacentSummaryRow(currentRow, direction) {
