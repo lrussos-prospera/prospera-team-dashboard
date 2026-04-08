@@ -1,28 +1,15 @@
 {
   "featureId": "fix-escape-vs-native-select-popup",
-  "reviewedAt": "2026-04-08T00:00:00Z",
-  "commitId": "ca8bd4ff49c1533f2ff48c0391a68c7a8448b842",
+  "reviewedAt": "2026-04-08T05:31:29Z",
+  "commitId": "61cdbbf",
   "transcriptSkeletonReviewed": true,
   "diffReviewed": true,
-  "status": "fail",
+  "status": "pass",
   "codeReview": {
-    "summary": "The fix preserves the browser's first-Escape behavior for focused native selects, but it does so by exempting selects from dashboard Escape handling entirely. That breaks the required broader unwind contract because the filter panel can no longer be closed with Escape while focus remains on a select after the native popup has already been dismissed.",
-    "issues": [
-      {
-        "file": "app.js",
-        "line": 795,
-        "severity": "blocking",
-        "description": "`shouldHandleEscapeForDashboardUnwind()` now returns false for every focused `<select>`, so the global Escape handler exits before calling `unwindEscapeState()`. This preserves the browser's first-Escape dismissal of the native popup, but it also suppresses every later dashboard Escape unwind while focus stays on the select, which violates the feature requirement to preserve the broader unwind order for relevant controls."
-      },
-      {
-        "file": "tests/dashboard-state-seams.spec.js",
-        "line": 331,
-        "severity": "non_blocking",
-        "description": "The updated regression test only checks that the first Escape with `#filter-status` focused leaves the filter panel open, then moves focus to `#search` before asserting the panel closes. Because the test changes focus away from the select, it misses the blocking scenario where a second Escape should unwind the dashboard while focus remains on the same native select after its popup has already been dismissed."
-      }
-    ]
+    "summary": "The original feature commit `ca8bd4f` did not fully preserve dashboard Escape unwind semantics, but the current codebase incorporates follow-up commits `5719e21` and `61cdbbf` that resolve the repeated-Escape and stale-bypass gaps. In the current `app.js`, the first Escape on a focused native `<select>` is deferred, the second Escape on that same still-focused select can unwind dashboard state, and the bypass state is reset between separate select interactions. The current browser test in `tests/dashboard-state-seams.spec.js` now covers both repeated Escape on the same focused select and reopening the same select to confirm first-Escape native dismissal semantics are restored for a new interaction." ,
+    "issues": []
   },
   "sharedStateObservations": [],
-  "addressesFailureFrom": null,
-  "summary": "Fail: the change stops the dashboard from stealing the first Escape from focused native selects, but it over-corrects by disabling dashboard Escape unwind for selects altogether. The accompanying test does not cover repeated Escape on the same focused select, so the regression remains undetected."
+  "addressesFailureFrom": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/leadership-ui-fixups-2/scrutiny/reviews/fix-escape-vs-native-select-popup.json",
+  "summary": "Pass: although the original `fix-escape-vs-native-select-popup` commit failed scrutiny, the current codebase now resolves that blocking issue through the follow-up Escape-handling refinements present in `app.js` and the expanded Playwright coverage in `tests/dashboard-state-seams.spec.js`. I found no remaining blocking or non-blocking issues in the reviewed behavior for repeated Escape on a focused native select or the related test coverage."
 }

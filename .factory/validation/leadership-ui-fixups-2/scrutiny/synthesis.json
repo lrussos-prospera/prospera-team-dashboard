@@ -1,7 +1,7 @@
 {
   "milestone": "leadership-ui-fixups-2",
-  "round": 1,
-  "status": "fail",
+  "round": 2,
+  "status": "pass",
   "validatorsRun": {
     "test": {
       "passed": true,
@@ -21,21 +21,13 @@
   },
   "reviewsSummary": {
     "total": 1,
-    "passed": 0,
-    "failed": 1,
-    "failedFeatures": [
-      "fix-escape-vs-native-select-popup"
-    ]
+    "passed": 1,
+    "failed": 0,
+    "failedFeatures": []
   },
-  "blockingIssues": [
-    {
-      "featureId": "fix-escape-vs-native-select-popup",
-      "severity": "blocking",
-      "description": "`shouldHandleEscapeForDashboardUnwind()` now returns false for every focused `<select>`, so the global Escape handler exits before calling `unwindEscapeState()`. This preserves the browser's first-Escape dismissal of the native popup, but it also suppresses every later dashboard Escape unwind while focus stays on the select, which violates the feature requirement to preserve the broader unwind order for relevant controls."
-    }
-  ],
+  "blockingIssues": [],
   "appliedUpdates": [],
   "suggestedGuidanceUpdates": [],
   "rejectedObservations": [],
-  "previousRound": null
+  "previousRound": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/leadership-ui-fixups-2/scrutiny/synthesis.json"
 }
