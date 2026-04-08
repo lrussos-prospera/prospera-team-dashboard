@@ -26,7 +26,7 @@ Use this skill for features in the static HTML/CSS/JS leadership dashboard, incl
 6. Implement only the assigned feature scope. If the feature depends on missing architecture or conflicting requirements, return to orchestrator.
 7. Use the manifest and worker-base startup flow for server lifecycle by default. Only start or stop extra processes yourself when the existing manifest flow is insufficient, and always clean them up.
 8. Manually verify the changed behavior in a browser using `agent-browser`, including adjacent regressions in overview, scope/filter state, and table behavior when relevant.
-9. Run the manifest commands relevant to the feature (`lint`, `test`, and any focused test command you add). Use `format` when you changed mission/repo artifact files in addition to runtime code. If a command is not yet available because your feature creates it, report that clearly.
+9. Run the manifest commands relevant to the feature (`lint`, `test`, and any focused test command you add). The baseline `test` command may pass with zero tests only before the browser-test harness is implemented; once tests exist, treat failures as real failures. Use `format` when you changed mission/repo artifact files in addition to runtime code. If a command is not yet available because your feature creates it, report that clearly.
 10. Stop any long-running processes you started and leave no orphaned servers or watch tasks.
 11. In the handoff, include exact commands run, browser checks performed, tests added/updated, and any gaps or discovered issues.
 

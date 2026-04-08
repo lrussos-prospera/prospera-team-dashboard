@@ -12,6 +12,7 @@ Testing surface, tools, and runtime validation notes.
 - Primary validation surface is the local dashboard served over HTTP.
 - Default validation tool: `agent-browser` for user-facing browser assertions.
 - Automated behavior-focused browser tests will be added in-repo during the mission and should cover the same critical flows as the validation contract.
+- The baseline Playwright manifest command is allowed to pass with zero tests until the test-harness feature lands; once tests exist, failures must fail the command normally.
 - Manual/browser QA is still required for animation quality, hierarchy, and visual fidelity review.
 
 ## Validation Readiness

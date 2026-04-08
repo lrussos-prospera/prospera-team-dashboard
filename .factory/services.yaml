@@ -1,7 +1,7 @@
 commands:
   install: npm install
   format: npx prettier --check index.html styles.css app.js docs/plans/2026-04-07-leadership-dashboard-spec.md .factory/skills/static-dashboard-worker/SKILL.md .factory/library/environment.md .factory/library/architecture.md .factory/library/user-testing.md .factory/services.yaml
-  test: npx playwright test --workers=2
+  test: npx playwright test --workers=2 --pass-with-no-tests
   lint: npx prettier --check index.html styles.css app.js
   typecheck: echo "No separate typecheck for static JS app"
 
