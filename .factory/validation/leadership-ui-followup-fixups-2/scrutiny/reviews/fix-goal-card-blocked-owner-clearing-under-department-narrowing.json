@@ -1,0 +1,21 @@
+{
+  "featureId": "fix-goal-card-blocked-owner-clearing-under-department-narrowing",
+  "reviewedAt": "2026-04-08T08:48:03.641370+00:00",
+  "commitId": "cf09341",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The feature scope was limited to closing a missing regression-coverage hole, and the implementation does that correctly. The updated Playwright scenario now explicitly proves that an unrelated goal card clears blocked-owner text when department narrowing reduces it to zero rows, keeps the empty-goal treatment visible through subsequent search narrowing, and restores the broader blocked-owner surfaces after Reset.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "Deterministic manual browser verification for fixture-backed dashboard states remains unreliable with agent-browser route mocking, so workers may need a documented debug fixture toggle or a shared note describing that Playwright interception is the dependable path for these flows.",
+      "evidence": "Mission handoff /Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/handoffs/2026-04-08T08-44-19-845Z__fix-goal-card-blocked-owner-clearing-under-department-narrowing__e5a4972f-d229-4b9f-9c1b-e1dfcf29d6a6.json records a discovered issue that agent-browser network-route mocking did not reliably override the live Google Sheets request during manual verification, while tests/helpers/sheet-fixtures.js provides the reliable Playwright route interception used by the automated coverage."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Pass. The change fully satisfies the requested feature by adding the missing regression assertions for blocked-owner clearing on unrelated zero-row goal cards during department-scope plus search narrowing, with reset restoration already verified in the same scenario. No blocking or non-blocking code issues were found."
+}

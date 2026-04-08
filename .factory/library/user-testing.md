@@ -50,6 +50,7 @@ Testing surface, tools, and runtime validation notes.
 - Each subagent must use its own isolated browser session/workspace and save reports only to its assigned `.factory/validation/<milestone>/user-testing/flows/<group-id>.json` path.
 - Shared-state risk is low because the dashboard is a static app backed by live-sheet fetches, but validators can still interfere through simultaneous refresh-heavy traffic; respect the max concurrency of 2 and avoid unnecessary repeated refresh/retry loops.
 - If an assertion requires network failure or empty-data simulation, prefer the existing Playwright/browser interception patterns over changing the production sheet URL.
+- For deterministic fixture-backed scenarios, Playwright route interception in `tests/helpers/sheet-fixtures.js` is currently the dependable path; agent-browser network-route mocking against the live Google Sheets request has proven unreliable in some manual validation sessions.
 - Capture concrete evidence for each assertion group: the specific user actions performed, the observed UI state, any console/network anomalies, and the final pass/fail/blocked decision for each assigned assertion.
 - Do not create or rely on URL-based state, alternate ports, or route transitions; the single-page invariant is part of the contract under test.
 - If the shared web server becomes unhealthy, stop and report the blocker instead of restarting unrelated services from inside a flow-validator run.
