@@ -1,0 +1,253 @@
+{
+  "groupId": "rerun-blocked-scope",
+  "testedAt": "2026-04-08T07:06:00.291735+00:00",
+  "isolation": {
+    "milestone": "leadership-ui",
+    "appUrl": "http://127.0.0.1:3100/index.html",
+    "browserSession": "77390450519e__u2",
+    "surface": "browser-ui"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-BLOCKED-001",
+      "title": "Blocked section is the canonical normalized-blocked callout",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open the dashboard in overview state and inspect the summary, goal cards, and table rows.",
+          "expected": "A dedicated blocked section appears whenever the active subset contains normalized blocked rows.",
+          "observed": "Overview showed multiple rows labeled 'At risk', but the summary still read 0 Blocked and no blocked section appeared anywhere on the page."
+        },
+        {
+          "action": "Capture an overview screenshot after the page settles.",
+          "expected": "The canonical blocked callout is visible in overview.",
+          "observed": "The screenshot only shows summary, goal cards, controls, and the table; the blocked section is absent."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-blocked-scope/VAL-BLOCKED-001-blocked-hidden.png"
+        ],
+        "consoleErrors": "browser-console-final.txt shows repeated 'Failed to load resource: net::ERR_INVALID_URL' messages.",
+        "network": "browser-network-final.txt shows repeated GET requests for index.html, styles.css, app.js, and the Google Sheets CSV fetch during reloads."
+      },
+      "issues": "The dedicated blocked section never rendered even though overview rows included visible 'At risk' items."
+    },
+    {
+      "id": "VAL-BLOCKED-002",
+      "title": "Blocked section responds to active scope and filters",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Scope the dashboard to goal 2 using the goal card.",
+          "expected": "The blocked section updates to only show blocked rows from the scoped subset.",
+          "observed": "The table narrowed to 41 goal-2 updates containing several 'At risk' rows, but no blocked section appeared."
+        },
+        {
+          "action": "Return to overview and capture both scoped and unscoped states.",
+          "expected": "Blocked visibility changes coherently with the active subset.",
+          "observed": "Neither the overview nor the scoped state showed any blocked section."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-blocked-scope/VAL-BLOCKED-002-blocked-unscoped.png",
+          "leadership-ui/rerun-blocked-scope/VAL-BLOCKED-002-blocked-scoped.png"
+        ],
+        "consoleErrors": "browser-console-final.txt shows repeated 'Failed to load resource: net::ERR_INVALID_URL' messages.",
+        "network": "browser-network-final.txt shows repeated Google Sheets CSV fetches on page opens/reloads."
+      },
+      "issues": "Blocked visibility still does not respond to scoping; the callout stays absent in both overview and scoped states."
+    },
+    {
+      "id": "VAL-BLOCKED-003",
+      "title": "Fully complete goals do not surface blocked callouts",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Open the filter panel and set Status to Done.",
+          "expected": "Goals that are fully complete within the active subset render as 100% complete with no blocked callout.",
+          "observed": "Goals 2, 3, and 4 became 100% complete in the filtered subset and showed no blocked counts or blocked-owner text."
+        },
+        {
+          "action": "Click the 100%-complete goal 2 card to confirm it remains explorable.",
+          "expected": "The complete goal card can still be scoped without adding blocked callouts.",
+          "observed": "Goal 2 scoped successfully at 100% (6/6 DONE), remained interactive, and still showed no blocked callout."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-blocked-scope/VAL-BLOCKED-003-goal-complete-no-blocked.png"
+        ],
+        "consoleErrors": "browser-console-final.txt shows repeated 'Failed to load resource: net::ERR_INVALID_URL' messages.",
+        "network": "browser-network-final.txt shows normal page asset and Google Sheets CSV requests during the retest."
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-OVERVIEW-003",
+      "title": "Goal cards surface progress, normalized blocked ownership, and stale signals",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Inspect the four goal cards in overview after the sheet data loads.",
+          "expected": "Each goal card shows progress plus blocked count/owner names when the active subset contains blocked rows, alongside stale state when applicable.",
+          "observed": "All goal cards showed progress and stale labels, but none displayed blocked counts or blocked-owner names despite visible 'At risk' rows in the active overview."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-blocked-scope/VAL-OVERVIEW-003-goal-cards.png"
+        ],
+        "consoleErrors": "browser-console-final.txt shows repeated 'Failed to load resource: net::ERR_INVALID_URL' messages.",
+        "network": "browser-network-final.txt shows the Google Sheets CSV fetch that populated the goal cards."
+      },
+      "issues": "Blocked ownership/count details are still missing from the goal cards."
+    },
+    {
+      "id": "VAL-OVERVIEW-006",
+      "title": "Freshness reflects sheet-update recency rather than fetch time",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Review the top-level freshness indicator in overview after the data loads.",
+          "expected": "The header freshness communicates recency from the underlying sheet data and aligns with stale treatment when updates are older than 7 days.",
+          "observed": "The header remained 'Live · update date unavailable' while all goal cards simultaneously showed 'Stale (> 7d)'."
+        },
+        {
+          "action": "Reload the page and compare the freshness messaging again.",
+          "expected": "Reloading should not mask stale data as current or unavailable when dated rows are present.",
+          "observed": "The mismatch persisted across reloads; the header freshness never reflected the dated row recency."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-blocked-scope/VAL-OVERVIEW-006-stale-state.png"
+        ],
+        "consoleErrors": "browser-console-final.txt shows repeated 'Failed to load resource: net::ERR_INVALID_URL' messages.",
+        "network": "browser-network-final.txt shows repeated Google Sheets CSV fetches on reloads."
+      },
+      "issues": "The top-level freshness badge still conflicts with the stale goal-card state instead of reflecting sheet recency."
+    },
+    {
+      "id": "VAL-KEYBOARD-003",
+      "title": "Escape unwinds state in priority order",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Activate goal scope and press Escape.",
+          "expected": "Escape clears the active scope first.",
+          "observed": "After Escape, overview totals and the full 101-row table returned, but the stale 'Scoped to goal' banner remained visible instead of clearing cleanly."
+        },
+        {
+          "action": "Reload, expand the first row, and press Escape.",
+          "expected": "With no scope active, Escape closes the expanded row.",
+          "observed": "The row details remained visible after Escape, so the expanded row did not close."
+        },
+        {
+          "action": "Reload, open the filter panel, and press Escape.",
+          "expected": "With no scope or row expansion active, Escape closes the filter panel.",
+          "observed": "The filter controls still remained visible after Escape, so the panel did not close."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-blocked-scope/VAL-KEYBOARD-003-escape-scope.png",
+          "leadership-ui/rerun-blocked-scope/VAL-KEYBOARD-003-escape-row.png",
+          "leadership-ui/rerun-blocked-scope/VAL-KEYBOARD-003-escape-filter-panel.png"
+        ],
+        "consoleErrors": "browser-console-final.txt shows repeated 'Failed to load resource: net::ERR_INVALID_URL' messages.",
+        "network": "browser-network-final.txt shows only normal page/document and sheet fetch traffic during the keyboard retest."
+      },
+      "issues": "Escape does not unwind state in the required priority order; it leaves stale scope UI, open row details, and visible filter controls behind."
+    },
+    {
+      "id": "VAL-CROSS-001",
+      "title": "Goal scope updates summary, blocked section, and table together",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Capture overview, then click the goal 2 card to scope the page.",
+          "expected": "Summary, scope indicator, table, and blocked section all update to the same goal subset.",
+          "observed": "The summary dropped to 6 done / 31 in progress / 41 total and the table narrowed to goal 2, but blocked remained 0 and no blocked section appeared despite visible 'At risk' rows in the scoped table."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-blocked-scope/VAL-CROSS-001-overview-before-goal-scope.png",
+          "leadership-ui/rerun-blocked-scope/VAL-CROSS-001-goal-scope-full-page.png"
+        ],
+        "consoleErrors": "browser-console-final.txt shows repeated 'Failed to load resource: net::ERR_INVALID_URL' messages.",
+        "network": "browser-network-final.txt shows the page/document and sheet fetch sequence used for the scoped retest."
+      },
+      "issues": "Goal scoping still updates summary and table without updating any blocked surface."
+    },
+    {
+      "id": "VAL-CROSS-002",
+      "title": "Department scope plus search plus reset returns to overview coherently",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "From overview, scope to the Biz Dev department and type 'settlement' into search.",
+          "expected": "The page narrows coherently and shows a recoverable scoped no-results state.",
+          "observed": "The page showed 0 total updates with 'Scoped to department: Biz Dev' and a no-matching-updates state."
+        },
+        {
+          "action": "Press Reset.",
+          "expected": "Reset returns the page to the default overview with original summary, original table, and no lingering scope UI.",
+          "observed": "The summary and full 101-row table returned, but the Biz Dev scope banner remained visible and the blocked surface was still absent."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-blocked-scope/VAL-CROSS-002-department-scope-search.png",
+          "leadership-ui/rerun-blocked-scope/VAL-CROSS-002-reset-restored-overview.png"
+        ],
+        "consoleErrors": "browser-console-final.txt shows repeated 'Failed to load resource: net::ERR_INVALID_URL' messages.",
+        "network": "browser-network-final.txt shows only page assets and Google Sheets CSV fetches during the cross-area retest."
+      },
+      "issues": "Reset restored overview data but left stale department-scope UI behind and still did not restore any blocked section."
+    },
+    {
+      "id": "VAL-LOAD-047",
+      "title": "Goal-card stale treatment remains readable alongside dimmed scoped-state styling",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Filter the dashboard to Status = Done so multiple goals are fully complete, then scope to goal 2.",
+          "expected": "With goal scope active and sibling cards dimmed, stale treatment remains legible and semantically clear.",
+          "observed": "In scoped goal 2 view, the active goal card still displayed a clear 'Stale (> 7d)' label while the non-selected cards dimmed into disabled 'No updates in current view' states."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-blocked-scope/VAL-LOAD-047-stale-goals-while-scoped.png"
+        ],
+        "consoleErrors": "browser-console-final.txt shows repeated 'Failed to load resource: net::ERR_INVALID_URL' messages.",
+        "network": "browser-network-final.txt shows normal page asset and Google Sheets CSV requests during the scoped-state retest."
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [
+    {
+      "description": "agent-browser's request log was empty immediately after the first open until additional navigations/reloads occurred.",
+      "resolved": true,
+      "resolution": "Captured the final request log after the remaining retest steps instead of relying on the first snapshot.",
+      "affectedAssertions": [
+        "VAL-BLOCKED-001",
+        "VAL-BLOCKED-002",
+        "VAL-OVERVIEW-003",
+        "VAL-OVERVIEW-006",
+        "VAL-CROSS-001",
+        "VAL-CROSS-002",
+        "VAL-KEYBOARD-003",
+        "VAL-BLOCKED-003",
+        "VAL-LOAD-047"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Retested 9 assigned assertions: 2 passed (VAL-BLOCKED-003, VAL-LOAD-047) and 7 failed. The blocked surface still never renders, freshness/header semantics still conflict with stale goal cards, Reset/Escape leave stale scope UI behind, and cross-area scope flows remain incoherent."
+}

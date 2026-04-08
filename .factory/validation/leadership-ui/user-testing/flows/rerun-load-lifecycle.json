@@ -1,0 +1,152 @@
+{
+  "groupId": "rerun-load-lifecycle",
+  "testedAt": "2026-04-08T07:03:47.794814+00:00",
+  "isolation": {
+    "milestone": "leadership-ui",
+    "appUrl": "http://127.0.0.1:3100/index.html",
+    "browserSession": "77390450519e__u1",
+    "surface": "browser-ui"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-LOAD-001",
+      "title": "Load transitions show visible loading and settle cleanly",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Open the dashboard at /index.html and wait for the page to settle",
+          "expected": "A visible loading state appears during the transition and then disappears so the page settles into a clean loaded state",
+          "observed": "The page showed the loading banner 'Fetching latest data from Google Sheets…' at the same time as fully rendered summary metrics, goal cards, filters, and table rows"
+        },
+        {
+          "action": "Capture the settled overview state",
+          "expected": "Loaded content should not retain loading UI once the dashboard is available",
+          "observed": "The loading affordance lingered in the settled overview instead of clearing"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-load-lifecycle/VAL-LOAD-001-loading-state.png"
+        ],
+        "consoleErrors": "none",
+        "network": "No additional requests were needed for the settled-state capture; the visible issue was a mixed loading+loaded UI on the live page"
+      },
+      "issues": "The dashboard does not settle cleanly after load because the loading banner remains visible alongside loaded content."
+    },
+    {
+      "id": "VAL-LOAD-014",
+      "title": "Dashboard interactions do not create app-history navigation",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "From the loaded dashboard, scope to goal 3 and enter 'Wyoming' in search",
+          "expected": "These in-dashboard interactions should not create history/navigation semantics for the dashboard view",
+          "observed": "The URL stayed at http://127.0.0.1:3100/index.html while the page narrowed to one result"
+        },
+        {
+          "action": "Press browser Back and then Forward",
+          "expected": "Back/Forward should be a no-op for dashboard interactions rather than leaving the app surface",
+          "observed": "Back navigated to about:blank, and Forward restored the dashboard at http://127.0.0.1:3100/index.html"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-load-lifecycle/VAL-LOAD-014-history-before-back.png",
+          "leadership-ui/rerun-load-lifecycle/VAL-LOAD-014-history-after-back.png",
+          "leadership-ui/rerun-load-lifecycle/VAL-LOAD-014-history-after-forward.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Forward reloaded the local dashboard document at http://127.0.0.1:3100/index.html"
+      },
+      "issues": "Browser history is not inert for dashboard interactions because Back leaves the app to about:blank before Forward returns."
+    },
+    {
+      "id": "VAL-LOAD-021",
+      "title": "Stale goal semantics are unambiguous in the UI",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Patch fetch in the browser page to return a custom CSV where goal 1 rows are dated 2026-03-20 and goal 4 has a fresh 2026-04-08 row, then trigger Refresh",
+          "expected": "Visible stale treatment and text should communicate the chosen recency rule without conflicting age signals",
+          "observed": "The page header showed 'Live · current (0d old)' while goal 1 simultaneously showed 'Blocked: Ada' and 'Stale (> 7d)'"
+        },
+        {
+          "action": "Review the summary, goal cards, and blocked section in the refreshed custom-data state",
+          "expected": "Age messaging should remain semantically consistent across the screen",
+          "observed": "The page-level freshness read as fresh/current even though a visible goal card on the same screen was marked stale"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-load-lifecycle/VAL-LOAD-021-stale-goal-clarity.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Refresh used browser-surface fetch patching for the Google Sheets request to simulate the stale/fresh mixed dataset"
+      },
+      "issues": "The UI still presents conflicting recency semantics by mixing a fresh global label with a stale goal card on the same screen."
+    },
+    {
+      "id": "VAL-LOAD-042",
+      "title": "Error and recovery transitions stay recoverable and non-misleading",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "From the custom-data browser state, patch fetch in-page to throw for the Google Sheets request and press Refresh",
+          "expected": "Refresh failure should stay on the same page with a recoverable status surface and avoid broken or misleading mixed presentations",
+          "observed": "The page showed an in-place error surface with 'Could not load data' and 'Try again', but it also continued to display the previous summary, goal cards, blocked section, controls, and table content underneath"
+        },
+        {
+          "action": "Restore fetch and press Try again to recover",
+          "expected": "Retry should settle into a clean loaded state without duplicate or lingering status UI",
+          "observed": "Retry restored loaded content, but the loading banner 'Fetching latest data from Google Sheets…' remained visible over the settled dashboard"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-load-lifecycle/VAL-LOAD-042-error-state.png",
+          "leadership-ui/rerun-load-lifecycle/VAL-LOAD-042-recovered-state.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Failure and recovery were exercised through browser-page fetch patching for the Google Sheets request"
+      },
+      "issues": "The transitions remain misleading because refresh failure overlays stale prior content and retry recovery still leaves a lingering loading banner in the settled state."
+    },
+    {
+      "id": "VAL-CROSS-003",
+      "title": "Refresh preserves a coherent scoped or filtered state",
+      "status": "fail",
+      "steps": [
+        {
+          "action": "Start from overview, scope to goal 3, enter search text 'Wyoming', and capture the narrowed state",
+          "expected": "The narrowed state should be coherent before refresh",
+          "observed": "The page narrowed to one visible Biz Dev result with the scope indicator and search state applied"
+        },
+        {
+          "action": "Press Refresh and wait for the page to settle",
+          "expected": "After reload completion the scoped/filtered state should remain coherent with no orphaned loading UI, stale expansion UI, or broken controls",
+          "observed": "The search result, scope indicator, filters, and controls remained coherent, but the loading banner persisted above the settled dashboard content"
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui/rerun-load-lifecycle/VAL-CROSS-003-before-refresh.png",
+          "leadership-ui/rerun-load-lifecycle/VAL-CROSS-003-after-refresh.png"
+        ],
+        "consoleErrors": "none",
+        "network": "Observed repeated GET requests to the Google Sheets CSV endpoint during refresh while the URL stayed http://127.0.0.1:3100/index.html"
+      },
+      "issues": "Refresh preserves the narrowed subset, but the post-refresh state is still incoherent because the loading UI remains visible after content has settled."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "The prior scoped/search state carried into the first custom-data run, so the custom stale-semantics check initially inherited an irrelevant scope and had to be reset before capturing final evidence.",
+      "resolved": true,
+      "resolution": "Used the in-page reset control to clear the inherited narrowing state, then reran the browser-only fetch-patched scenario from a clean overview.",
+      "affectedAssertions": ["VAL-LOAD-021", "VAL-LOAD-042"]
+    }
+  ],
+  "blockers": [],
+  "summary": "Retested 5 assigned assertions and all 5 still fail. The dashboard still leaves loading UI visible after load/refresh, browser Back leaves the app surface, stale goal semantics remain contradictory in mixed-recency data, and refresh failure/recovery transitions still produce misleading mixed states."
+}

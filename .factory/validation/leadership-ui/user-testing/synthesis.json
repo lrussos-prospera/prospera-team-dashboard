@@ -1,150 +1,68 @@
 {
   "milestone": "leadership-ui",
-  "round": 1,
+  "round": 2,
   "status": "fail",
   "assertionsSummary": {
-    "total": 81,
-    "passed": 68,
-    "failed": 11,
-    "blocked": 2
+    "total": 14,
+    "passed": 2,
+    "failed": 12,
+    "blocked": 0
   },
   "passedAssertions": [
-    "VAL-CROSS-004",
-    "VAL-KEYBOARD-001",
-    "VAL-KEYBOARD-002",
-    "VAL-KEYBOARD-004",
-    "VAL-KEYBOARD-005",
-    "VAL-LOAD-002",
-    "VAL-LOAD-003",
-    "VAL-LOAD-004",
-    "VAL-LOAD-005",
-    "VAL-LOAD-006",
-    "VAL-LOAD-007",
-    "VAL-LOAD-008",
-    "VAL-LOAD-009",
-    "VAL-LOAD-010",
-    "VAL-LOAD-011",
-    "VAL-LOAD-012",
-    "VAL-LOAD-013",
-    "VAL-LOAD-015",
-    "VAL-LOAD-016",
-    "VAL-LOAD-017",
-    "VAL-LOAD-018",
-    "VAL-LOAD-019",
-    "VAL-LOAD-020",
-    "VAL-LOAD-022",
-    "VAL-LOAD-023",
-    "VAL-LOAD-024",
-    "VAL-LOAD-025",
-    "VAL-LOAD-026",
-    "VAL-LOAD-027",
-    "VAL-LOAD-028",
-    "VAL-LOAD-029",
-    "VAL-LOAD-030",
-    "VAL-LOAD-031",
-    "VAL-LOAD-032",
-    "VAL-LOAD-033",
-    "VAL-LOAD-034",
-    "VAL-LOAD-035",
-    "VAL-LOAD-036",
-    "VAL-LOAD-037",
-    "VAL-LOAD-038",
-    "VAL-LOAD-039",
-    "VAL-LOAD-040",
-    "VAL-LOAD-041",
-    "VAL-LOAD-043",
-    "VAL-LOAD-044",
-    "VAL-LOAD-045",
-    "VAL-LOAD-046",
-    "VAL-LOAD-048",
-    "VAL-LOAD-049",
-    "VAL-LOAD-050",
-    "VAL-OVERVIEW-001",
-    "VAL-OVERVIEW-002",
-    "VAL-OVERVIEW-004",
-    "VAL-OVERVIEW-005",
-    "VAL-RESPONSIVE-001",
-    "VAL-RESPONSIVE-002",
-    "VAL-RESPONSIVE-003",
-    "VAL-SCOPE-001",
-    "VAL-SCOPE-002",
-    "VAL-SCOPE-003",
-    "VAL-SCOPE-004",
-    "VAL-SCOPE-005",
-    "VAL-SCOPE-006",
-    "VAL-SCOPE-007",
-    "VAL-TABLE-001",
-    "VAL-TABLE-002",
-    "VAL-TABLE-003",
-    "VAL-TABLE-004"
+    "VAL-BLOCKED-003",
+    "VAL-LOAD-047"
   ],
   "failedAssertions": [
     {
-      "id": "VAL-BLOCKED-001",
-      "reason": "The dedicated blocked section stayed hidden in overview even though six visible rows were labeled 'At risk', so the canonical blocked callout was absent."
-    },
-    {
-      "id": "VAL-BLOCKED-002",
-      "reason": "Blocked visibility never responded to active subsets because the blocked section remained hidden in overview, goal scope, department scope, and combined filtered states."
-    },
-    {
-      "id": "VAL-CROSS-001",
-      "reason": "Goal scope updated summary, table, and scope indicator together, but the blocked section did not update to that subset and stayed hidden despite 'At risk' rows within goal 2."
-    },
-    {
-      "id": "VAL-CROSS-002",
-      "reason": "Department scope + search + reset returned summary and table to overview, but the blocked section never surfaced either before or after reset even though overview still contained visible 'At risk' rows."
-    },
-    {
-      "id": "VAL-CROSS-003",
-      "reason": "Refreshing during a narrowed state left an incoherent post-refresh UI: the loading message persisted over loaded content, scope text remained while scope visibility was false, and the narrowed filters stayed active."
-    },
-    {
       "id": "VAL-LOAD-001",
-      "reason": "On repeated fresh opens, the browser-rendered dashboard content was already visible in the first captured frame, so the app did not present an observable loading-only state before summary/goals/controls/table content appeared."
+      "reason": "The dashboard does not settle cleanly after load because the loading banner remains visible alongside loaded content."
     },
     {
       "id": "VAL-LOAD-014",
-      "reason": "Browser history was not a no-op: Back from the dashboard returned to about:blank before Forward restored the dashboard, so browser navigation did alter page state instead of remaining inert within the single-page app."
+      "reason": "Browser history is not inert for dashboard interactions because Back leaves the app to about:blank before Forward returns."
     },
     {
       "id": "VAL-LOAD-021",
-      "reason": "Stale-goal semantics were not fully unambiguous: in the custom-data run the page-level freshness badge read 'Live \u00b7 current (0d old)' while the first goal card simultaneously showed 'Stale (> 7d)', creating conflicting visible recency signals on the same screen."
+      "reason": "The UI still presents conflicting recency semantics by mixing a fresh global label with a stale goal card on the same screen."
     },
     {
       "id": "VAL-LOAD-042",
-      "reason": "During a mocked refresh failure, the page collapsed from the normal top-to-bottom header/summary/goals/controls/detail reading order to only the refresh button plus retry surface, so the reading order was not preserved across load transitions."
+      "reason": "The transitions remain misleading because refresh failure overlays stale prior content and retry recovery still leaves a lingering loading banner in the settled state."
+    },
+    {
+      "id": "VAL-CROSS-003",
+      "reason": "Refresh preserves the narrowed subset, but the post-refresh state is still incoherent because the loading UI remains visible after content has settled."
+    },
+    {
+      "id": "VAL-BLOCKED-001",
+      "reason": "The dedicated blocked section never rendered even though overview rows included visible 'At risk' items."
+    },
+    {
+      "id": "VAL-BLOCKED-002",
+      "reason": "Blocked visibility still does not respond to scoping; the callout stays absent in both overview and scoped states."
     },
     {
       "id": "VAL-OVERVIEW-003",
-      "reason": "Goal cards showed labels, progress, and stale signals, but they never surfaced blocked counts or blocked-owner names even though six visible rows were marked 'At risk'."
+      "reason": "Blocked ownership/count details are still missing from the goal cards."
     },
     {
       "id": "VAL-OVERVIEW-006",
-      "reason": "Freshness did not reliably reflect sheet-update recency: the header badge stayed at 'Live \u00b7 update date unavailable' even though rows had dated updates and goal cards were marked stale."
-    }
-  ],
-  "blockedAssertions": [
-    {
-      "id": "VAL-BLOCKED-003",
-      "blockedBy": "The current dataset never produced a fully complete goal card, so there was no qualifying complete/no-blocked goal to verify this assertion against."
+      "reason": "The top-level freshness badge still conflicts with the stale goal-card state instead of reflecting sheet recency."
     },
     {
-      "id": "VAL-LOAD-047",
-      "blockedBy": "I could validate stale goal treatment and scoped dimming separately, but I could not produce a browser state where a non-selected dimmed card also remained stale instead of becoming an empty-state card, so this exact coexistence case was not directly testable in the current implementation."
-    }
-  ],
-  "appliedUpdates": [
-    {
-      "target": "user-testing.md",
-      "description": "Added a Browser UI flow-validator guidance section documenting session isolation, shared server usage, evidence expectations, and the max-concurrency constraint of 2.",
-      "source": "setup"
+      "id": "VAL-KEYBOARD-003",
+      "reason": "Escape does not unwind state in the required priority order; it leaves stale scope UI, open row details, and visible filter controls behind."
     },
     {
-      "target": "validation artifacts",
-      "description": "Created .factory/validation/leadership-ui/user-testing/flows plus mission evidence directories so browser subagents could write isolated reports and screenshots.",
-      "source": "setup"
+      "id": "VAL-CROSS-001",
+      "reason": "Goal scoping still updates summary and table without updating any blocked surface."
+    },
+    {
+      "id": "VAL-CROSS-002",
+      "reason": "Reset restored overview data but left stale department-scope UI behind and still did not restore any blocked section."
     }
   ],
-  "previousRound": null
+  "blockedAssertions": [],
+  "appliedUpdates": [],
+  "previousRound": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/leadership-ui/user-testing/synthesis.round1.json"
 }
