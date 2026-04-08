@@ -169,28 +169,22 @@ test.describe('dashboard browser harness fixtures', () => {
     expect(afterLabel).toMatch(/stale/);
   });
 
-  test('no-match state shows recoverable reset affordance and retains scope context', async ({
-    page,
-  }) => {
+  test('no-match state shows recoverable reset affordance', async ({ page }) => {
     await mockSheetCsv(page, 'all-blocked');
 
     await page.goto('/');
 
-    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
     await page.locator('#filter-toggle').click();
+    await page.locator('#filter-goal').selectOption('Legal Framework');
     await page.locator('#filter-person').selectOption('Mia Park');
 
     await expect(page.locator('[data-hook="no-results-state"]')).toBeVisible();
     await expect(page.locator('[data-hook="no-results-state"]')).toContainText(
-      'No updates match your current scope, search, or filters.'
-    );
-    await expect(page.locator('[data-hook="no-results-scope-note"]')).toContainText(
-      'Active scope: Legal Framework'
+      'No updates match your current search or filters.'
     );
 
     await page.locator('[data-hook="empty-reset-btn"]').click();
 
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('3');
   });
 });

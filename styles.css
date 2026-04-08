@@ -383,13 +383,6 @@ button.goal-card {
   box-shadow: var(--shadow-md);
   border-color: var(--brand-teal);
 }
-.goal-card-active {
-  border-color: var(--brand-navy);
-  box-shadow: 0 0 0 2px rgba(31, 78, 134, 0.12);
-}
-.goal-card-dimmed {
-  opacity: 0.58;
-}
 .goal-card-empty {
   border-style: dashed;
 }
@@ -461,64 +454,6 @@ button.goal-card {
 }
 .goal-signals.goal-signals-empty {
   color: var(--color-text-muted);
-}
-
-.scope-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  background: rgba(106, 190, 190, 0.14);
-  border-radius: var(--radius-md);
-  color: var(--brand-dark-teal);
-  font-size: 0.85rem;
-  font-weight: 700;
-  overflow: hidden;
-  max-height: 0;
-  opacity: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  padding-left: 14px;
-  padding-right: 14px;
-  margin-bottom: 0;
-  border: 1px solid transparent;
-  visibility: hidden;
-  transition:
-    max-height var(--duration-state) var(--ease-out-quart),
-    opacity var(--duration-state) var(--ease-out-quart),
-    padding var(--duration-state) var(--ease-out-quart),
-    margin var(--duration-state) var(--ease-out-quart),
-    border-color var(--duration-state) var(--ease-out-quart),
-    visibility 0s var(--duration-state);
-}
-.scope-indicator.scope-indicator-visible {
-  max-height: 60px;
-  opacity: 1;
-  visibility: visible;
-  padding: 10px 14px;
-  margin-bottom: 16px;
-  border-color: rgba(54, 132, 150, 0.26);
-  transition:
-    max-height var(--duration-state) var(--ease-out-quart),
-    opacity var(--duration-state) var(--ease-out-quart),
-    padding var(--duration-state) var(--ease-out-quart),
-    margin var(--duration-state) var(--ease-out-quart),
-    border-color var(--duration-state) var(--ease-out-quart),
-    visibility 0s;
-}
-.scope-clear-btn {
-  border: 1px solid rgba(31, 78, 134, 0.35);
-  background: white;
-  border-radius: var(--radius-sm);
-  color: var(--brand-navy);
-  font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 6px 10px;
-}
-.scope-clear-btn:hover {
-  background: rgba(31, 78, 134, 0.07);
 }
 
 .blocked-section {

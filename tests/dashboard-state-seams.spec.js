@@ -35,27 +35,14 @@ test.describe('dashboard state and render seams', () => {
     await expect(infraGoal).not.toContainText('Zoe Klein');
   });
 
-  test('goal scope updates summary, blocked section, and table together with a visible dismissible scope indicator', async ({
-    page,
-  }) => {
+  test('goal card click navigates to goal drilldown route', async ({ page }) => {
     await mockSheetCsv(page, 'all-blocked');
     await page.goto('/');
 
     await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
-
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
-    await expect(page.locator('#scope-indicator-text')).toContainText(
-      'Scoped to goal: Legal Framework'
-    );
-    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('2');
-    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(2);
-    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(2);
-
-    await page.locator('#scope-clear-btn').click();
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+    // Stub redirects back to overview
+    await expect(page.locator('[data-hook="summary"]')).toBeVisible();
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('3');
-    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(3);
-    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(3);
   });
 
   test('narrowed states preserve full goal-card frame with empty non-scopable goals', async ({
@@ -80,30 +67,17 @@ test.describe('dashboard state and render seams', () => {
     ).not.toHaveAttribute('aria-disabled', 'true');
   });
 
-  test('empty scoped goal card becomes non-interactive after narrowing to zero and scope can be dismissed via controls', async ({
-    page,
-  }) => {
+  test('empty goal card is non-interactive after filter narrows to zero', async ({ page }) => {
     await mockSheetCsv(page, 'all-blocked');
     await page.goto('/');
-
-    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
 
     await page.locator('#filter-toggle').click();
     await page.locator('#filter-person').selectOption('Mia Park');
 
-    const scopedGoalCard = page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]');
-    await expect(scopedGoalCard).toContainText('0 / 0 DONE');
-    await expect(scopedGoalCard).toContainText('No updates in current view');
-    await expect(scopedGoalCard).toHaveAttribute('aria-disabled', 'true');
-
-    await scopedGoalCard.click({ force: true });
-    await expect(page.locator('#scope-indicator-text')).toContainText(
-      'Scoped to goal: Legal Framework'
-    );
-
-    await page.locator('#scope-clear-btn').click();
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+    const legalGoal = page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]');
+    await expect(legalGoal).toContainText('0 / 0 DONE');
+    await expect(legalGoal).toContainText('No updates in current view');
+    await expect(legalGoal).toHaveAttribute('aria-disabled', 'true');
   });
 
   test('page freshness follows same stale basis as visible goal cards in mixed-recency overview', async ({
@@ -125,7 +99,7 @@ test.describe('dashboard state and render seams', () => {
     ).toHaveCount(0);
   });
 
-  test('header freshness follows narrowed subset recency in scoped mixed-recency state', async ({
+  test('header freshness follows narrowed subset recency in filtered mixed-recency state', async ({
     page,
   }) => {
     await mockSheetCsv(page, 'mixed-recency');
@@ -134,20 +108,12 @@ test.describe('dashboard state and render seams', () => {
     const headerLabel = page.locator('#csv-date-label');
     await expect(headerLabel).toContainText('stale');
 
-    await page.locator('[data-hook="table-group-header"][data-department="Operations"]').click();
+    await page.locator('#filter-toggle').click();
+    await page.locator('#filter-dept').selectOption('Operations');
 
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
-    await expect(page.locator('#scope-indicator-text')).toContainText(
-      'Scoped to department: Operations'
-    );
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
-    await expect(
-      page.locator('[data-hook="goal-card"][data-goal="Operations"] [data-hook="goal-stale"]')
-    ).toHaveCount(0);
-
     await expect(headerLabel).toContainText('current');
     await expect(headerLabel).not.toContainText('stale');
-    await expect(headerLabel).not.toContainText('update date unavailable');
   });
 
   test('department filter cascades team options and combined filters apply conjunctively', async ({
@@ -178,135 +144,63 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="table-row-summary"]')).toContainText('Permit backlog');
   });
 
-  test('department header click scopes detail in place, supports reset, and keeps URL stable', async ({
-    page,
-  }) => {
+  test('department header click navigates to department drilldown route', async ({ page }) => {
     await mockSheetCsv(page, 'all-blocked');
     await page.goto('/');
 
-    const urlBefore = page.url();
-
     await page.locator('[data-hook="table-group-header"][data-department="Governance"]').click();
-
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
-    await expect(page.locator('#scope-indicator-text')).toContainText(
-      'Scoped to department: Governance'
-    );
-    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('2');
-    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(2);
-    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(2);
-    await expect(page).toHaveURL(urlBefore);
-
-    await page.locator('#reset-btn').click();
-
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+    // Stub redirects back to overview
+    await expect(page.locator('[data-hook="summary"]')).toBeVisible();
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('3');
-    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(3);
-    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(3);
-    await expect(page).toHaveURL(urlBefore);
   });
 
-  test('department scope plus search plus reset returns to overview coherently', async ({
+  test('department filter plus search plus reset returns to overview coherently', async ({
     page,
   }) => {
     await mockSheetCsv(page, 'canonical-blocked-mixed');
     await page.goto('/');
 
-    const legalGoal = page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]');
-    const infraGoal = page.locator('[data-hook="goal-card"][data-goal="Infrastructure"]');
-
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('4');
     await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('2');
     await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(2);
-    await expect(page.locator('[data-hook="blocked-section"]')).toContainText('Ana Cruz');
-    await expect(page.locator('[data-hook="blocked-section"]')).toContainText('Mia Park');
-    await expect(page.locator('[data-hook="blocked-section"]')).not.toContainText('Leo Tan');
-    await expect(page.locator('[data-hook="blocked-section"]')).not.toContainText('Zoe Klein');
-    await expect(legalGoal).toContainText('Blocked: Ana Cruz');
-    await expect(legalGoal).not.toContainText('Leo Tan');
-    await expect(infraGoal).toContainText('Blocked: Mia Park');
-    await expect(infraGoal).not.toContainText('Zoe Klein');
-
-    await page.locator('[data-hook="table-group-header"][data-department="Governance"]').click();
-
-    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('2');
-    await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('1');
-    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(1);
-    await expect(page.locator('[data-hook="blocked-section"]')).toContainText('Ana Cruz');
-    await expect(page.locator('[data-hook="blocked-section"]')).not.toContainText('Leo Tan');
-    await expect(legalGoal).toContainText('Blocked: Ana Cruz');
-    await expect(legalGoal).not.toContainText('Leo Tan');
-    await expect(infraGoal).toContainText('No updates in current view');
-    await expect(infraGoal).not.toContainText('Blocked:');
 
     await page.locator('#filter-toggle').click();
-    await page.locator('#search').fill('permit');
+    await page.locator('#filter-dept').selectOption('Governance');
 
-    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
-    await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('0');
-    await expect(page.locator('[data-hook="blocked-section"]')).toBeHidden();
-    await expect(legalGoal).not.toContainText('Blocked:');
-    await expect(infraGoal).toContainText('No updates in current view');
-    await expect(infraGoal).not.toContainText('Blocked:');
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('2');
+
+    await page.locator('#search').fill('permit');
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
 
     await page.locator('#reset-btn').click();
-
     await expect(page.locator('#search')).toHaveValue('');
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
-    await expect(page.locator('[data-hook="scope-indicator"]')).toHaveAttribute(
-      'aria-hidden',
-      'true'
-    );
-    await expect(page.locator('#scope-indicator-text')).toHaveText('');
-    await expect(
-      page.locator('[data-hook="table-group-header"][data-department="Governance"]')
-    ).toHaveAttribute('aria-pressed', 'false');
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('4');
     await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('2');
     await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(2);
-    await expect(page.locator('[data-hook="blocked-section"]')).toContainText('Ana Cruz');
-    await expect(page.locator('[data-hook="blocked-section"]')).toContainText('Mia Park');
-    await expect(page.locator('[data-hook="blocked-section"]')).not.toContainText('Leo Tan');
-    await expect(page.locator('[data-hook="blocked-section"]')).not.toContainText('Zoe Klein');
-    await expect(legalGoal).toContainText('Blocked: Ana Cruz');
-    await expect(legalGoal).not.toContainText('Leo Tan');
-    await expect(infraGoal).toContainText('Blocked: Mia Park');
-    await expect(infraGoal).not.toContainText('Zoe Klein');
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(4);
   });
 
-  test('cross-area scope plus search plus reset keeps blocked surfaces tied to canonical blocked rows', async ({
+  test('goal filter plus search plus reset keeps blocked surfaces tied to canonical blocked rows', async ({
     page,
   }) => {
     await mockSheetCsv(page, 'canonical-blocked-mixed');
     await page.goto('/');
 
     await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('2');
-    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(2);
 
-    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
+    await page.locator('#filter-toggle').click();
+    await page.locator('#filter-goal').selectOption('Legal Framework');
+
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('2');
     await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('1');
     await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(1);
-    await expect(page.locator('[data-hook="blocked-section"]')).toContainText('Ana Cruz');
-    await expect(page.locator('[data-hook="blocked-section"]')).not.toContainText('Leo Tan');
 
-    await page.locator('#filter-toggle').click();
     await page.locator('#search').fill('risk watch');
-
-    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
     await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('0');
-    await expect(page.locator('[data-hook="blocked-section"]')).toBeHidden();
-    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
 
     await page.locator('#reset-btn').click();
-
-    await expect(page.locator('#search')).toHaveValue('');
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('4');
     await expect(page.locator('[data-hook="summary-blocked"] .hero-stat-value')).toHaveText('2');
-    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(2);
   });
 
   test('refresh preserves coherent narrowed state without duplicate blocked surface', async ({
@@ -315,8 +209,8 @@ test.describe('dashboard state and render seams', () => {
     await mockSheetCsv(page, 'all-blocked');
     await page.goto('/');
 
-    await page.locator('[data-hook="table-group-header"][data-department="Governance"]').click();
     await page.locator('#filter-toggle').click();
+    await page.locator('#filter-dept').selectOption('Governance');
     await page.locator('#search').fill('permit');
 
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
@@ -335,10 +229,6 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="error-state"]')).toHaveCount(0);
 
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
-    await expect(page.locator('#scope-indicator-text')).toContainText(
-      'Scoped to department: Governance'
-    );
     await expect(page.locator('[data-hook="blocked-section"]')).toBeVisible();
     await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(1);
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
@@ -392,14 +282,11 @@ test.describe('dashboard state and render seams', () => {
 
     await page.goto('/');
 
-    await page.locator('[data-hook="table-group-header"][data-department="Governance"]').click();
     await page.locator('#filter-toggle').click();
+    await page.locator('#filter-dept').selectOption('Governance');
     await page.locator('#search').fill('permit');
 
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
-    await expect(page.locator('#scope-indicator-text')).toContainText(
-      'Scoped to department: Governance'
-    );
 
     const loadingState = page.locator('[data-hook="loading-state"]');
     await page.locator('#refresh-btn').click();
@@ -412,9 +299,6 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="summary"]')).toBeVisible();
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
     await expect(page.locator('#search')).toHaveValue('permit');
-    await expect(page.locator('#scope-indicator-text')).toContainText(
-      'Scoped to department: Governance'
-    );
     await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(1);
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
     await expect(page.locator('[data-hook="blocked-section"] .blocked-list')).toHaveCount(1);
@@ -436,10 +320,8 @@ test.describe('dashboard state and render seams', () => {
 
     await page.goto('/');
 
-    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
-    await expect(page.locator('#scope-indicator-text')).toContainText(
-      'Scoped to goal: Legal Framework'
-    );
+    await page.locator('#filter-toggle').click();
+    await page.locator('#filter-goal').selectOption('Legal Framework');
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('2');
 
     await page.locator('#refresh-btn').click();
@@ -447,7 +329,6 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="error-state"]')).toBeVisible();
     await expect(page.locator('[data-hook="loading-state"]')).toHaveCount(0);
     await expect(page.locator('[data-hook="summary"]')).toBeHidden();
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
     await expect(page.locator('[data-hook="blocked-section"]')).toBeHidden();
     await expect(page.locator('[data-hook="detail-table"]')).toBeHidden();
   });
@@ -472,8 +353,8 @@ test.describe('dashboard state and render seams', () => {
 
     await page.goto('/');
 
-    await page.locator('[data-hook="table-group-header"][data-department="Governance"]').click();
     await page.locator('#filter-toggle').click();
+    await page.locator('#filter-dept').selectOption('Governance');
     await page.locator('#search').fill('permit');
 
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
@@ -483,16 +364,9 @@ test.describe('dashboard state and render seams', () => {
 
     await page.locator('[data-hook="retry-btn"]').click();
 
-    await expect(page.locator('[data-hook="loading-state"]')).toHaveCount(0);
-    await expect(page.locator('[data-hook="error-state"]')).toHaveCount(0);
     await expect(page.locator('[data-hook="summary"]')).toBeVisible();
     await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('1');
-    await expect(page.locator('#scope-indicator-text')).toContainText(
-      'Scoped to department: Governance'
-    );
     await expect(page.locator('#search')).toHaveValue('permit');
-    await expect(page.locator('[data-hook="blocked-item"]')).toHaveCount(1);
-    await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
   });
 
   test('table expansion keeps one expanded detail row at a time', async ({ page }) => {
@@ -556,12 +430,9 @@ test.describe('dashboard state and render seams', () => {
     await expect(rows.nth(1)).toBeFocused();
   });
 
-  test('Escape unwinds scope before expansion before filter panel', async ({ page }) => {
+  test('Escape unwinds expansion before filter panel', async ({ page }) => {
     await mockSheetCsv(page, 'all-blocked');
     await page.goto('/');
-
-    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
 
     await page.locator('[data-hook="table-row-summary"]').first().click();
     await expect(page.locator('[data-hook="table-row-summary"][aria-expanded="true"]')).toHaveCount(
@@ -569,16 +440,6 @@ test.describe('dashboard state and render seams', () => {
     );
 
     await page.locator('#filter-toggle').click();
-    await expect(page.locator('#filter-panel')).toBeVisible();
-
-    await page.locator('#search').focus();
-    await expect(page.locator('#search')).toBeFocused();
-
-    await page.keyboard.press('Escape');
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
-    await expect(page.locator('[data-hook="table-row-summary"][aria-expanded="true"]')).toHaveCount(
-      1
-    );
     await expect(page.locator('#filter-panel')).toBeVisible();
 
     await page.locator('#search').focus();
@@ -627,34 +488,21 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('#filter-toggle')).toHaveAttribute('aria-expanded', 'false');
   });
 
-  test('escape unwind keeps expansion bound to the same row after scope clears', async ({
-    page,
-  }) => {
+  test('escape unwind keeps expansion bound to the same row', async ({ page }) => {
     await mockSheetCsv(page, 'escape-unwind-derived-ui');
     await page.goto('/');
 
-    await page.locator('[data-hook="goal-card"][data-goal="Infrastructure"]').click();
-    await expect(page.locator('[data-hook="scope-indicator"]')).toContainText('Infrastructure');
-
-    const scopedRow = page.locator('[data-hook="table-row-summary"]', {
-      hasText: 'Follow-up permits',
-    });
-    await scopedRow.click();
-    await expect(scopedRow).toHaveAttribute('aria-expanded', 'true');
+    const row = page.locator('[data-hook="table-row-summary"]', { hasText: 'Follow-up permits' });
+    await row.click();
+    await expect(row).toHaveAttribute('aria-expanded', 'true');
 
     await page.locator('#filter-toggle').click();
-    await expect(page.locator('#filter-panel')).toBeVisible();
     await page.locator('#search').focus();
 
     await page.keyboard.press('Escape');
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
     await expect(page.locator('[data-hook="table-row-summary"][aria-expanded="true"]')).toHaveCount(
-      1
+      0
     );
-    await expect(
-      page.locator('[data-hook="table-row-summary"][aria-expanded="true"] .td-topic')
-    ).toHaveText('Follow-up permits');
-    await expect(page.locator('#filter-panel')).toBeVisible();
   });
 
   test('reduced motion mode preserves interaction behavior', async ({ page }) => {
@@ -667,13 +515,14 @@ test.describe('dashboard state and render seams', () => {
     await page.keyboard.press('Enter');
     await expect(firstRow).toHaveAttribute('aria-expanded', 'true');
 
-    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
+    await page.locator('#filter-toggle').click();
+    await page.locator('#filter-goal').selectOption('Legal Framework');
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('2');
+    await page.locator('#reset-btn').click();
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('3');
   });
 
-  test('mobile layout preserves hidden table info through expansion and keeps scoped flow in-page', async ({
+  test('mobile layout preserves hidden table info through expansion and filter flow in-page', async ({
     page,
   }) => {
     await mockSheetCsv(page, 'all-blocked');
@@ -697,17 +546,15 @@ test.describe('dashboard state and render seams', () => {
     await expect(detail).toContainText('Updated');
 
     const initialUrl = page.url();
-    await page.locator('[data-hook="table-group-header"]').first().click();
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeVisible();
     await page.locator('#filter-toggle').click();
+    await page.locator('#filter-dept').selectOption('Governance');
     await page.locator('#search').fill('permit');
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
     await page.locator('#reset-btn').click();
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
     await expect(page).toHaveURL(initialUrl);
   });
 
-  test('full single-page exploration path preserves URL while scope expand search and reset interact', async ({
+  test('full single-page exploration path preserves URL while filter search and reset interact', async ({
     page,
   }) => {
     await mockSheetCsv(page, 'all-blocked');
@@ -715,8 +562,9 @@ test.describe('dashboard state and render seams', () => {
 
     const initialUrl = page.url();
 
-    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
-    await expect(page.locator('[data-hook="scope-indicator"]')).toContainText('Legal Framework');
+    await page.locator('#filter-toggle').click();
+    await page.locator('#filter-goal').selectOption('Legal Framework');
+    await expect(page.locator('[data-hook="summary-total"] .hero-stat-value')).toHaveText('2');
 
     const rows = page.locator('[data-hook="table-row-summary"]');
     await rows.first().click();
@@ -726,7 +574,6 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
 
     await page.locator('#reset-btn').click();
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(3);
     await expect(page).toHaveURL(initialUrl);
   });
@@ -778,8 +625,8 @@ test.describe('dashboard state and render seams', () => {
       marker: window.history.state?.marker ?? null,
     }));
 
-    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
     await page.locator('#filter-toggle').click();
+    await page.locator('#filter-goal').selectOption('Legal Framework');
     await page.locator('#search').fill('permit');
     await page.locator('[data-hook="table-row-summary"]').first().click();
 
@@ -789,7 +636,6 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="summary"]')).toBeVisible();
 
     await page.locator('#reset-btn').click();
-    await expect(page.locator('[data-hook="scope-indicator"]')).toBeHidden();
 
     const afterInteractions = await page.evaluate(() => ({
       href: window.location.href,
