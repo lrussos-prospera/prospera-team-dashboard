@@ -1,7 +1,7 @@
 {
   "milestone": "leadership-ui-followup",
-  "round": 1,
-  "status": "fail",
+  "round": 2,
+  "status": "pass",
   "validatorsRun": {
     "test": {
       "passed": true,
@@ -20,33 +20,19 @@
     }
   },
   "reviewsSummary": {
-    "total": 5,
-    "passed": 3,
-    "failed": 2,
-    "failedFeatures": [
-      "unify-page-and-goal-freshness-semantics",
-      "align-canonical-blocked-status-surfaces-and-validation-scenarios"
-    ]
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "failedFeatures": []
   },
-  "blockingIssues": [
-    {
-      "featureId": "unify-page-and-goal-freshness-semantics",
-      "severity": "blocking",
-      "description": "app.js:775 still sets the header freshness badge from appState.rows while goal-card stale treatment renders from the active subset, so narrowed/scoped views can still show contradictory freshness semantics; the new test only covers overview state and misses that regression path."
-    },
-    {
-      "featureId": "align-canonical-blocked-status-surfaces-and-validation-scenarios",
-      "severity": "blocking",
-      "description": "tests/dashboard-state-seams.spec.js:207 adds mixed blocked-status coverage for goal scoping, but the required department-scope + search + reset path from VAL-CROSS-002 still uses the all-blocked fixture, so regressions that count generic At risk rows as blocked under department scoping can still slip through."
-    }
-  ],
+  "blockingIssues": [],
   "appliedUpdates": [],
   "suggestedGuidanceUpdates": [],
   "rejectedObservations": [
     {
-      "observation": "The blocked-status reviewer noted that the worker handoff/transcript overstates VAL-CROSS-002 coverage because the mixed-fixture scenario covers goal scoping, not the contract's department-scope flow.",
-      "reason": "rejected as handoff-specific rather than durable shared-state guidance for services.yaml, library/, AGENTS.md, or skills"
+      "observation": "The freshness-fix review noted that the feature metadata verification step still references `tests/fixtures/mixed-recency.csv` in a Prettier check even though this repository's Prettier setup cannot infer a CSV parser for that file.",
+      "reason": "rejected because this is feature-specific verification metadata rather than durable shared-state guidance for services.yaml, library/, AGENTS.md, or a skill; it does not warrant a repository knowledge-base update on its own"
     }
   ],
-  "previousRound": null
+  "previousRound": ".factory/validation/leadership-ui-followup/scrutiny/synthesis.json"
 }

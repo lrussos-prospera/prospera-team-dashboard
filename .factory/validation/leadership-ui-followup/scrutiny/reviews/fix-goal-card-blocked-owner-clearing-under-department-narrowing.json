@@ -1,0 +1,15 @@
+{
+  "featureId": "fix-goal-card-blocked-owner-clearing-under-department-narrowing",
+  "reviewedAt": "2026-04-08T10:38:35Z",
+  "commitId": "cf09341",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The latest fix adequately closes the remaining department-scope regression hole left by both the original failed blocked-surface feature and the intermediate fix. Commit cf09341 adds the missing deterministic assertions inside the mixed canonical-blocked department-scope + search + reset scenario so an unrelated goal card must show the empty-goal treatment and clear its blocked-owner signal once narrowing reduces it to zero rows, while reset still restores the broader overview blocked-owner surfaces.",
+    "issues": []
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/leadership-ui-followup-fixups/scrutiny/reviews/fix-department-scope-canonical-blocked-coverage.json",
+  "summary": "Reviewed the original failed review, the intermediate failed fix review, the related prior pass review for this same fix feature, the worker transcript skeleton, handoff, static-dashboard-worker skill, mission guidance, and commit cf09341. The fix passes because tests/dashboard-state-seams.spec.js now explicitly asserts that the unrelated Infrastructure card clears blocked-owner text and shows 'No updates in current view' after department scoping and again after search narrowing, which directly addresses the previously missing department-scope VAL-BLOCKED-002 / VAL-CROSS-002 coverage and still preserves reset restoration to the canonical overview state."
+}

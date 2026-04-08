@@ -1,0 +1,21 @@
+{
+  "featureId": "fix-subset-freshness-header-coherence",
+  "reviewedAt": "2026-04-08T08:45:00Z",
+  "commitId": "ed19420",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Reviewed the original failing commit `0be025b` and the fix commit `ed19420` against the prior failure report. The original feature correctly unified header freshness with goal-bucket recency semantics in overview, but still fed the header badge from `appState.rows`, which let narrowed/scoped views disagree with visible goal-card stale treatment. The fix resolves that remaining gap by changing `renderApp()` to derive the header badge from `viewRows`, the same active visible subset already used by `renderGoals(viewRows)`, `renderBlocked(viewRows)`, and `renderTable(viewRows)`. The added Playwright scenario covers the exact mixed-recency department-scoped path from the prior failure by proving the overview is stale, then scoping to Operations flips the header to current while the visible Operations goal card remains non-stale and the subset narrows to one row.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "The feature metadata and worker transcript show a verification command that includes `tests/fixtures/mixed-recency.csv` in a Prettier check, but this repository's Prettier setup cannot parse CSV fixtures, so that documented verification step is not executable as written.",
+      "evidence": "Feature verificationSteps in mission `features.json` include `npx prettier --check ... tests/fixtures/mixed-recency.csv`; the fix handoff `discoveredIssues` records Prettier failing with `No parser could be inferred` for that CSV path, and `.factory/services.yaml` does not define a CSV-capable formatting command."
+    }
+  ],
+  "addressesFailureFrom": "/Users/treygoff/Code/prospera-team-dashboard/.factory/validation/leadership-ui-followup/scrutiny/reviews/unify-page-and-goal-freshness-semantics.json",
+  "summary": "Reviewed the fix feature transcript skeleton, both feature diffs (`0be025b` and `ed19420`), the fix handoff, prior failure review, skill guidance, and shared-state docs. The fix adequately addresses the original narrowed/scoped freshness bug: header freshness now derives from the active visible subset, and the new browser coverage closes the specific mixed-recency scoped regression path. Report status: pass."
+}
