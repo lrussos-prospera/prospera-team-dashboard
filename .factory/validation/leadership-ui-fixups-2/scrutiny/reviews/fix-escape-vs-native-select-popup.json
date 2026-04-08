@@ -1,0 +1,28 @@
+{
+  "featureId": "fix-escape-vs-native-select-popup",
+  "reviewedAt": "2026-04-08T00:00:00Z",
+  "commitId": "ca8bd4ff49c1533f2ff48c0391a68c7a8448b842",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The fix preserves the browser's first-Escape behavior for focused native selects, but it does so by exempting selects from dashboard Escape handling entirely. That breaks the required broader unwind contract because the filter panel can no longer be closed with Escape while focus remains on a select after the native popup has already been dismissed.",
+    "issues": [
+      {
+        "file": "app.js",
+        "line": 795,
+        "severity": "blocking",
+        "description": "`shouldHandleEscapeForDashboardUnwind()` now returns false for every focused `<select>`, so the global Escape handler exits before calling `unwindEscapeState()`. This preserves the browser's first-Escape dismissal of the native popup, but it also suppresses every later dashboard Escape unwind while focus stays on the select, which violates the feature requirement to preserve the broader unwind order for relevant controls."
+      },
+      {
+        "file": "tests/dashboard-state-seams.spec.js",
+        "line": 331,
+        "severity": "non_blocking",
+        "description": "The updated regression test only checks that the first Escape with `#filter-status` focused leaves the filter panel open, then moves focus to `#search` before asserting the panel closes. Because the test changes focus away from the select, it misses the blocking scenario where a second Escape should unwind the dashboard while focus remains on the same native select after its popup has already been dismissed."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Fail: the change stops the dashboard from stealing the first Escape from focused native selects, but it over-corrects by disabling dashboard Escape unwind for selects altogether. The accompanying test does not cover repeated Escape on the same focused select, so the regression remains undetected."
+}
