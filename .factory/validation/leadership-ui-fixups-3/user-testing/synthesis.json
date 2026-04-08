@@ -1,0 +1,21 @@
+{
+  "milestone": "leadership-ui-fixups-3",
+  "round": 1,
+  "status": "fail",
+  "assertionsSummary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "appliedUpdates": [],
+  "previousRound": null,
+  "notes": [
+    "No testable validation-contract assertions were mapped to completed implementation features for milestone leadership-ui-fixups-3.",
+    "The only completed implementation feature in this milestone (fix-second-escape-unwinds-after-native-select-dismiss) had an empty fulfills array, so user-surface validation could not select any assertions to execute.",
+    "No flow validator subagents were spawned because there were zero assigned assertions to test."
+  ]
+}
