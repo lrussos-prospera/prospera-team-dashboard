@@ -32,6 +32,11 @@ const appState = {
       direction: '',
     },
   },
+  route: {
+    view: 'overview', // 'overview' | 'goal' | 'department' | 'employee'
+    param: '', // entity name
+    filters: {}, // { status: 'blocked', search: 'tax' } from query string
+  },
 };
 
 const elements = {
@@ -975,10 +980,66 @@ function renderTableWithCrossfade(rows) {
   setTimeout(() => elements.tableBody.classList.remove('table-fade-in'), 200);
 }
 
+function parseRoute(hash) {
+  const raw = (hash || '').replace(/^#\/?/, '');
+  if (!raw) return { view: 'overview', param: '', filters: {} };
+
+  const [pathPart, queryPart] = raw.split('?');
+  const segments = pathPart.split('/').map((s) => decodeURIComponent(s.replace(/\+/g, ' ')));
+  const view = segments[0] || 'overview';
+  const param = segments.slice(1).join('/');
+
+  const validViews = ['overview', 'goal', 'department', 'employee'];
+  if (!validViews.includes(view)) return { view: 'overview', param: '', filters: {} };
+  if (view !== 'overview' && !param) return { view: 'overview', param: '', filters: {} };
+
+  const filters = {};
+  if (queryPart) {
+    new URLSearchParams(queryPart).forEach((value, key) => {
+      filters[key] = value;
+    });
+  }
+
+  return { view, param, filters };
+}
+
+function buildHash(view, param, filters) {
+  if (view === 'overview') return '#/';
+  let hash = `#/${encodeURIComponent(view)}/${encodeURIComponent(param).replace(/%20/g, '+')}`;
+  if (filters && Object.keys(filters).length) {
+    const qs = new URLSearchParams(filters).toString();
+    hash += `?${qs}`;
+  }
+  return hash;
+}
+
+function navigateTo(view, param = '', filters = {}) {
+  const hash = buildHash(view, param, filters);
+  if (window.location.hash === hash) return;
+  window.location.hash = hash;
+}
+
+function onRouteChange() {
+  const newRoute = parseRoute(window.location.hash);
+  appState.route = newRoute;
+  collapseExpandedRow();
+  renderApp();
+}
+
+function renderDrilldownView() {
+  // Stub — will be implemented in Tasks 4-6
+  navigateTo('overview');
+}
+
 function renderApp() {
   const isLoaded = appState.lifecycle.phase === 'loaded';
   syncVisibility(isLoaded);
   if (!isLoaded) return;
+
+  if (appState.route.view !== 'overview') {
+    renderDrilldownView();
+    return;
+  }
 
   renderScopeIndicator();
 
@@ -1437,6 +1498,8 @@ function bindEvents() {
       resetEscapeBypassSelect();
     });
   });
+
+  window.addEventListener('hashchange', onRouteChange);
 }
 
 function isTextEntryContext(element) {
@@ -1506,4 +1569,5 @@ function unwindEscapeState() {
 
 initializeViewedDate();
 bindEvents();
+appState.route = parseRoute(window.location.hash);
 fetchSheetData();
