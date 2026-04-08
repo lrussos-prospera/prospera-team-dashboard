@@ -11,7 +11,10 @@ const appState = {
     refreshedLabel: 'Loading…',
   },
   view: {
-    scopeGoal: '',
+    scope: {
+      type: '', // '' | 'goal' | 'department'
+      value: '',
+    },
     filters: {
       dept: '',
       team: '',
@@ -143,10 +146,11 @@ function parseCSV(text) {
 
 function deriveViewRows() {
   const { rows } = appState;
-  const { scopeGoal, filters } = appState.view;
+  const { scope, filters } = appState.view;
 
   return rows.filter((r) => {
-    if (scopeGoal && (r['Goal'] || 'No Goal') !== scopeGoal) return false;
+    if (scope.type === 'goal' && (r['Goal'] || 'No Goal') !== scope.value) return false;
+    if (scope.type === 'department' && (r['Department'] || 'Other') !== scope.value) return false;
     if (filters.dept && r['Department'] !== filters.dept) return false;
     if (filters.team && r['Team'] !== filters.team) return false;
     if (filters.person && r['Responsible'] !== filters.person) return false;
@@ -239,7 +243,7 @@ function deriveRecencyLabel(rows) {
 
 function isNarrowedViewActive() {
   return Boolean(
-    appState.view.scopeGoal ||
+    appState.view.scope.value ||
     appState.view.filters.search ||
     appState.view.filters.dept ||
     appState.view.filters.team ||
@@ -359,19 +363,32 @@ function renderSummary(rows) {
 }
 
 function renderScopeIndicator() {
-  if (!appState.view.scopeGoal) {
+  const { scope } = appState.view;
+  if (!scope.value) {
     els.scopeIndicator.style.display = 'none';
     return;
   }
 
   els.scopeIndicator.style.display = '';
-  els.scopeIndicatorText.textContent = `Scoped to goal: ${appState.view.scopeGoal}`;
+  els.scopeIndicatorText.textContent =
+    scope.type === 'department'
+      ? `Scoped to department: ${scope.value}`
+      : `Scoped to goal: ${scope.value}`;
+}
+
+function setScope(type, value) {
+  const current = appState.view.scope;
+  const nextValue = current.type === type && current.value === value ? '' : value;
+  appState.view.scope = {
+    type: nextValue ? type : '',
+    value: nextValue,
+  };
+  appState.view.expandedRowKey = null;
+  renderApp();
 }
 
 function scopeToGoal(goal) {
-  appState.view.scopeGoal = appState.view.scopeGoal === goal ? '' : goal;
-  appState.view.expandedRowKey = null;
-  renderApp();
+  setScope('goal', goal);
 }
 
 function renderGoals(rows) {
@@ -379,7 +396,8 @@ function renderGoals(rows) {
   const activeGoalMap = new Map(
     deriveGoalBuckets(rows).map((goalData) => [goalData.goal, goalData])
   );
-  const hasScope = Boolean(appState.view.scopeGoal);
+  const hasScope = Boolean(appState.view.scope.value);
+  const goalScoped = appState.view.scope.type === 'goal';
 
   els.goalsGrid.innerHTML = '';
 
@@ -394,13 +412,13 @@ function renderGoals(rows) {
     };
 
     const div = document.createElement('button');
-    const isScoped = appState.view.scopeGoal === activeGoalData.goal;
+    const isScoped = goalScoped && appState.view.scope.value === activeGoalData.goal;
     const isScopable = activeGoalData.total > 0;
     const isInteractive = isScopable;
     div.type = 'button';
     div.className = `goal-card ${isScopable && activeGoalData.pct < 25 ? 'status-low' : ''}${isScoped ? ' goal-card-active' : ''}${
       !isScopable ? ' goal-card-empty' : ''
-    }${hasScope && !isScoped ? ' goal-card-dimmed' : ''}`;
+    }${goalScoped && hasScope && !isScoped ? ' goal-card-dimmed' : ''}`;
     div.setAttribute('data-hook', 'goal-card');
     div.setAttribute('data-goal', activeGoalData.goal);
     div.setAttribute('aria-pressed', String(isScoped));
@@ -488,8 +506,9 @@ function toggleExpandedRow(rowKey) {
 
 function renderTable(rows) {
   if (!rows.length) {
-    const scopeMessage = appState.view.scopeGoal
-      ? `<div class="empty-scope-note" data-hook="no-results-scope-note">Active scope: ${esc(appState.view.scopeGoal)}</div>`
+    const activeScopeLabel = appState.view.scope.value;
+    const scopeMessage = activeScopeLabel
+      ? `<div class="empty-scope-note" data-hook="no-results-scope-note">Active scope: ${esc(activeScopeLabel)}</div>`
       : '';
     const emptyMessage = isNarrowedViewActive()
       ? 'No updates match your current scope, search, or filters.'
@@ -528,10 +547,24 @@ function renderTable(rows) {
     .sort(([a], [b]) => a.localeCompare(b))
     .forEach(([dept, deptRows]) => {
       const groupHeader = document.createElement('tr');
-      groupHeader.className = 'group-header';
+      const isDepartmentScoped =
+        appState.view.scope.type === 'department' && appState.view.scope.value === dept;
+      groupHeader.className = `group-header${isDepartmentScoped ? ' group-header-active' : ''}`;
       groupHeader.setAttribute('data-hook', 'table-group-header');
       groupHeader.setAttribute('data-department', dept);
+      groupHeader.setAttribute('role', 'button');
+      groupHeader.setAttribute('tabindex', '0');
+      groupHeader.setAttribute('aria-pressed', String(isDepartmentScoped));
       groupHeader.innerHTML = `<td colspan="5">${esc(dept)} &mdash; ${deptRows.length} update${deptRows.length !== 1 ? 's' : ''}</td>`;
+
+      const onScopeDepartment = () => setScope('department', dept);
+      groupHeader.addEventListener('click', onScopeDepartment);
+      groupHeader.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        onScopeDepartment();
+      });
+
       els.tableBody.appendChild(groupHeader);
 
       deptRows.forEach((row, index) => {
@@ -686,6 +719,13 @@ function renderApp() {
   els.csvDateLabel.textContent = appState.lifecycle.refreshedLabel;
 }
 
+function clearScope() {
+  appState.view.scope = {
+    type: '',
+    value: '',
+  };
+}
+
 function resetFilters() {
   appState.view.filters = {
     dept: '',
@@ -695,7 +735,7 @@ function resetFilters() {
     goal: '',
     search: '',
   };
-  appState.view.scopeGoal = '';
+  clearScope();
   appState.view.expandedRowKey = null;
 
   els.filterDept.value = '';
@@ -750,6 +790,11 @@ let searchDebounceTimer;
 function bindEvents() {
   els.filterDept.addEventListener('change', () => {
     syncFilterStateFromControls();
+    if (appState.view.scope.type === 'department') {
+      if (appState.view.scope.value !== appState.view.filters.dept) {
+        clearScope();
+      }
+    }
     populateTeamOptions();
     appState.view.expandedRowKey = null;
     renderApp();
@@ -781,7 +826,7 @@ function bindEvents() {
   els.resetBtn.addEventListener('click', resetFilters);
   els.refreshBtn.addEventListener('click', fetchSheetData);
   els.scopeClearBtn.addEventListener('click', () => {
-    appState.view.scopeGoal = '';
+    clearScope();
     appState.view.expandedRowKey = null;
     renderApp();
   });
