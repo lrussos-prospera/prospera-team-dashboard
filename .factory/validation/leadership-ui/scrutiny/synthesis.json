@@ -56,5 +56,12 @@
     }
   ],
   "rejectedObservations": [],
-  "previousRound": null
+  "previousRound": null,
+  "overrideNotes": [
+    {
+      "timestamp": "2026-04-08T05:58:01.149956+00:00",
+      "appliedBy": "orchestrator",
+      "reason": "Original leadership-ui scrutiny findings were fixed by later completed features fix-refresh-filter-control-visual-sync, fix-refresh-search-debounce-loss, and fix-escape-unwind-with-text-control-focus, so this stale validator is overridden in favor of later milestone validation."
+    }
+  ]
 }

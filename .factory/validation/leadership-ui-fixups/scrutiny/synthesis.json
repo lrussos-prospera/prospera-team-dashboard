@@ -53,5 +53,12 @@
       "reason": "already-triaged-in-later-milestones"
     }
   ],
-  "previousRound": ".factory/validation/leadership-ui-fixups/scrutiny/synthesis.round-4.json"
+  "previousRound": ".factory/validation/leadership-ui-fixups/scrutiny/synthesis.round-4.json",
+  "overrideNotes": [
+    {
+      "timestamp": "2026-04-08T05:58:01.149956+00:00",
+      "appliedBy": "orchestrator",
+      "reason": "Original leadership-ui-fixups scrutiny findings were fixed by later completed features fix-escape-vs-native-select-popup, fix-second-escape-unwinds-after-native-select-dismiss, and fix-stale-select-escape-bypass-state, so this stale validator is overridden in favor of later milestone validation."
+    }
+  ]
 }

@@ -1,0 +1,27 @@
+{
+  "milestone": "leadership-ui-fixups",
+  "round": 0,
+  "status": "override",
+  "assertionsSummary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "appliedUpdates": [],
+  "previousRound": null,
+  "notes": [
+    "This validator was overridden by the orchestrator because no completed implementation feature in leadership-ui-fixups owns validation assertions after assertion ownership was moved to later fixup milestones.",
+    "The remaining native-select Escape assertion is owned by leadership-ui-fixups-4 and is tracked there instead of this superseded milestone."
+  ],
+  "overrideNotes": [
+    {
+      "timestamp": "2026-04-08T05:58:01.149956+00:00",
+      "appliedBy": "orchestrator",
+      "reason": "No assertions remain mapped to leadership-ui-fixups; user-surface validation for the native-select Escape chain was reassigned to the later completed leadership-ui-fixups-4 milestone."
+    }
+  ]
+}
