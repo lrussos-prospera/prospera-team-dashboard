@@ -1,0 +1,53 @@
+{
+  "groupId": "reset-clears-scope-ui",
+  "testedAt": "2026-04-08T09:36:57.631372Z",
+  "isolation": {
+    "appUrl": "http://127.0.0.1:3100/index.html?qaFixture=canonical-blocked-mixed",
+    "fixture": "canonical-blocked-mixed",
+    "surface": "browser-ui",
+    "missionDir": "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-CROSS-002",
+      "title": "Department scope plus search plus reset returns to overview coherently",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Load the fixture-backed dashboard overview",
+          "expected": "Overview renders with executive summary, blocked section, goal cards, controls, and full table on the single page.",
+          "observed": "Overview loaded at the provided localhost fixture URL with 0 done, 0 in progress, 2 blocked, 4 total, both Governance and Operations table groups, and the blocked-items section visible."
+        },
+        {
+          "action": "Click the Governance department header to scope the table in place",
+          "expected": "Dashboard narrows to Governance rows and shows visible scoped-state affordances.",
+          "observed": "The table narrowed to Governance — 1 update after subsequent search narrowing, the Governance group showed pressed state, and a visible Clear active scope control appeared."
+        },
+        {
+          "action": "Enter the search term 'permit' while Governance scope is active",
+          "expected": "The active subset narrows to the matching Governance row while keeping scope/search controls coherent.",
+          "observed": "Only the Leo Tan 'Permit risk watch' row remained visible, with Governance still indicated as the active scoped subset and the clear-scope control still present."
+        },
+        {
+          "action": "Activate Reset",
+          "expected": "Reset clears search and underlying department scope, removes any visible scope indicator / clear-scope UI, and restores the default overview summary, blocked section, goal cards, controls, and full table.",
+          "observed": "Reset returned the page to Executive Summary — All Departments, cleared the search field, removed the clear-scope control, restored the blocked-items section, restored both goal cards, and restored the full 4-row table with Governance — 2 updates and Operations — 2 updates."
+        }
+      ],
+      "evidence": {
+        "screenshots": [
+          "leadership-ui-followup-fixups-3/reset-clears-scope-ui/VAL-CROSS-002-overview-before-scope.png",
+          "leadership-ui-followup-fixups-3/reset-clears-scope-ui/VAL-CROSS-002-department-scope-search.png",
+          "leadership-ui-followup-fixups-3/reset-clears-scope-ui/VAL-CROSS-002-reset-restored-overview.png"
+        ],
+        "consoleErrors": "none",
+        "network": "No browser-request anomalies observed during the flow; agent-browser's request log returned 'No requests captured'."
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Tested 1 assertion (VAL-CROSS-002): passed. Reset fully returned the dashboard from Governance scope + 'permit' search to the default overview without leaving a visible scope indicator."
+}
