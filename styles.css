@@ -1445,6 +1445,91 @@ header :focus-visible {
   border-top: 1px solid var(--color-border-light);
 }
 
+/* Department strip */
+.dept-strip {
+  margin-bottom: var(--space-xl);
+}
+
+.dept-strip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.dept-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 8px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--brand-navy);
+  text-decoration: none;
+  transition:
+    border-color var(--duration-instant) var(--ease-out-quart),
+    background var(--duration-instant) var(--ease-out-quart);
+}
+
+.dept-chip:hover {
+  border-color: var(--brand-teal);
+  background: rgba(106, 190, 190, 0.06);
+}
+
+.dept-chip-name {
+  font-weight: 800;
+}
+
+.dept-chip-pct {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.dept-chip-blocked {
+  color: var(--brand-red);
+  font-weight: 800;
+  font-size: 0.75rem;
+}
+
+/* Person links in table */
+.td-person-link {
+  color: var(--brand-navy);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.td-person-link:hover {
+  text-decoration: underline;
+}
+
+/* Person links in blocked section */
+.blocked-item-person-link {
+  font-weight: 700;
+  color: var(--brand-navy);
+  text-decoration: none;
+}
+
+.blocked-item-person-link:hover {
+  text-decoration: underline;
+}
+
+/* Goal card arrow */
+.goal-card-arrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-faint);
+  margin-top: var(--space-md);
+  transition: color var(--duration-instant) var(--ease-out-quart);
+}
+
+.goal-card:hover .goal-card-arrow {
+  color: var(--brand-teal);
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,

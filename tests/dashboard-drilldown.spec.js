@@ -186,3 +186,40 @@ test.describe('employee drilldown view', () => {
     await expect(page.locator('[data-hook="drilldown-row"]')).toHaveCount(1);
   });
 });
+
+test.describe('overview navigation to drilldowns', () => {
+  test('clicking goal card navigates to goal drilldown', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/');
+
+    await page.locator('[data-hook="goal-card"][data-goal="Legal Framework"]').click();
+    await expect(page.locator('.drilldown-title')).toHaveText('Legal Framework');
+  });
+
+  test('clicking department chip navigates to department drilldown', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/');
+
+    await page.locator('[data-hook="dept-chip"][data-department="Governance"]').click();
+    await expect(page.locator('.drilldown-title')).toHaveText('Governance');
+  });
+
+  test('clicking employee name in table navigates to employee drilldown', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/');
+
+    await page.locator('[data-hook="person-link"]').first().click();
+    await expect(page.locator('.drilldown-title')).toBeVisible();
+    await expect(page.locator('.drilldown-view')).toBeVisible();
+  });
+
+  test('clicking employee name in blocked section navigates to employee drilldown', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/');
+
+    await page.locator('[data-hook="blocked-person-link"]').first().click();
+    await expect(page.locator('.drilldown-title')).toBeVisible();
+  });
+});

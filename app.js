@@ -52,6 +52,9 @@ const elements = {
   tableWrap: document.getElementById('table-wrap'),
   tableBody: document.getElementById('table-body'),
 
+  deptStrip: document.getElementById('dept-strip'),
+  deptStripGrid: document.getElementById('dept-strip-grid'),
+
   drilldownView: document.getElementById('drilldown-view'),
   drilldownBreadcrumbList: document.getElementById('drilldown-breadcrumb-list'),
   drilldownTitle: document.getElementById('drilldown-title'),
@@ -391,6 +394,7 @@ function syncVisibility(isLoaded) {
   if (!isLoaded) {
     elements.blockedSection.style.display = 'none';
     elements.scopedSummary.style.display = 'none';
+    elements.deptStrip.style.display = 'none';
     elements.drilldownView.style.display = 'none';
   }
 
@@ -400,6 +404,7 @@ function syncVisibility(isLoaded) {
   if (isDrilldown) {
     elements.summary.style.display = 'none';
     elements.goalsSection.style.display = 'none';
+    elements.deptStrip.style.display = 'none';
     elements.controls.style.display = 'none';
     elements.resultCount.style.display = 'none';
     elements.tableWrap.style.display = 'none';
@@ -556,6 +561,7 @@ function renderGoals(rows) {
       ${blockedOwnersText}
       ${staleText}
       <div class="progress-mini"><div class="progress-mini-fill" style="width:${activeGoalData.pct}%"></div></div>
+      ${isScopable ? '<div class="goal-card-arrow">View →</div>' : ''}
     `;
 
     if (isInteractive) {
@@ -564,6 +570,37 @@ function renderGoals(rows) {
 
     elements.goalsGrid.appendChild(div);
   });
+}
+
+function renderDepartmentStrip(rows) {
+  const deptStats = {};
+  rows.forEach((row) => {
+    const dept = row['Department'] || 'Other';
+    if (!deptStats[dept]) deptStats[dept] = { total: 0, done: 0, blocked: 0 };
+    deptStats[dept].total++;
+    if (row._status === 'done') deptStats[dept].done++;
+    if (row._status === 'blocked') deptStats[dept].blocked++;
+  });
+
+  if (!Object.keys(deptStats).length) {
+    elements.deptStrip.style.display = 'none';
+    return;
+  }
+
+  elements.deptStrip.style.display = '';
+  elements.deptStripGrid.innerHTML = Object.entries(deptStats)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([dept, stats]) => {
+      const pct = stats.total ? Math.round((stats.done / stats.total) * 100) : 0;
+      const blockedBadge =
+        stats.blocked > 0 ? `<span class="dept-chip-blocked">${stats.blocked} blocked</span>` : '';
+      return `<a href="${escapeHtml(buildHash('department', dept))}" class="dept-chip" data-hook="dept-chip" data-department="${escapeHtml(dept)}">
+        <span class="dept-chip-name">${escapeHtml(dept)}</span>
+        <span class="dept-chip-pct">${pct}%</span>
+        ${blockedBadge}
+      </a>`;
+    })
+    .join('');
 }
 
 function renderBlocked(rows) {
@@ -584,7 +621,7 @@ function renderBlocked(rows) {
           (row) => `
             <div class="blocked-item" data-hook="blocked-item" data-person="${escapeHtml(row['Responsible'] || '')}">
               <div class="blocked-item-header">
-                <span class="blocked-item-person">${escapeHtml(row['Responsible'])}</span>
+                <a href="${escapeHtml(buildHash('employee', row['Responsible']))}" class="blocked-item-person-link" data-hook="blocked-person-link">${escapeHtml(row['Responsible'])}</a>
                 <span class="blocked-item-topic">${escapeHtml(row['Topic'])}</span>
               </div>
               ${row['Details'] ? `<div class="blocked-item-details">${escapeHtml(row['Details'])}</div>` : ''}
@@ -727,7 +764,7 @@ function renderTable(rows) {
     summaryRow.setAttribute('data-hook', 'table-row-summary');
     summaryRow.setAttribute('data-row-key', rowKey);
     summaryRow.innerHTML = `
-      <td class="td-person"><span class="expand-icon" aria-hidden="true">›</span>${escapeHtml(row['Responsible'])}</td>
+      <td class="td-person"><span class="expand-icon" aria-hidden="true">›</span><a href="${escapeHtml(buildHash('employee', row['Responsible']))}" class="td-person-link" data-hook="person-link">${escapeHtml(row['Responsible'])}</a></td>
       <td class="td-topic">${escapeHtml(row['Topic'])}</td>
       <td>${badge(row.Status, row._status)}</td>
       <td class="td-goal">${escapeHtml(row['Goal'])}</td>
@@ -760,7 +797,14 @@ function renderTable(rows) {
     `;
 
     const onToggle = () => toggleExpandedRow(rowKey);
-    summaryRow.addEventListener('click', onToggle);
+    summaryRow.addEventListener('click', (event) => {
+      if (event.target.closest('.td-person-link')) {
+        event.preventDefault();
+        navigateTo('employee', row['Responsible']);
+        return;
+      }
+      onToggle();
+    });
     summaryRow.addEventListener('keydown', (event) => {
       if (event.key === 'ArrowDown') {
         event.preventDefault();
@@ -1516,6 +1560,7 @@ function renderApp() {
   const viewRows = deriveViewRows();
   renderSummary(viewRows);
   renderGoals(viewRows);
+  renderDepartmentStrip(viewRows);
   renderBlocked(viewRows);
   renderScopedSummary(viewRows);
 
@@ -1539,6 +1584,7 @@ function renderApp() {
 const REVEAL_TARGETS = [
   { key: 'summary', delay: 0 },
   { key: 'goalsSection', delay: 200 },
+  { key: 'deptStrip', delay: 350 },
   { key: 'blockedSection', delay: 500 },
   { key: 'controls', delay: 650 },
   { key: 'tableWrap', delay: 650 },
