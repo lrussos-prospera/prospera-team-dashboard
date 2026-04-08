@@ -641,21 +641,59 @@ function renderSummary(rows) {
       animateCounterTo(blockedEl, summary.blocked, 300);
     }
     if (totalEl) animateCounterTo(totalEl, summary.total, 300);
+
+    const overviewPeriodA = appState.route.filters.period || '1w';
+    const overallHistoryA = getHistoryForEntity('overall');
+    const overallDeltaA = computeDelta(overallHistoryA, overviewPeriodA);
+
+    const heroPctBadge = existingHeroZone.querySelector('.hero-pct + .delta-badge');
+    if (heroPctBadge) heroPctBadge.remove();
+    const newPctBadgeHtml =
+      appState.history.status === 'loaded' ? renderDeltaBadge(overallDeltaA) : '';
+    if (newPctBadgeHtml) {
+      const pctEl2 = existingHeroZone.querySelector('[data-hook="summary-percent"]');
+      if (pctEl2) pctEl2.insertAdjacentHTML('afterend', newPctBadgeHtml);
+    }
+
+    const toggleContainerA = existingHeroZone.querySelector('#hero-period-toggle');
+    if (toggleContainerA && appState.history.status === 'loaded') {
+      renderPeriodToggle(toggleContainerA, overviewPeriodA, (newPeriod) => {
+        const newFilters = { ...appState.route.filters, period: newPeriod };
+        if (newPeriod === '1w') delete newFilters.period;
+        replaceRoute('overview', '', newFilters);
+        renderApp();
+      });
+    } else if (toggleContainerA) {
+      toggleContainerA.style.display = 'none';
+    }
+
     return;
   }
+
+  const overviewPeriod = appState.route.filters.period || '1w';
+  const overallHistory = getHistoryForEntity('overall');
+  const overallDelta = computeDelta(overallHistory, overviewPeriod);
+  const deltaBadgeHtml = appState.history.status === 'loaded' ? renderDeltaBadge(overallDelta) : '';
+  const doneDeltaHtml =
+    appState.history.status === 'loaded' ? renderDeltaBadge(overallDelta, 'doneDelta') : '';
+  const blockedDeltaHtml =
+    appState.history.status === 'loaded' ? renderDeltaBadge(overallDelta, 'blockedDelta') : '';
 
   elements.summary.innerHTML = `
     <div class="hero-zone" data-hook="hero-zone">
       <div class="hero-pct" data-hook="summary-percent">${summary.pct}<span class="hero-pct-symbol">%</span></div>
+      ${deltaBadgeHtml}
       <div class="hero-label">Complete</div>
       <div class="hero-progress" data-hook="summary-progress">
         <div class="hero-progress-track">
           <div class="hero-progress-fill" data-hook="summary-progress-fill" style="width:${summary.pct}%"></div>
         </div>
       </div>
+      <div class="hero-period-toggle" id="hero-period-toggle"></div>
       <div class="hero-stats">
         <div class="hero-stat" data-hook="summary-done">
           <span class="hero-stat-value ${doneClass}">${summary.done}</span>
+          ${doneDeltaHtml}
           <span class="hero-stat-label">Done</span>
         </div>
         <div class="hero-stat-divider"></div>
@@ -666,6 +704,7 @@ function renderSummary(rows) {
         <div class="hero-stat-divider"></div>
         <div class="hero-stat" data-hook="summary-blocked">
           <span class="hero-stat-value ${blockedClass}">${summary.blocked}</span>
+          ${blockedDeltaHtml}
           <span class="hero-stat-label">Blocked</span>
         </div>
         <div class="hero-stat-divider"></div>
@@ -674,8 +713,21 @@ function renderSummary(rows) {
           <span class="hero-stat-label">Total Updates</span>
         </div>
       </div>
+      <a href="#/trends" class="hero-trends-link" data-hook="trends-link">View trends →</a>
     </div>
   `;
+
+  const toggleContainer = elements.summary.querySelector('#hero-period-toggle');
+  if (toggleContainer && appState.history.status === 'loaded') {
+    renderPeriodToggle(toggleContainer, overviewPeriod, (newPeriod) => {
+      const newFilters = { ...appState.route.filters, period: newPeriod };
+      if (newPeriod === '1w') delete newFilters.period;
+      replaceRoute('overview', '', newFilters);
+      renderApp();
+    });
+  } else if (toggleContainer) {
+    toggleContainer.style.display = 'none';
+  }
 }
 
 function renderGoals(rows) {
@@ -699,6 +751,10 @@ function renderGoals(rows) {
     const div = document.createElement('button');
     const isScopable = activeGoalData.total > 0;
     const isInteractive = isScopable;
+    const overviewPeriod = appState.route.filters.period || '1w';
+    const goalHistory = getHistoryForEntity('goal', activeGoalData.goal);
+    const goalDelta = computeDelta(goalHistory, overviewPeriod);
+    const goalDeltaHtml = isScopable && goalDelta ? renderDeltaBadge(goalDelta) : '';
     div.type = 'button';
     div.className = `goal-card${isScopable && activeGoalData.pct < 25 ? ' status-low' : ''}${!isScopable ? ' goal-card-empty' : ''}`;
     div.setAttribute('data-hook', 'goal-card');
@@ -719,7 +775,7 @@ function renderGoals(rows) {
     div.innerHTML = `
       <div class="goal-title">${escapeHtml(activeGoalData.goal)}</div>
       <div class="goal-meta">
-        <div class="goal-pct-large">${activeGoalData.pct}%</div>
+        <div class="goal-pct-large">${activeGoalData.pct}%${goalDeltaHtml}</div>
         <div class="goal-count">${activeGoalData.done} / ${activeGoalData.total} <span style="font-size:0.7em">DONE</span></div>
       </div>
       <div class="goal-progress"><div class="goal-progress-fill" style="width:${activeGoalData.pct}%"></div></div>
@@ -1479,11 +1535,130 @@ function renderGoalDrilldown(goalName, filters) {
   renderDrilldownTable(filteredRows);
 }
 
+function renderTrendsDrilldown(filters) {
+  const period = filters.period || '1w';
+  const periodDays = PERIOD_DAYS[period];
+
+  renderBreadcrumb([{ label: 'Overview', hash: '#/' }, { label: 'Trends' }]);
+
+  elements.drilldownTitle.textContent = 'Performance Trends';
+  const uniqueTimestamps = new Set(appState.history.raw.map((r) => r.timestamp.getTime())).size;
+  elements.drilldownSubtitle.textContent =
+    appState.history.status === 'loaded'
+      ? `${uniqueTimestamps} snapshot${uniqueTimestamps !== 1 ? 's' : ''} collected`
+      : appState.history.status === 'error'
+        ? 'History data unavailable'
+        : 'Loading history data…';
+
+  if (appState.history.status !== 'loaded' || uniqueTimestamps < 2) {
+    const msg =
+      appState.history.status === 'error'
+        ? '<p>Could not load history data. The dashboard is still fully functional without trends.</p>'
+        : '<p>Not enough history data yet. Snapshots are collected automatically as the sheet is edited.</p><p>Check back after a few days of activity.</p>';
+    elements.drilldownHero.innerHTML = `<div class="trends-empty-state">${msg}</div>`;
+    elements.drilldownFilters.innerHTML = '';
+    elements.drilldownTableWrap.style.display = 'none';
+    elements.drilldownResultCount.textContent = '';
+    return;
+  }
+
+  const periodContainer = document.createElement('div');
+  periodContainer.className = 'trends-period-toggle';
+  renderPeriodToggle(periodContainer, period, (newPeriod) => {
+    const newFilters = { ...filters, period: newPeriod };
+    if (newPeriod === '1w') delete newFilters.period;
+    navigateTo('trends', '', newFilters);
+  });
+
+  const cutoff = Date.now() - periodDays * 24 * 60 * 60 * 1000;
+  const overallHistory = getHistoryForEntity('overall').filter(
+    (r) => r.timestamp.getTime() >= cutoff
+  );
+
+  elements.drilldownHero.innerHTML = `
+    <div class="trends-hero">
+      <div class="trends-period-row" id="trends-period-row"></div>
+      <div class="trends-hero-charts">
+        <div class="trends-chart-card">
+          <h3 class="trends-chart-title">Overall Completion</h3>
+          <div id="trends-chart-overall" class="trends-chart" aria-label="Overall completion trend chart"></div>
+        </div>
+        <div class="trends-chart-card">
+          <h3 class="trends-chart-title">Blocked Items</h3>
+          <div id="trends-chart-blocked" class="trends-chart" aria-label="Blocked items trend chart"></div>
+        </div>
+      </div>
+      <div class="trends-small-multiples">
+        <h3 class="trends-section-title">Goals</h3>
+        <div class="trends-grid" id="trends-goals-grid"></div>
+      </div>
+      <div class="trends-small-multiples">
+        <h3 class="trends-section-title">Departments</h3>
+        <div class="trends-grid" id="trends-depts-grid"></div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('trends-period-row').appendChild(periodContainer);
+
+  if (overallHistory.length >= 2) {
+    renderFrappeLineChart('trends-chart-overall', overallHistory, 'pct', '% Complete');
+    renderFrappeLineChart('trends-chart-blocked', overallHistory, 'blocked', 'Blocked');
+  }
+
+  const goalsGrid = document.getElementById('trends-goals-grid');
+  const liveGoals = new Set(appState.rows.map((r) => r['Goal'] || 'No Goal'));
+  const goalEntities = Object.keys(appState.history.byLevel.goal || {})
+    .filter((name) => liveGoals.has(name))
+    .sort();
+  goalEntities.forEach((goalName) => {
+    const chartId = slugify('trends-goal-' + goalName);
+    const goalHistory = getHistoryForEntity('goal', goalName).filter(
+      (r) => r.timestamp.getTime() >= cutoff
+    );
+    const card = document.createElement('div');
+    card.className = 'trends-small-card';
+    card.style.cursor = 'pointer';
+    card.innerHTML = `<div class="trends-small-title">${escapeHtml(goalName)}</div><div class="trends-small-chart" id="${chartId}"></div>`;
+    card.addEventListener('click', () => navigateTo('goal', goalName));
+    goalsGrid.appendChild(card);
+    if (goalHistory.length >= 2) {
+      renderFrappeLineChart(chartId, goalHistory, 'pct', '%');
+    }
+  });
+
+  const deptsGrid = document.getElementById('trends-depts-grid');
+  const liveDepts = new Set(appState.rows.map((r) => r['Department']).filter(Boolean));
+  const deptEntities = Object.keys(appState.history.byLevel.department || {})
+    .filter((name) => liveDepts.has(name))
+    .sort();
+  deptEntities.forEach((deptName) => {
+    const chartId = slugify('trends-dept-' + deptName);
+    const deptHistory = getHistoryForEntity('department', deptName).filter(
+      (r) => r.timestamp.getTime() >= cutoff
+    );
+    const card = document.createElement('div');
+    card.className = 'trends-small-card';
+    card.style.cursor = 'pointer';
+    card.innerHTML = `<div class="trends-small-title">${escapeHtml(deptName)}</div><div class="trends-small-chart" id="${chartId}"></div>`;
+    card.addEventListener('click', () => navigateTo('department', deptName));
+    deptsGrid.appendChild(card);
+    if (deptHistory.length >= 2) {
+      renderFrappeLineChart(chartId, deptHistory, 'pct', '%');
+    }
+  });
+
+  elements.drilldownFilters.innerHTML = '';
+  elements.drilldownTableWrap.style.display = 'none';
+  elements.drilldownResultCount.textContent = '';
+}
+
 function renderDrilldownView() {
   const { view, param, filters } = appState.route;
   if (view === 'goal') return renderGoalDrilldown(param, filters);
   if (view === 'department') return renderDepartmentDrilldown(param, filters);
   if (view === 'employee') return renderEmployeeDrilldown(param, filters);
+  if (view === 'trends') return renderTrendsDrilldown(filters);
   navigateTo('overview');
 }
 

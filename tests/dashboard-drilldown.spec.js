@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { mockSheetCsv } = require('./helpers/sheet-fixtures');
+const { mockSheetCsv, mockHistoryCsv } = require('./helpers/sheet-fixtures');
 
 test.describe('goal drilldown view', () => {
   test('shows filtered summary and table for the goal', async ({ page }) => {
@@ -315,5 +315,83 @@ test.describe('drilldown edge cases', () => {
 
     await expect(page.locator('[data-hook="summary"]')).toBeVisible();
     await expect(page.locator('.drilldown-view')).toBeHidden();
+  });
+});
+
+test.describe('trends drilldown view', () => {
+  test('shows overall completion and blocked chart containers', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/#/trends');
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    await expect(page.locator('.drilldown-title')).toHaveText('Performance Trends');
+    await expect(page.locator('.trends-chart-card')).toHaveCount(2);
+    await expect(page.locator('.trends-chart-card').first()).toBeVisible();
+  });
+
+  test('shows goal small multiples', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/#/trends');
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    await expect(page.locator('#trends-goals-grid .trends-small-card')).toHaveCount(2);
+  });
+
+  test('shows department small multiples', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/#/trends');
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    await expect(page.locator('#trends-depts-grid .trends-small-card')).toHaveCount(2);
+  });
+
+  test('clicking goal chart navigates to goal drilldown', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/#/trends');
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    await page.locator('#trends-goals-grid .trends-small-card').first().click();
+    await expect(page).toHaveURL(/#\/goal\//);
+  });
+
+  test('clicking department chart navigates to department drilldown', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/#/trends');
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    await page.locator('#trends-depts-grid .trends-small-card').first().click();
+    await expect(page).toHaveURL(/#\/department\//);
+  });
+
+  test('empty state when no history data', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    // History aborted by default
+    await page.goto('/#/trends');
+    await expect(page.locator('.trends-empty-state')).toBeVisible();
+  });
+
+  test('breadcrumb shows Overview > Trends', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/#/trends');
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    await expect(page.locator('.drilldown-breadcrumb-list')).toContainText('Overview');
+    await expect(page.locator('.drilldown-breadcrumb-list')).toContainText('Trends');
+  });
+
+  test('header trends link navigates to #/trends', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/');
+    await page.locator('.header-trends-link').click();
+    await expect(page).toHaveURL(/#\/trends/);
+  });
+
+  test('Escape key returns to overview from trends', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/#/trends');
+    await expect(page.locator('.drilldown-title')).toHaveText('Performance Trends');
+    await page.keyboard.press('Escape');
+    await expect(page).toHaveURL(/\/#\/$/);
   });
 });

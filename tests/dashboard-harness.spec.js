@@ -263,6 +263,48 @@ test.describe('dashboard browser harness fixtures', () => {
     });
     expect(result.view).toBe('trends');
   });
+
+  test('hero zone shows delta badge when history data exists', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/');
+    await expect(page.locator('#summary .hero-pct')).toBeVisible();
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    await expect(page.locator('#summary .delta-badge').first()).toBeVisible();
+  });
+
+  test('no delta badges when history has fewer than 2 snapshots', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    // History is aborted by default — no history data
+    await page.goto('/');
+    await expect(page.locator('#summary .hero-pct')).toBeVisible();
+    await expect(page.locator('#summary .delta-badge')).toHaveCount(0);
+  });
+
+  test('trends link navigates to #/trends', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/');
+    await expect(page.locator('[data-hook="trends-link"]')).toBeVisible();
+    await page.locator('[data-hook="trends-link"]').click();
+    await expect(page).toHaveURL(/#\/trends/);
+  });
+
+  test('goal cards show delta badge when history exists', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/');
+    await expect(page.locator('[data-hook="goal-card"]').first()).toBeVisible();
+    const badges = page.locator('[data-hook="goal-card"] .delta-badge');
+    await expect(badges.first()).toBeVisible();
+  });
+
+  test('goal card delta not shown when no history', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    // History aborted by default
+    await page.goto('/');
+    await expect(page.locator('[data-hook="goal-card"]').first()).toBeVisible();
+    await expect(page.locator('[data-hook="goal-card"] .delta-badge')).toHaveCount(0);
+  });
 });
 
 const LIVE_TERMINAL_STATE_TIMEOUT_MS = 25000;

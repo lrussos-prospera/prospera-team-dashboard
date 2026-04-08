@@ -1784,3 +1784,97 @@ header :focus-visible {
   color: var(--color-text-muted);
   background: var(--color-bg);
 }
+
+/* ── Goal card delta ── */
+.goal-card .delta-badge {
+  font-size: 0.65rem;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+/* ── Header trends link ── */
+.header-trends-link {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition:
+    background var(--duration-instant),
+    color var(--duration-instant);
+  margin-left: var(--space-md);
+  align-self: center;
+}
+.header-trends-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* ── Trends view layout ── */
+.trends-hero-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+  margin-bottom: var(--space-2xl);
+}
+.trends-chart-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-sm);
+}
+.trends-chart-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  margin-bottom: var(--space-md);
+  color: var(--color-text);
+}
+.trends-section-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  margin-bottom: var(--space-lg);
+  color: var(--color-text);
+}
+.trends-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-lg);
+  margin-bottom: var(--space-2xl);
+}
+.trends-small-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--duration-instant);
+}
+.trends-small-card:hover {
+  box-shadow: var(--shadow-md);
+}
+.trends-small-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--space-sm);
+}
+.trends-period-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-lg);
+}
+.trends-empty-state {
+  text-align: center;
+  padding: var(--space-3xl);
+  color: var(--color-text-muted);
+}
+.trends-small-multiples {
+  margin-top: var(--space-xl);
+}
+
+@media (max-width: 640px) {
+  .trends-hero-charts {
+    grid-template-columns: 1fr;
+  }
+}
