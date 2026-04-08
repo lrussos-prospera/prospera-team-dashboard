@@ -1,0 +1,40 @@
+{
+  "milestone": "leadership-ui-followup-fixups",
+  "testedAt": "2026-04-08T10:32:14.397084+00:00",
+  "assertionResults": [
+    {
+      "id": "VAL-BLOCKED-001",
+      "status": "pass",
+      "reason": "Using the deterministic canonical-blocked-mixed fixture, the dashboard showed a single blocked section with only the two normalized Blocked rows (Ana Cruz and Mia Park), excluded the generic At risk rows from that section, and visually hid the blocked section (display:none, no items) after narrowing the active subset to only the Leo Tan At risk row."
+    },
+    {
+      "id": "VAL-CROSS-001",
+      "status": "pass",
+      "reason": "After scoping to the Legal Framework goal on the canonical-blocked-mixed fixture, the UI displayed the visible scope indicator ('Scoped to goal: Legal Framework'), recomputed the summary to Total 2 / Blocked 1, reduced the blocked section to Ana Cruz only, and reduced the detail table to the two Legal Framework rows, keeping all scoped surfaces aligned to the same subset."
+    }
+  ],
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "frictions": [
+    {
+      "description": "The annotated screenshot and interactive accessibility snapshot did not expose the goal cards as clickable refs in overview, so the scope interaction had to be triggered through the stable [data-hook=goal-card][data-goal=...] DOM hook inside the same browser session.",
+      "resolved": true,
+      "resolution": "Used agent-browser eval with the existing stable goal-card hook to click the Legal Framework card and then verified the scoped UI state through screenshots and DOM reads.",
+      "affectedAssertions": [
+        "VAL-CROSS-001"
+      ]
+    }
+  ],
+  "blockers": [],
+  "evidence": {
+    "screenshots": [
+      "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui-followup-fixups/blocked/VAL-BLOCKED-001-blocked-visible.png",
+      "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui-followup-fixups/blocked/VAL-BLOCKED-001-blocked-hidden.png",
+      "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui-followup-fixups/blocked/VAL-CROSS-001-overview-before-goal-scope.png",
+      "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui-followup-fixups/blocked/VAL-CROSS-001-goal-scope-full-page.png"
+    ],
+    "consoleErrors": "none observed in the validation session"
+  },
+  "summary": "Tested 2 assigned browser assertions against the canonical-blocked-mixed fixture; both passed, with canonical blocked rows isolated correctly and goal scope keeping summary, blocked section, and table synchronized to the same subset."
+}

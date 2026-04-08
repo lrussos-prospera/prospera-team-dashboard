@@ -1,0 +1,44 @@
+{
+  "milestone": "leadership-ui-followup-fixups",
+  "groupId": "freshness",
+  "testedAt": "2026-04-08T00:00:00Z",
+  "isolation": {
+    "surface": "Browser UI",
+    "appUrl": "http://127.0.0.1:3100/index.html",
+    "fixture": "mixed-recency",
+    "missionDir": "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359"
+  },
+  "toolsUsed": ["agent-browser"],
+  "assertionResults": [
+    {
+      "id": "VAL-LOAD-021",
+      "status": "pass",
+      "reason": "With the localhost mixed-recency fixture loaded, the overview header reads 'Fixture:mixed-recency · stale (19d old)' and the Compliance goal card shows a single clear stale treatment, 'Stale (> 7d)', while the Operations card does not show stale UI. The stale copy and styling use the same Phase 1 >7 day rule and do not present conflicting age signals.",
+      "evidence": {
+        "screenshots": [
+          "leadership-ui-followup-fixups/freshness/VAL-LOAD-021-stale-goal-clarity.png"
+        ],
+        "consoleErrors": "none"
+      }
+    },
+    {
+      "id": "VAL-OVERVIEW-006",
+      "status": "pass",
+      "reason": "On initial load of the mixed-recency fixture, the page freshness label is stale ('Fixture:mixed-recency · stale (19d old)'). Triggering the in-app refresh leaves the label stale, confirming fetch time alone does not make stale data appear fresh. Narrowing the visible subset by scoping to the Operations department changes the header to 'Fixture:mixed-recency · current (2d old)' with one visible row and no Operations stale badge, showing freshness is derived from the active subset's Added/updated dates rather than from the act of fetching.",
+      "evidence": {
+        "screenshots": [
+          "leadership-ui-followup-fixups/freshness/VAL-OVERVIEW-006-stale-state.png",
+          "leadership-ui-followup-fixups/freshness/VAL-OVERVIEW-006-after-refresh-still-stale.png",
+          "leadership-ui-followup-fixups/freshness/VAL-OVERVIEW-006-fresh-scoped-state.png"
+        ],
+        "consoleErrors": "none"
+      }
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "evidence": {
+    "directory": "/Users/treygoff/.factory/missions/c8e0bdf9-ea59-4a57-99ee-3f3701789359/evidence/leadership-ui-followup-fixups/freshness"
+  },
+  "summary": "Validated 2 freshness assertions with the deterministic mixed-recency fixture: both passed. The stale overview remained stale after manual refresh, and the header freshness coherently switched to current only when the visible subset was narrowed to the fresh Operations department."
+}
