@@ -893,13 +893,6 @@ tbody tr:not(.group-header):not(.expand-row) {
   margin-bottom: 10px;
 }
 
-.empty-scope-note {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--brand-dark-teal);
-  margin-bottom: 14px;
-}
-
 .empty .retry-btn {
   padding: 8px 16px;
   background: var(--brand-navy);
