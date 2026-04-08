@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { mockSheetCsv, mockHistoryCsv } = require('./helpers/sheet-fixtures');
+const { mockSheetCsv, mockHistoryCsv, failHistoryCsv } = require('./helpers/sheet-fixtures');
 
 test.describe('goal drilldown view', () => {
   test('shows filtered summary and table for the goal', async ({ page }) => {
@@ -368,6 +368,20 @@ test.describe('trends drilldown view', () => {
     // History aborted by default
     await page.goto('/#/trends');
     await expect(page.locator('.trends-empty-state')).toBeVisible();
+  });
+
+  test('delayed history failure rerenders explicit unavailable trends state', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await failHistoryCsv(page, { delayMs: 350 });
+
+    await page.goto('/#/trends');
+
+    await expect(page.locator('.drilldown-subtitle')).toHaveText('Loading history data…');
+    await page.waitForFunction(() => window.appState?.history?.status === 'error');
+    await expect(page.locator('.drilldown-subtitle')).toHaveText('History data unavailable');
+    await expect(page.locator('.trends-empty-state')).toContainText(
+      'Could not load history data.'
+    );
   });
 
   test('breadcrumb shows Overview > Trends', async ({ page }) => {

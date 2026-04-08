@@ -42,6 +42,19 @@ test.describe('dashboard browser harness fixtures', () => {
     ).toBe(true);
   });
 
+  test('manual qa fixture also loads shared history fixture data', async ({ page }) => {
+    await page.goto('/?qaFixture=all-blocked');
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+
+    const history = await page.evaluate(() => ({
+      status: window.appState?.history?.status,
+      rowCount: window.appState?.history?.raw?.length || 0,
+    }));
+
+    expect(history.status).toBe('loaded');
+    expect(history.rowCount).toBeGreaterThan(0);
+  });
+
   test('all-blocked fixture renders risk-forward summary and blocked list', async ({ page }) => {
     await mockSheetCsv(page, 'all-blocked');
 
@@ -271,6 +284,58 @@ test.describe('dashboard browser harness fixtures', () => {
     await expect(page.locator('#summary .hero-pct')).toBeVisible();
     await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
     await expect(page.locator('#summary .delta-badge').first()).toBeVisible();
+  });
+
+  test('overview history rerender restores toggle and all summary delta badges after delayed history load', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed', { delayMs: 350 });
+
+    await page.goto('/');
+
+    await expect(page.locator('#summary .hero-pct')).toBeVisible();
+    await expect(page.locator('#hero-period-toggle')).toBeHidden();
+    await expect(page.locator('#summary [data-hook=\"summary-done\"] .delta-badge')).toHaveCount(0);
+    await expect(page.locator('#summary [data-hook=\"summary-blocked\"] .delta-badge')).toHaveCount(
+      0
+    );
+
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    await expect(page.locator('#hero-period-toggle')).toBeVisible();
+    await expect(page.locator('#summary .hero-pct + .delta-badge')).toHaveText('↑ 10%');
+    await expect(page.locator('#summary [data-hook="summary-done"] .delta-badge')).toHaveText(
+      '↑ 2'
+    );
+    await expect(page.locator('#summary [data-hook="summary-blocked"] .delta-badge')).toHaveText(
+      '↓ 1'
+    );
+  });
+
+  test('overview period switch recomputes done and blocked delta badges', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+
+    await page.goto('/');
+
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+    await expect(page.locator('#summary [data-hook="summary-done"] .delta-badge')).toHaveText(
+      '↑ 2'
+    );
+    await expect(page.locator('#summary [data-hook="summary-blocked"] .delta-badge')).toHaveText(
+      '↓ 1'
+    );
+
+    await page.locator('#hero-period-toggle').getByRole('radio', { name: '1M' }).click();
+
+    await expect(page).toHaveURL(/period=1m/);
+    await expect(page.locator('#summary .hero-pct + .delta-badge')).toHaveText('↑ 30%');
+    await expect(page.locator('#summary [data-hook="summary-done"] .delta-badge')).toHaveText(
+      '↑ 6'
+    );
+    await expect(page.locator('#summary [data-hook="summary-blocked"] .delta-badge')).toHaveText(
+      '↓ 2'
+    );
   });
 
   test('no delta badges when history has fewer than 2 snapshots', async ({ page }) => {

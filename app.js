@@ -609,6 +609,56 @@ function animateCounterTo(element, targetValue, duration) {
   requestAnimationFrame(step);
 }
 
+function updateOverviewStatDelta(heroZone, statHook, deltaHtml) {
+  const stat = heroZone.querySelector(`[data-hook="${statHook}"]`);
+  if (!stat) return;
+  stat.querySelectorAll('.delta-badge').forEach((badge) => badge.remove());
+  if (!deltaHtml) return;
+  const valueEl = stat.querySelector('.hero-stat-value');
+  if (valueEl) valueEl.insertAdjacentHTML('afterend', deltaHtml);
+}
+
+function handleOverviewPeriodChange(newPeriod) {
+  const newFilters = { ...appState.route.filters, period: newPeriod };
+  if (newPeriod === '1w') delete newFilters.period;
+  replaceRoute('overview', '', newFilters);
+  renderApp();
+}
+
+function refreshOverviewHistoryChrome(heroZone) {
+  const overviewPeriod = appState.route.filters.period || '1w';
+  const overallHistory = getHistoryForEntity('overall');
+  const overallDelta = computeDelta(overallHistory, overviewPeriod);
+  const pctBadgeHtml =
+    appState.history.status === 'loaded' ? renderDeltaBadge(overallDelta) : '';
+  const doneBadgeHtml =
+    appState.history.status === 'loaded' ? renderDeltaBadge(overallDelta, 'doneDelta') : '';
+  const blockedBadgeHtml =
+    appState.history.status === 'loaded' ? renderDeltaBadge(overallDelta, 'blockedDelta') : '';
+
+  const heroPctBadge = heroZone.querySelector('.hero-pct + .delta-badge');
+  if (heroPctBadge) heroPctBadge.remove();
+  const pctEl = heroZone.querySelector('[data-hook="summary-percent"]');
+  if (pctEl && pctBadgeHtml) {
+    pctEl.insertAdjacentHTML('afterend', pctBadgeHtml);
+  }
+
+  updateOverviewStatDelta(heroZone, 'summary-done', doneBadgeHtml);
+  updateOverviewStatDelta(heroZone, 'summary-blocked', blockedBadgeHtml);
+
+  const toggleContainer = heroZone.querySelector('#hero-period-toggle');
+  if (!toggleContainer) return;
+
+  if (appState.history.status === 'loaded') {
+    toggleContainer.style.removeProperty('display');
+    renderPeriodToggle(toggleContainer, overviewPeriod, handleOverviewPeriodChange);
+    return;
+  }
+
+  toggleContainer.style.display = 'none';
+  toggleContainer.innerHTML = '';
+}
+
 function renderSummary(rows) {
   const summary = deriveSummary(rows);
   const doneClass = summary.done > 0 ? 'status-done' : '';
@@ -660,31 +710,7 @@ function renderSummary(rows) {
       animateCounterTo(blockedEl, summary.blocked, 300);
     }
     if (totalEl) animateCounterTo(totalEl, summary.total, 300);
-
-    const overviewPeriodA = appState.route.filters.period || '1w';
-    const overallHistoryA = getHistoryForEntity('overall');
-    const overallDeltaA = computeDelta(overallHistoryA, overviewPeriodA);
-
-    const heroPctBadge = existingHeroZone.querySelector('.hero-pct + .delta-badge');
-    if (heroPctBadge) heroPctBadge.remove();
-    const newPctBadgeHtml =
-      appState.history.status === 'loaded' ? renderDeltaBadge(overallDeltaA) : '';
-    if (newPctBadgeHtml) {
-      const pctEl2 = existingHeroZone.querySelector('[data-hook="summary-percent"]');
-      if (pctEl2) pctEl2.insertAdjacentHTML('afterend', newPctBadgeHtml);
-    }
-
-    const toggleContainerA = existingHeroZone.querySelector('#hero-period-toggle');
-    if (toggleContainerA && appState.history.status === 'loaded') {
-      renderPeriodToggle(toggleContainerA, overviewPeriodA, (newPeriod) => {
-        const newFilters = { ...appState.route.filters, period: newPeriod };
-        if (newPeriod === '1w') delete newFilters.period;
-        replaceRoute('overview', '', newFilters);
-        renderApp();
-      });
-    } else if (toggleContainerA) {
-      toggleContainerA.style.display = 'none';
-    }
+    refreshOverviewHistoryChrome(existingHeroZone);
 
     return;
   }
@@ -736,17 +762,8 @@ function renderSummary(rows) {
     </div>
   `;
 
-  const toggleContainer = elements.summary.querySelector('#hero-period-toggle');
-  if (toggleContainer && appState.history.status === 'loaded') {
-    renderPeriodToggle(toggleContainer, overviewPeriod, (newPeriod) => {
-      const newFilters = { ...appState.route.filters, period: newPeriod };
-      if (newPeriod === '1w') delete newFilters.period;
-      replaceRoute('overview', '', newFilters);
-      renderApp();
-    });
-  } else if (toggleContainer) {
-    toggleContainer.style.display = 'none';
-  }
+  const heroZone = elements.summary.querySelector('.hero-zone');
+  if (heroZone) refreshOverviewHistoryChrome(heroZone);
 }
 
 function renderGoals(rows) {
@@ -2181,6 +2198,7 @@ const MANUAL_QA_FIXTURE_ALLOWLIST = new Set([
   'mixed-recency',
   'stale-data',
 ]);
+const MANUAL_QA_HISTORY_FIXTURE = 'history-mixed';
 const QA_FIXTURE_DEBUG_MAX_EVENTS = 120;
 
 const qaFixtureDebugState = {
@@ -2341,12 +2359,17 @@ async function fetchFixtureCsv(fixtureName) {
 
 async function fetchHistoryData() {
   appState.history.status = 'loading';
+  appState.history.raw = [];
+  appState.history.byLevel = {};
   try {
     const fixtureName = readManualQaFixtureSelection();
-    const url = fixtureName ? buildFixtureCsvUrl(fixtureName + '-history') : HISTORY_URL;
+    const url = fixtureName ? buildFixtureCsvUrl(MANUAL_QA_HISTORY_FIXTURE) : HISTORY_URL;
     const response = await fetch(url);
     if (!response.ok) {
+      appState.history.raw = [];
+      appState.history.byLevel = {};
       appState.history.status = 'error';
+      if (appState.lifecycle.phase === 'loaded') renderApp();
       return;
     }
     const text = await response.text();
@@ -2356,7 +2379,10 @@ async function fetchHistoryData() {
     appState.history.status = 'loaded';
     if (appState.lifecycle.phase === 'loaded') renderApp();
   } catch {
+    appState.history.raw = [];
+    appState.history.byLevel = {};
     appState.history.status = 'error';
+    if (appState.lifecycle.phase === 'loaded') renderApp();
   }
 }
 

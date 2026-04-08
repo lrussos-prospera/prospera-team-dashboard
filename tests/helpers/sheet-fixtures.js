@@ -63,9 +63,14 @@ async function mockSheetCsvSequence(page, sequence) {
   });
 }
 
-async function mockHistoryCsv(page, fixtureName) {
+async function mockHistoryCsv(page, fixtureName, options = {}) {
   const csv = readFixture(fixtureName);
   await page.route(HISTORY_ROUTE, async (route) => {
+    if (options.delayMs) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, options.delayMs);
+      });
+    }
     await route.fulfill({
       status: 200,
       contentType: 'text/csv; charset=utf-8',
@@ -74,8 +79,13 @@ async function mockHistoryCsv(page, fixtureName) {
   });
 }
 
-async function failHistoryCsv(page) {
+async function failHistoryCsv(page, options = {}) {
   await page.route(HISTORY_ROUTE, async (route) => {
+    if (options.delayMs) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, options.delayMs);
+      });
+    }
     await route.abort('failed');
   });
 }
