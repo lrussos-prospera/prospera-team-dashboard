@@ -1,0 +1,38 @@
+{
+  "groupId": "keyboard",
+  "surface": "Browser UI",
+  "assertions": [
+    {
+      "id": "VAL-KEYBOARD-003",
+      "status": "pass",
+      "reason": "Validated Escape unwinding on http://127.0.0.1:3100/index.html in priority order. Starting from a state with goal scope active, one summary row expanded, and the filter panel open, the first Escape cleared the visible scope indicator and restored the full overview while leaving the expanded row and open filter panel in place. A DOM check after that first Escape confirmed scopeVisible=false, filterPanelDisplay='grid', filterExpanded='true', and one expanded summary row/detail region still visible. The second Escape closed the expanded row and removed its detail region while keeping the filter panel open. The third Escape closed the filter panel. Final DOM verification showed no active scope indicator, no expanded rows, no visible detail regions, and no visible filter controls, so no stale scope UI, open details, or filter controls were left behind.",
+      "evidence": [
+        "Screenshot: leadership-ui-followup/keyboard/scoped-expanded-filter-open-before-escape.png (precondition state showing active scope, expanded row, and visible filter panel)",
+        "Screenshot: leadership-ui-followup/keyboard/escape-1-after-scope-clear.png (after first Escape; scope cleared, overview restored, filter panel still visible)",
+        "Observed after first Escape: scopeVisible=false, filterPanelDisplay='grid', filterExpanded='true', expandedRows=1, detailRegionsVisible=1",
+        "Screenshot: leadership-ui-followup/keyboard/escape-2-after-row-close.png (after second Escape; expanded row/detail closed, filter panel still visible)",
+        "Observed after second Escape: scopeVisible=false, filterPanelDisplay='grid', filterExpanded='true', expandedRows=0, detailRegionsVisible=0",
+        "Screenshot: leadership-ui-followup/keyboard/escape-3-after-filter-close.png (after third Escape; filter panel closed)",
+        "Observed after third Escape: scopeVisible=false, filterPanelDisplay='none', filterExpanded='false', expandedRows=0, detailRegionsVisible=0, visibleFilterControls=0",
+        "Console errors: none observed via agent-browser errors",
+        "Console output: no unexpected console messages observed via agent-browser console",
+        "Network note: agent-browser network requests returned no tracked requests, but Performance API showed the Google Sheets CSV fetch resource in the session: https://docs.google.com/spreadsheets/d/1bUY_Us-Vjq4JSYsnxrVXfAX6qRGjxZRgXR31me3Nc0U/gviz/tq?tqx=out:csv&gid=1636341361"
+      ]
+    }
+  ],
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "summary": "Tested 1 assertion (VAL-KEYBOARD-003): pass. Escape unwound state in the required order—scope first, expanded row second, filter panel third—and the dashboard did not leave stale scope UI, detail UI, or visible filter controls behind.",
+  "frictions": [
+    {
+      "description": "agent-browser network requests did not report the page's initial fetch activity for this local session, so the network evidence had to be confirmed through the browser Performance API instead.",
+      "resolved": true,
+      "resolution": "Used agent-browser eval to inspect performance.getEntriesByType('resource') and confirm the Google Sheets CSV fetch resource was loaded.",
+      "affectedAssertions": [
+        "VAL-KEYBOARD-003"
+      ]
+    }
+  ],
+  "blockers": []
+}

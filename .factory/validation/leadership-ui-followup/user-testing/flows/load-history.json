@@ -1,0 +1,61 @@
+{
+  "groupId": "load-history",
+  "surface": "Browser UI",
+  "toolsUsed": ["agent-browser"],
+  "assertions": [
+    {
+      "id": "VAL-LOAD-001",
+      "status": "pass",
+      "reason": "Opened the dashboard at http://127.0.0.1:3100/index.html and captured the initial loading surface, then waited for the live sheet fetch to settle. The loading state was visibly present during load, and after settle the dashboard showed the overview with controls and result count while the state box was hidden (stateHook=null, stateVisible=false, resultCount='Showing 101 updates'). No lingering mixed loading/loaded presentation remained.",
+      "evidence": [
+        "leadership-ui-followup/load-history/VAL-LOAD-001-initial-loading-state.png",
+        "leadership-ui-followup/load-history/VAL-LOAD-001-loaded-overview.png",
+        "Observed URL remained http://127.0.0.1:3100/index.html after load; historyLength stayed 2; no console errors during the normal load path."
+      ]
+    },
+    {
+      "id": "VAL-LOAD-014",
+      "status": "pass",
+      "reason": "Narrowed the dashboard in place by entering 'Amanda' in the search field, then refreshed from within the app. The browser location remained unchanged at /index.html with empty query/hash and historyLength stayed 2 before and after interactions, showing no intra-app history entries or URL-state navigation from search or refresh. The narrowed view remained in-page with 'Showing 14 updates'.",
+      "evidence": [
+        "leadership-ui-followup/load-history/VAL-LOAD-014-history-noop-narrowed.png",
+        "Observed URL before/after interactions: http://127.0.0.1:3100/index.html",
+        "Observed browser history length before/after interactions: 2 -> 2",
+        "Console errors after the normal narrowed refresh flow: none"
+      ]
+    },
+    {
+      "id": "VAL-LOAD-042",
+      "status": "pass",
+      "reason": "From the narrowed in-app state, triggered refresh and captured the in-progress loading surface. Then forced one recoverable failure by taking the browser session offline, refreshing to the error state, restoring connectivity, and clicking Try again. The dashboard stayed on the same page throughout, showed a visible recoverable error surface with retry, then returned to a clean loaded state with no duplicate retry/loading/error surfaces (retryButtons=0, loadingStates=0, errorStates=0 after recovery) and controls visible again.",
+      "evidence": [
+        "leadership-ui-followup/load-history/VAL-LOAD-042-reading-order-stable-across-load-transitions.png",
+        "leadership-ui-followup/load-history/VAL-LOAD-042-refresh-offline-loading.png",
+        "leadership-ui-followup/load-history/VAL-LOAD-042-refresh-offline-error.png",
+        "leadership-ui-followup/load-history/VAL-LOAD-042-retry-loading.png",
+        "leadership-ui-followup/load-history/VAL-LOAD-042-retry-recovered.png",
+        "Observed URL remained http://127.0.0.1:3100/index.html across refresh/error/retry; historyLength stayed 2; intentional offline simulation produced one expected console error: Failed to load resource: net::ERR_INTERNET_DISCONNECTED"
+      ]
+    },
+    {
+      "id": "VAL-CROSS-003",
+      "status": "pass",
+      "reason": "Triggered refresh while the dashboard was actively narrowed by search ('Amanda'). After refresh completion and after the forced retry recovery cycle, the narrowed subset remained coherent: the search field still contained 'Amanda', the result count still read 'Showing 14 updates', controls/summary/table were visible, no loading state remained visible, and there were no orphaned expanded rows (expandedRows=0) or broken controls.",
+      "evidence": [
+        "leadership-ui-followup/load-history/VAL-CROSS-003-refresh-during-scoped-state.png",
+        "Observed post-refresh state: searchValue='Amanda', resultCount='Showing 14 updates', controlsVisible=true, summaryVisible=true, tableWrapVisible=true, stateVisible=false, expandedRows=0",
+        "Console errors on the successful narrowed refresh path: none"
+      ]
+    }
+  ],
+  "summary": "Tested 4 assertions on the live dashboard surface: 4 passed, 0 failed, 0 blocked. Verified visible loading/settle behavior, no intra-app history or URL-state navigation, recoverable refresh/error/retry transitions, and coherent narrowed-state preservation through refresh.",
+  "frictions": [
+    {
+      "description": "The shared library file /Users/treygoff/.factory/library/user-testing.md referenced by the subagent prompt was not present at the expected path, so testing proceeded using the mission-local AGENTS guidance and validation contract.",
+      "resolved": true,
+      "resolution": "Followed the mission-local testing guidance plus the assigned assertion definitions directly.",
+      "affectedAssertions": ["VAL-LOAD-001", "VAL-LOAD-014", "VAL-LOAD-042", "VAL-CROSS-003"]
+    }
+  ],
+  "blockers": []
+}

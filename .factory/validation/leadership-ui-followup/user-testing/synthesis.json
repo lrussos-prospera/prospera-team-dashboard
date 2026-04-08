@@ -1,0 +1,22 @@
+{
+  "milestone": "leadership-ui-followup",
+  "round": 1,
+  "status": "pass",
+  "assertionsSummary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "blocked": 0
+  },
+  "passedAssertions": [
+    "VAL-LOAD-001",
+    "VAL-LOAD-014",
+    "VAL-LOAD-042",
+    "VAL-CROSS-003",
+    "VAL-KEYBOARD-003"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [],
+  "appliedUpdates": [],
+  "previousRound": null
+}
