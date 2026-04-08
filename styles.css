@@ -663,6 +663,40 @@ thead th {
   color: var(--color-text-muted);
   text-align: left;
 }
+thead th[data-sort-key] {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 24px;
+  transition: color 0.15s;
+}
+thead th[data-sort-key]:hover {
+  color: var(--brand-navy);
+}
+thead th[data-sort-key]::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.65rem;
+  opacity: 0.3;
+}
+thead th[aria-sort='ascending']::after {
+  content: '▲';
+  opacity: 1;
+  color: var(--brand-navy);
+}
+thead th[aria-sort='descending']::after {
+  content: '▼';
+  opacity: 1;
+  color: var(--brand-navy);
+}
+thead th[aria-sort='ascending'],
+thead th[aria-sort='descending'] {
+  color: var(--brand-navy);
+  border-bottom-color: var(--brand-navy);
+}
 tbody tr {
   transition: all 0.2s ease;
 }

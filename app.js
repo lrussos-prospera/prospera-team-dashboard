@@ -26,6 +26,10 @@ const appState = {
     },
     filterPanelOpen: false,
     expandedRowKey: null,
+    sort: {
+      column: '',
+      direction: '',
+    },
   },
 };
 
@@ -236,6 +240,34 @@ function deriveRecencyLabel(rows, sourceLabel) {
 
   const freshestAgeDays = Math.min(...validGoalAges);
   return `${sourceLabel} · current (${freshestAgeDays}d old)`;
+}
+
+const STATUS_SORT_ORDER = { blocked: 0, doing: 1, other: 2, done: 3 };
+
+function sortViewRows(rows) {
+  const { column, direction } = appState.view.sort;
+  if (!column || !direction) return rows;
+
+  const sorted = [...rows];
+  const mult = direction === 'asc' ? 1 : -1;
+
+  sorted.sort((a, b) => {
+    if (column === 'Status') {
+      return mult * ((STATUS_SORT_ORDER[a._status] ?? 99) - (STATUS_SORT_ORDER[b._status] ?? 99));
+    }
+
+    if (column === 'Added/updated') {
+      const aTime = a._date ? a._date.getTime() : -Infinity;
+      const bTime = b._date ? b._date.getTime() : -Infinity;
+      return mult * (aTime - bTime);
+    }
+
+    const aVal = (a[column] || '').toLowerCase();
+    const bVal = (b[column] || '').toLowerCase();
+    return mult * aVal.localeCompare(bVal);
+  });
+
+  return sorted;
 }
 
 function isNarrowedViewActive() {
@@ -575,106 +607,115 @@ function renderTable(rows) {
 
   elements.resultCount.textContent = `Showing ${rows.length} update${rows.length !== 1 ? 's' : ''}`;
 
-  const grouped = rows.reduce((acc, row) => {
-    const dept = row['Department'] || 'Other';
-    if (!acc[dept]) acc[dept] = [];
-    acc[dept].push(row);
-    return acc;
-  }, {});
+  const isSorted = Boolean(appState.view.sort.column);
+  const sortedRows = sortViewRows(rows);
 
   elements.tableBody.innerHTML = '';
 
-  Object.entries(grouped)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .forEach(([dept, deptRows]) => {
-      const groupHeader = document.createElement('tr');
-      const isDepartmentScoped =
-        appState.view.scope.type === 'department' && appState.view.scope.value === dept;
-      groupHeader.className = `group-header${isDepartmentScoped ? ' group-header-active' : ''}`;
-      groupHeader.setAttribute('data-hook', 'table-group-header');
-      groupHeader.setAttribute('data-department', dept);
-      groupHeader.setAttribute('role', 'button');
-      groupHeader.setAttribute('tabindex', '0');
-      groupHeader.setAttribute('aria-pressed', String(isDepartmentScoped));
-      groupHeader.innerHTML = `<td colspan="5">${escapeHtml(dept)} &mdash; ${deptRows.length} update${deptRows.length !== 1 ? 's' : ''}</td>`;
+  function appendDataRow(row, fallbackIndex) {
+    const rowKey = buildRowKey(row, fallbackIndex);
+    const isExpanded = appState.view.expandedRowKey === rowKey;
 
-      const onScopeDepartment = () => setScope('department', dept);
-      groupHeader.addEventListener('click', onScopeDepartment);
-      groupHeader.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        onScopeDepartment();
-      });
+    const summaryRow = document.createElement('tr');
+    summaryRow.tabIndex = 0;
+    summaryRow.setAttribute('role', 'button');
+    summaryRow.setAttribute('aria-expanded', String(isExpanded));
+    summaryRow.setAttribute('aria-controls', `details-${rowKey}`);
+    summaryRow.setAttribute('data-hook', 'table-row-summary');
+    summaryRow.setAttribute('data-row-key', rowKey);
+    summaryRow.innerHTML = `
+      <td class="td-person"><span class="expand-icon" aria-hidden="true" style="transform:${isExpanded ? 'rotate(90deg)' : 'none'}">›</span>${escapeHtml(row['Responsible'])}</td>
+      <td class="td-topic">${escapeHtml(row['Topic'])}</td>
+      <td>${badge(row.Status, row._status)}</td>
+      <td class="td-goal">${escapeHtml(row['Goal'])}</td>
+      <td class="td-date">${escapeHtml(row['Added/updated'])}</td>
+    `;
 
-      elements.tableBody.appendChild(groupHeader);
-
-      deptRows.forEach((row, index) => {
-        const rowKey = buildRowKey(row, `${dept}-${index}`);
-        const isExpanded = appState.view.expandedRowKey === rowKey;
-
-        const summaryRow = document.createElement('tr');
-        summaryRow.tabIndex = 0;
-        summaryRow.setAttribute('role', 'button');
-        summaryRow.setAttribute('aria-expanded', String(isExpanded));
-        summaryRow.setAttribute('aria-controls', `details-${rowKey}`);
-        summaryRow.setAttribute('data-hook', 'table-row-summary');
-        summaryRow.setAttribute('data-row-key', rowKey);
-        summaryRow.innerHTML = `
-          <td class="td-person"><span class="expand-icon" aria-hidden="true" style="transform:${isExpanded ? 'rotate(90deg)' : 'none'}">›</span>${escapeHtml(row['Responsible'])}</td>
-          <td class="td-topic">${escapeHtml(row['Topic'])}</td>
-          <td>${badge(row.Status, row._status)}</td>
-          <td class="td-goal">${escapeHtml(row['Goal'])}</td>
-          <td class="td-date">${escapeHtml(row['Added/updated'])}</td>
-        `;
-
-        const detailRow = document.createElement('tr');
-        detailRow.className = 'expand-row';
-        detailRow.id = `details-${rowKey}`;
-        detailRow.setAttribute('data-hook', 'table-row-detail');
-        detailRow.setAttribute('data-row-key', rowKey);
-        detailRow.style.display = isExpanded ? 'table-row' : 'none';
-        detailRow.innerHTML = `
-          <td colspan="5">
-            <div class="expand-wrapper">
-              <div class="expand-content">
-                <div class="expand-grid">
-                  ${row['Team'] ? `<div class="expand-item expand-team"><span class="expand-label">Team</span><div class="expand-field">${escapeHtml(row['Team'])}</div></div>` : ''}
-                  ${row['Details'] ? `<div class="expand-item expand-details"><span class="expand-label">Details</span><div class="expand-field">${escapeHtml(row['Details'])}</div></div>` : ''}
-                  ${row['Notes'] ? `<div class="expand-item expand-notes"><span class="expand-label">Notes</span><div class="expand-field">${escapeHtml(row['Notes'])}</div></div>` : ''}
-                </div>
-                <div class="expand-grid expand-mobile-only">
-                  ${row['Goal'] ? `<div class="expand-item"><span class="expand-label">Goal</span><div class="expand-field">${escapeHtml(row['Goal'])}</div></div>` : ''}
-                  ${row['Added/updated'] ? `<div class="expand-item"><span class="expand-label">Updated</span><div class="expand-field">${escapeHtml(row['Added/updated'])}</div></div>` : ''}
-                </div>
-              </div>
+    const detailRow = document.createElement('tr');
+    detailRow.className = 'expand-row';
+    detailRow.id = `details-${rowKey}`;
+    detailRow.setAttribute('data-hook', 'table-row-detail');
+    detailRow.setAttribute('data-row-key', rowKey);
+    detailRow.style.display = isExpanded ? 'table-row' : 'none';
+    detailRow.innerHTML = `
+      <td colspan="5">
+        <div class="expand-wrapper">
+          <div class="expand-content">
+            <div class="expand-grid">
+              ${row['Team'] ? `<div class="expand-item expand-team"><span class="expand-label">Team</span><div class="expand-field">${escapeHtml(row['Team'])}</div></div>` : ''}
+              ${row['Details'] ? `<div class="expand-item expand-details"><span class="expand-label">Details</span><div class="expand-field">${escapeHtml(row['Details'])}</div></div>` : ''}
+              ${row['Notes'] ? `<div class="expand-item expand-notes"><span class="expand-label">Notes</span><div class="expand-field">${escapeHtml(row['Notes'])}</div></div>` : ''}
             </div>
-          </td>
-        `;
+            <div class="expand-grid expand-mobile-only">
+              ${row['Goal'] ? `<div class="expand-item"><span class="expand-label">Goal</span><div class="expand-field">${escapeHtml(row['Goal'])}</div></div>` : ''}
+              ${row['Added/updated'] ? `<div class="expand-item"><span class="expand-label">Updated</span><div class="expand-field">${escapeHtml(row['Added/updated'])}</div></div>` : ''}
+            </div>
+          </div>
+        </div>
+      </td>
+    `;
 
-        const onToggle = () => toggleExpandedRow(rowKey);
-        summaryRow.addEventListener('click', onToggle);
-        summaryRow.addEventListener('keydown', (event) => {
-          if (event.key === 'ArrowDown') {
-            event.preventDefault();
-            focusAdjacentSummaryRow(summaryRow, 1);
-            return;
-          }
+    const onToggle = () => toggleExpandedRow(rowKey);
+    summaryRow.addEventListener('click', onToggle);
+    summaryRow.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        focusAdjacentSummaryRow(summaryRow, 1);
+        return;
+      }
 
-          if (event.key === 'ArrowUp') {
-            event.preventDefault();
-            focusAdjacentSummaryRow(summaryRow, -1);
-            return;
-          }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        focusAdjacentSummaryRow(summaryRow, -1);
+        return;
+      }
 
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      onToggle();
+    });
+
+    elements.tableBody.appendChild(summaryRow);
+    elements.tableBody.appendChild(detailRow);
+  }
+
+  if (isSorted) {
+    sortedRows.forEach((row, index) => appendDataRow(row, index));
+  } else {
+    const grouped = rows.reduce((acc, row) => {
+      const dept = row['Department'] || 'Other';
+      if (!acc[dept]) acc[dept] = [];
+      acc[dept].push(row);
+      return acc;
+    }, {});
+
+    Object.entries(grouped)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([dept, deptRows]) => {
+        const groupHeader = document.createElement('tr');
+        const isDepartmentScoped =
+          appState.view.scope.type === 'department' && appState.view.scope.value === dept;
+        groupHeader.className = `group-header${isDepartmentScoped ? ' group-header-active' : ''}`;
+        groupHeader.setAttribute('data-hook', 'table-group-header');
+        groupHeader.setAttribute('data-department', dept);
+        groupHeader.setAttribute('role', 'button');
+        groupHeader.setAttribute('tabindex', '0');
+        groupHeader.setAttribute('aria-pressed', String(isDepartmentScoped));
+        groupHeader.innerHTML = `<td colspan="5">${escapeHtml(dept)} &mdash; ${deptRows.length} update${deptRows.length !== 1 ? 's' : ''}</td>`;
+
+        const onScopeDepartment = () => setScope('department', dept);
+        groupHeader.addEventListener('click', onScopeDepartment);
+        groupHeader.addEventListener('keydown', (event) => {
           if (event.key !== 'Enter' && event.key !== ' ') return;
           event.preventDefault();
-          onToggle();
+          onScopeDepartment();
         });
 
-        elements.tableBody.appendChild(summaryRow);
-        elements.tableBody.appendChild(detailRow);
+        elements.tableBody.appendChild(groupHeader);
+
+        deptRows.forEach((row, index) => appendDataRow(row, `${dept}-${index}`));
       });
-    });
+  }
 }
 
 function updateFilterBadge() {
@@ -796,6 +837,7 @@ function renderApp() {
   renderBlocked(viewRows);
   renderTable(viewRows);
   updateFilterBadge();
+  updateSortIndicators();
 
   appState.lifecycle.refreshedLabel = deriveRecencyLabel(
     viewRows,
@@ -821,6 +863,38 @@ function collapseExpandedRow() {
   appState.view.expandedRowKey = null;
 }
 
+function cycleSort(column) {
+  const { sort } = appState.view;
+  if (sort.column === column) {
+    if (sort.direction === 'asc') {
+      sort.direction = 'desc';
+    } else {
+      sort.column = '';
+      sort.direction = '';
+    }
+  } else {
+    sort.column = column;
+    sort.direction = 'asc';
+  }
+  collapseExpandedRow();
+  renderApp();
+}
+
+function updateSortIndicators() {
+  const headers = document.querySelectorAll('thead th[data-sort-key]');
+  headers.forEach((th) => {
+    const key = th.getAttribute('data-sort-key');
+    if (key === appState.view.sort.column) {
+      th.setAttribute(
+        'aria-sort',
+        appState.view.sort.direction === 'asc' ? 'ascending' : 'descending'
+      );
+    } else {
+      th.setAttribute('aria-sort', 'none');
+    }
+  });
+}
+
 function resetFilters() {
   appState.view.filters = {
     dept: '',
@@ -832,6 +906,7 @@ function resetFilters() {
   };
   clearScope();
   collapseExpandedRow();
+  appState.view.sort = { column: '', direction: '' };
 
   elements.filterDept.value = '';
   elements.filterTeam.value = '';
@@ -1074,6 +1149,16 @@ async function fetchSheetData() {
 let searchDebounceTimer;
 
 function bindEvents() {
+  document.querySelectorAll('thead th[data-sort-key]').forEach((th) => {
+    const key = th.getAttribute('data-sort-key');
+    th.addEventListener('click', () => cycleSort(key));
+    th.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      cycleSort(key);
+    });
+  });
+
   elements.filterDept.addEventListener('change', () => {
     syncFilterStateFromControls();
     if (appState.view.scope.type === 'department') {
