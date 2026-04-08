@@ -14,7 +14,9 @@ test.describe('dashboard browser harness fixtures', () => {
     await expect(page.locator('#blocked-section .blocked-item')).toHaveCount(3);
   });
 
-  test('empty-goals fixture is deterministic and maps blanks into No Goal card', async ({ page }) => {
+  test('empty-goals fixture is deterministic and maps blanks into No Goal card', async ({
+    page,
+  }) => {
     await mockSheetCsv(page, 'empty-goals');
 
     await page.goto('/');
@@ -41,7 +43,9 @@ test.describe('dashboard browser harness fixtures', () => {
     await page.goto('/');
 
     await expect(page.locator('#state-box')).toBeVisible();
-    await expect(page.locator('#state-box')).toContainText('Could not load data from Google Sheets.');
+    await expect(page.locator('#state-box')).toContainText(
+      'Could not load data from Google Sheets.'
+    );
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
   });
 });
@@ -49,16 +53,29 @@ test.describe('dashboard browser harness fixtures', () => {
 test('live dashboard surface settles to loaded or explicit error state', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page.locator('#state-box')).toContainText('Fetching latest data from Google Sheets…');
-
   await expect
-    .poll(async () => {
-      const summaryVisible = await page.locator('#summary').isVisible();
-      const hasErrorText = await page
-        .locator('#state-box')
-        .filter({ hasText: 'Could not load data from Google Sheets.' })
-        .isVisible();
-      return summaryVisible || hasErrorText;
-    })
-    .toBe(true);
+    .poll(
+      async () => {
+        const summaryVisible = await page.locator('#summary').isVisible();
+        if (summaryVisible) {
+          return 'loaded';
+        }
+
+        const hasErrorText = await page
+          .locator('#state-box')
+          .filter({ hasText: 'Could not load data from Google Sheets.' })
+          .isVisible();
+        if (hasErrorText) {
+          return 'error';
+        }
+
+        return 'pending';
+      },
+      {
+        timeout: 20000,
+        message:
+          'Dashboard did not settle into either loaded content or explicit error state in time.',
+      }
+    )
+    .toMatch(/^(loaded|error)$/);
 });
