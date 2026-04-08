@@ -219,6 +219,43 @@ test.describe('dashboard state and render seams', () => {
     await expect(page.locator('[data-hook="table-row-summary"]')).toHaveCount(1);
   });
 
+  test('immediate refresh after typing search preserves typed term and narrowed rows before debounce delay', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'all-blocked');
+    await page.goto('/');
+
+    await page.locator('#filter-toggle').click();
+    await page.locator('#filter-dept').selectOption('Governance');
+
+    await page.evaluate(() => {
+      const search = document.getElementById('search');
+      const refresh = document.getElementById('refresh-btn');
+      search.value = 'permit';
+      search.dispatchEvent(new Event('input', { bubbles: true }));
+      refresh.click();
+    });
+
+    await page.waitForTimeout(75);
+
+    const postRefreshState = await page.evaluate(() => ({
+      searchValue: document.getElementById('search').value,
+      filterBadge: document.getElementById('filter-badge').textContent.trim(),
+      summaryTotal: document.querySelector('[data-hook="summary-total"] .hero-stat-value')
+        ?.textContent,
+      visibleRows: [...document.querySelectorAll('[data-hook="table-row-summary"]')].map((row) =>
+        row.textContent.trim()
+      ),
+    }));
+
+    expect(postRefreshState).toEqual({
+      searchValue: 'permit',
+      filterBadge: '1',
+      summaryTotal: '1',
+      visibleRows: [expect.stringContaining('Permit backlog')],
+    });
+  });
+
   test('table expansion keeps one expanded detail row at a time', async ({ page }) => {
     await mockSheetCsv(page, 'stale-data');
     await page.goto('/');

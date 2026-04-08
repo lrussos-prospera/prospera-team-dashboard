@@ -855,7 +855,13 @@ function syncFilterStateFromControls() {
   appState.view.filters.search = els.search.value;
 }
 
+function flushPendingSearchDebounce() {
+  clearTimeout(searchDebounceTimer);
+  syncFilterStateFromControls();
+}
+
 async function fetchSheetData() {
+  flushPendingSearchDebounce();
   setLifecyclePhase('loading');
 
   try {
