@@ -1,0 +1,24 @@
+{
+  "milestone": "leadership-ui-followup-fixups-2",
+  "round": 1,
+  "status": "fail",
+  "assertionsSummary": {
+    "total": 3,
+    "passed": 2,
+    "failed": 1,
+    "blocked": 0
+  },
+  "passedAssertions": [
+    "VAL-OVERVIEW-003",
+    "VAL-BLOCKED-002"
+  ],
+  "failedAssertions": [
+    {
+      "id": "VAL-CROSS-002",
+      "reason": "Reset restored the summary, blocked section, and full table, but incorrectly left the Governance scope indicator visible instead of fully returning to the default overview."
+    }
+  ],
+  "blockedAssertions": [],
+  "appliedUpdates": [],
+  "previousRound": null
+}

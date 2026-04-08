@@ -1,0 +1,85 @@
+{
+  "groupId": "blocked-overview-reset",
+  "milestone": "leadership-ui-followup-fixups-2",
+  "testedAt": "2026-04-08T09:13:12Z",
+  "surface": "browser-ui",
+  "isolation": {
+    "appUrl": "http://127.0.0.1:3100/index.html?qaFixture=canonical-blocked-mixed",
+    "browserSession": "blocked-overview-reset",
+    "fixture": "canonical-blocked-mixed",
+    "port": 3100
+  },
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-OVERVIEW-003",
+      "status": "pass",
+      "reason": "In overview, both goal cards showed goal label, 0% completion, done/total progress, stale treatment, and blocked-owner callouts only for normalized blocked rows. Legal Framework showed blocked owner Ana Cruz while excluding Leo Tan, and Infrastructure showed blocked owner Mia Park while excluding Zoe Klein.",
+      "evidence": {
+        "screenshots": [
+          "leadership-ui-followup-fixups-2/blocked-overview-reset/VAL-OVERVIEW-003-goal-cards.png"
+        ],
+        "observed": [
+          "Infrastructure card rendered '0 / 2 DONE', 'Blocked: Mia Park', and 'Stale (> 7d)'.",
+          "Legal Framework card rendered '0 / 2 DONE', 'Blocked: Ana Cruz', and 'Stale (> 7d)'.",
+          "At-risk owners Leo Tan and Zoe Klein did not appear in goal-card blocked-owner signals."
+        ],
+        "consoleErrors": "Failed to load resource: net::ERR_INVALID_URL",
+        "network": "No requests captured by agent-browser network logger during this manual flow."
+      }
+    },
+    {
+      "id": "VAL-BLOCKED-002",
+      "status": "pass",
+      "reason": "The blocked section matched the active subset through overview, Governance department scope, and a narrowed search. Unscoped it listed only Ana Cruz and Mia Park; scoped to Governance it narrowed to only Ana Cruz; after searching 'permit' it disappeared because the remaining Leo Tan row is only at-risk, not normalized blocked.",
+      "evidence": {
+        "screenshots": [
+          "leadership-ui-followup-fixups-2/blocked-overview-reset/VAL-BLOCKED-002-blocked-unscoped.png",
+          "leadership-ui-followup-fixups-2/blocked-overview-reset/VAL-BLOCKED-002-blocked-scoped.png",
+          "leadership-ui-followup-fixups-2/blocked-overview-reset/VAL-CROSS-002-department-scope-search.png"
+        ],
+        "observed": [
+          "Overview blocked section listed Ana Cruz / Tax-signoff blocker and Mia Park / Grid handoff stalled only.",
+          "After clicking Governance, blocked section narrowed to Ana Cruz only while table showed two Governance rows.",
+          "After searching 'permit', summary dropped to 0 blocked and the blocked section was hidden."
+        ],
+        "consoleErrors": "Failed to load resource: net::ERR_INVALID_URL",
+        "network": "No requests captured by agent-browser network logger during this manual flow."
+      }
+    },
+    {
+      "id": "VAL-CROSS-002",
+      "status": "fail",
+      "reason": "Reset restored the original summary, blocked section contents, and full table, but it did not fully return the page to the default overview because the scope indicator 'Scoped to department: Governance' and 'Clear scope' remained visible after reset.",
+      "evidence": {
+        "screenshots": [
+          "leadership-ui-followup-fixups-2/blocked-overview-reset/VAL-CROSS-002-department-scope-search.png",
+          "leadership-ui-followup-fixups-2/blocked-overview-reset/VAL-CROSS-002-reset-restored-overview.png"
+        ],
+        "observed": [
+          "Starting from overview, clicking Governance reduced the dataset to 2 updates and blocked section to Ana Cruz only.",
+          "Searching 'permit' reduced the dataset to Leo Tan only, with blocked count at 0 and blocked section hidden.",
+          "Pressing Reset restored the original 2 blocked / 4 total summary, both canonical blocked rows in the blocked section, and all 4 table rows, but the Governance scope badge remained visible."
+        ],
+        "consoleErrors": "Failed to load resource: net::ERR_INVALID_URL",
+        "network": "No requests captured by agent-browser network logger during this manual flow."
+      }
+    }
+  ],
+  "frictions": [
+    {
+      "description": "agent-browser network capture did not record the fixture-backed page requests and instead reported 'No requests captured'; evidence relied on screenshots and rendered text states.",
+      "resolved": true,
+      "resolution": "Used screenshot and DOM text verification for each state transition and still checked console/errors output.",
+      "affectedAssertions": [
+        "VAL-OVERVIEW-003",
+        "VAL-BLOCKED-002",
+        "VAL-CROSS-002"
+      ]
+    }
+  ],
+  "blockers": [],
+  "summary": "Tested 3 assertions in the localhost qaFixture flow: VAL-OVERVIEW-003 passed, VAL-BLOCKED-002 passed, and VAL-CROSS-002 failed because Reset left the Governance scope indicator visible instead of fully restoring the default overview state."
+}
