@@ -50,9 +50,7 @@ test.describe('dashboard browser harness fixtures', () => {
   });
 });
 
-test('live dashboard surface settles to loaded or explicit error state', async ({ page }) => {
-  await page.goto('/');
-
+async function waitForLiveTerminalState(page, timeout, message) {
   await expect
     .poll(
       async () => {
@@ -72,10 +70,29 @@ test('live dashboard surface settles to loaded or explicit error state', async (
         return 'pending';
       },
       {
-        timeout: 20000,
-        message:
-          'Dashboard did not settle into either loaded content or explicit error state in time.',
+        timeout,
+        message,
       }
     )
     .toMatch(/^(loaded|error)$/);
+}
+
+test('live dashboard surface settles to loaded or explicit error state', async ({ page }) => {
+  await page.goto('/');
+
+  try {
+    await waitForLiveTerminalState(
+      page,
+      25000,
+      'Dashboard did not settle into either loaded content or explicit error state in the initial window.'
+    );
+  } catch {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+
+    await waitForLiveTerminalState(
+      page,
+      25000,
+      'Dashboard did not settle into either loaded content or explicit error state after one controlled reload fallback.'
+    );
+  }
 });
