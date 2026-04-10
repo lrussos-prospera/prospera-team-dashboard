@@ -77,6 +77,41 @@ test.describe('goal drilldown view', () => {
     await expect(page.locator('[data-hook="drilldown-row"]')).toHaveCount(1);
     await expect(page.locator('[data-hook="drilldown-row"]')).toContainText('Ana Cruz');
   });
+
+  test('contextual filters scope the hero stats and blocked callout', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/goal/Legal+Framework?status=blocked');
+
+    const statValues = page.locator('.drilldown-stats .drilldown-stat-value');
+    await expect(page.locator('.drilldown-progress-pct')).toContainText('0%');
+    await expect(statValues.nth(1)).toHaveText('0');
+    await expect(statValues.nth(3)).toHaveText('1');
+    await expect(statValues.nth(4)).toHaveText('1');
+    await expect(page.locator('[data-hook="drilldown-departments"] .drilldown-chip')).toHaveCount(1);
+    await expect(page.locator('[data-hook="drilldown-blocked"] .drilldown-blocked-item')).toHaveCount(
+      1
+    );
+  });
+
+  test('expanding drilldown rows updates aria-expanded and collapses the prior row', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/goal/Legal+Framework');
+
+    const rows = page.locator('[data-hook="drilldown-row"]');
+    const details = page.locator('[data-hook="drilldown-row-detail"]');
+
+    await rows.nth(0).click();
+    await expect(rows.nth(0)).toHaveAttribute('aria-expanded', 'true');
+    await expect(details.nth(0)).toHaveClass(/expand-row-open/);
+
+    await rows.nth(1).click();
+    await expect(rows.nth(0)).toHaveAttribute('aria-expanded', 'false');
+    await expect(rows.nth(1)).toHaveAttribute('aria-expanded', 'true');
+    await expect(details.nth(0)).not.toHaveClass(/expand-row-open/);
+    await expect(details.nth(1)).toHaveClass(/expand-row-open/);
+  });
 });
 
 test.describe('department drilldown view', () => {
@@ -125,6 +160,22 @@ test.describe('department drilldown view', () => {
     await page.goto('/#/department/Governance?team=Policy');
 
     await expect(page.locator('[data-hook="drilldown-row"]')).toHaveCount(2);
+  });
+
+  test('contextual filters scope the hero stats and people list', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/department/Governance?status=blocked');
+
+    const statValues = page.locator('.drilldown-stats .drilldown-stat-value');
+    await expect(statValues.nth(0)).toHaveText('0%');
+    await expect(statValues.nth(3)).toHaveText('1');
+    await expect(statValues.nth(4)).toHaveText('1');
+    await expect(page.locator('[data-hook="drilldown-teams"]')).toHaveCount(0);
+    await expect(page.locator('[data-hook="drilldown-people"] .drilldown-person-row')).toHaveCount(
+      1
+    );
+    await expect(page.locator('[data-hook="drilldown-people"]')).toContainText('Ana Cruz');
+    await expect(page.locator('[data-hook="drilldown-people"]')).not.toContainText('Leo Tan');
   });
 });
 
@@ -184,6 +235,38 @@ test.describe('employee drilldown view', () => {
     await page.goto('/#/employee/Ana+Cruz?status=blocked');
 
     await expect(page.locator('[data-hook="drilldown-row"]')).toHaveCount(1);
+  });
+
+  test('contextual filters scope the hero stats and goal chips', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/employee/Ana+Cruz?status=blocked');
+
+    const statValues = page.locator('.drilldown-stats .drilldown-stat-value');
+    await expect(statValues.nth(0)).toHaveText('0%');
+    await expect(statValues.nth(3)).toHaveText('1');
+    await expect(statValues.nth(4)).toHaveText('1');
+    await expect(page.locator('[data-hook="drilldown-goals"] .drilldown-chip')).toHaveCount(1);
+    await expect(page.locator('[data-hook="drilldown-goals"]')).toContainText('Legal Framework');
+    await expect(page.locator('[data-hook="drilldown-goals"]')).not.toContainText('Infrastructure');
+  });
+
+  test('detail panel keeps notes visible and preserves single expanded row', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/employee/Ana+Cruz');
+
+    const rows = page.locator('[data-hook="drilldown-row"]');
+    const details = page.locator('[data-hook="drilldown-row-detail"]');
+
+    await rows.nth(0).click();
+    await expect(rows.nth(0)).toHaveAttribute('aria-expanded', 'true');
+    await expect(details.nth(0)).toContainText('Escalated');
+    await expect(details.nth(0)).toHaveClass(/expand-row-open/);
+
+    await rows.nth(1).click();
+    await expect(rows.nth(0)).toHaveAttribute('aria-expanded', 'false');
+    await expect(rows.nth(1)).toHaveAttribute('aria-expanded', 'true');
+    await expect(details.nth(0)).not.toHaveClass(/expand-row-open/);
+    await expect(details.nth(1)).toHaveClass(/expand-row-open/);
   });
 });
 
