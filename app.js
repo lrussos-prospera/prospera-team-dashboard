@@ -50,6 +50,7 @@ const elements = {
   csvBadge: document.getElementById('csv-badge'),
   csvDateLabel: document.getElementById('csv-date-label'),
   refreshBtn: document.getElementById('refresh-btn'),
+  headerRouteNav: document.getElementById('header-route-nav'),
   stateBox: document.getElementById('state-box'),
 
   summary: document.getElementById('summary'),
@@ -240,13 +241,6 @@ function slugify(name) {
   );
 }
 
-function isTrendPanelOpen() {
-  return sessionStorage.getItem('trendPanelOpen') === 'true';
-}
-function setTrendPanelOpen(open) {
-  sessionStorage.setItem('trendPanelOpen', String(open));
-}
-
 function renderPeriodToggle(container, currentPeriod, onChange) {
   const periods = [
     { key: '1w', label: '1W' },
@@ -324,6 +318,26 @@ function renderFrappeLineChart(containerId, historyRows, metric, yLabel) {
     axisOptions: { xIsSeries: true },
     tooltipOptions: { formatTooltipY: (d) => `${d} ${yLabel}` },
   });
+}
+
+function renderTrendPanelChartOrEmpty(containerId, historyRows, metric, yLabel, zeroStateMessage) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const daily = aggregateDaily(historyRows);
+  if (daily.length < 2) {
+    container.innerHTML =
+      '<p class="trend-panel-empty">Not enough data for this period. Try a wider range.</p>';
+    return;
+  }
+
+  const values = daily.map((row) => row[metric]);
+  if (values.every((value) => value === 0)) {
+    container.innerHTML = `<p class="trend-panel-empty">${escapeHtml(zeroStateMessage)}</p>`;
+    return;
+  }
+
+  renderFrappeLineChart(containerId, historyRows, metric, yLabel);
 }
 
 function clearSelectOptions(selectEl) {
@@ -545,6 +559,7 @@ function setLifecyclePhase(phase, errorMessage = '') {
   });
 
   const sourceLabel = appState.lifecycle.sourceLabel || 'Live';
+  renderHeaderRouteNav();
   syncVisibility(phase === 'loaded');
   updateDataBadge(phase, sourceLabel);
   updateSpinner(phase === 'loading');
@@ -610,56 +625,6 @@ function animateCounterTo(element, targetValue, duration) {
   requestAnimationFrame(step);
 }
 
-function updateOverviewStatDelta(heroZone, statHook, deltaHtml) {
-  const stat = heroZone.querySelector(`[data-hook="${statHook}"]`);
-  if (!stat) return;
-  stat.querySelectorAll('.delta-badge').forEach((badge) => badge.remove());
-  if (!deltaHtml) return;
-  const valueEl = stat.querySelector('.hero-stat-value');
-  if (valueEl) valueEl.insertAdjacentHTML('afterend', deltaHtml);
-}
-
-function handleOverviewPeriodChange(newPeriod) {
-  const newFilters = { ...appState.route.filters, period: newPeriod };
-  if (newPeriod === '1w') delete newFilters.period;
-  replaceRoute('overview', '', newFilters);
-  renderApp();
-}
-
-function refreshOverviewHistoryChrome(heroZone) {
-  const overviewPeriod = appState.route.filters.period || '1w';
-  const overallHistory = getHistoryForEntity('overall');
-  const overallDelta = computeDelta(overallHistory, overviewPeriod);
-  const pctBadgeHtml =
-    appState.history.status === 'loaded' ? renderDeltaBadge(overallDelta) : '';
-  const doneBadgeHtml =
-    appState.history.status === 'loaded' ? renderDeltaBadge(overallDelta, 'doneDelta') : '';
-  const blockedBadgeHtml =
-    appState.history.status === 'loaded' ? renderDeltaBadge(overallDelta, 'blockedDelta') : '';
-
-  const heroPctBadge = heroZone.querySelector('.hero-pct + .delta-badge');
-  if (heroPctBadge) heroPctBadge.remove();
-  const pctEl = heroZone.querySelector('[data-hook="summary-percent"]');
-  if (pctEl && pctBadgeHtml) {
-    pctEl.insertAdjacentHTML('afterend', pctBadgeHtml);
-  }
-
-  updateOverviewStatDelta(heroZone, 'summary-done', doneBadgeHtml);
-  updateOverviewStatDelta(heroZone, 'summary-blocked', blockedBadgeHtml);
-
-  const toggleContainer = heroZone.querySelector('#hero-period-toggle');
-  if (!toggleContainer) return;
-
-  if (appState.history.status === 'loaded') {
-    toggleContainer.style.removeProperty('display');
-    renderPeriodToggle(toggleContainer, overviewPeriod, handleOverviewPeriodChange);
-    return;
-  }
-
-  toggleContainer.style.display = 'none';
-  toggleContainer.innerHTML = '';
-}
-
 function renderSummary(rows) {
   const summary = deriveSummary(rows);
   const doneClass = summary.done > 0 ? 'status-done' : '';
@@ -711,35 +676,22 @@ function renderSummary(rows) {
       animateCounterTo(blockedEl, summary.blocked, 300);
     }
     if (totalEl) animateCounterTo(totalEl, summary.total, 300);
-    refreshOverviewHistoryChrome(existingHeroZone);
 
     return;
   }
 
-  const overviewPeriod = appState.route.filters.period || '1w';
-  const overallHistory = getHistoryForEntity('overall');
-  const overallDelta = computeDelta(overallHistory, overviewPeriod);
-  const deltaBadgeHtml = appState.history.status === 'loaded' ? renderDeltaBadge(overallDelta) : '';
-  const doneDeltaHtml =
-    appState.history.status === 'loaded' ? renderDeltaBadge(overallDelta, 'doneDelta') : '';
-  const blockedDeltaHtml =
-    appState.history.status === 'loaded' ? renderDeltaBadge(overallDelta, 'blockedDelta') : '';
-
   elements.summary.innerHTML = `
     <div class="hero-zone" data-hook="hero-zone">
       <div class="hero-pct" data-hook="summary-percent">${summary.pct}<span class="hero-pct-symbol">%</span></div>
-      ${deltaBadgeHtml}
       <div class="hero-label">Complete</div>
       <div class="hero-progress" data-hook="summary-progress">
         <div class="hero-progress-track">
           <div class="hero-progress-fill" data-hook="summary-progress-fill" style="width:${summary.pct}%"></div>
         </div>
       </div>
-      <div class="hero-period-toggle" id="hero-period-toggle"></div>
       <div class="hero-stats">
         <div class="hero-stat" data-hook="summary-done">
           <span class="hero-stat-value ${doneClass}">${summary.done}</span>
-          ${doneDeltaHtml}
           <span class="hero-stat-label">Done</span>
         </div>
         <div class="hero-stat-divider"></div>
@@ -750,7 +702,6 @@ function renderSummary(rows) {
         <div class="hero-stat-divider"></div>
         <div class="hero-stat" data-hook="summary-blocked">
           <span class="hero-stat-value ${blockedClass}">${summary.blocked}</span>
-          ${blockedDeltaHtml}
           <span class="hero-stat-label">Blocked</span>
         </div>
         <div class="hero-stat-divider"></div>
@@ -759,12 +710,8 @@ function renderSummary(rows) {
           <span class="hero-stat-label">Total Updates</span>
         </div>
       </div>
-      <a href="#/trends" class="hero-trends-link" data-hook="trends-link">View trends →</a>
     </div>
   `;
-
-  const heroZone = elements.summary.querySelector('.hero-zone');
-  if (heroZone) refreshOverviewHistoryChrome(heroZone);
 }
 
 function renderGoals(rows) {
@@ -1289,6 +1236,128 @@ function buildHash(view, param, filters) {
   return hash;
 }
 
+function getRouteNavCarryFilters(targetView) {
+  if (targetView === 'overview') return {};
+
+  const filters = {};
+  if (appState.route.filters?.period) {
+    filters.period = appState.route.filters.period;
+  }
+  return filters;
+}
+
+function getRouteNavEntities(view) {
+  if (view === 'goal') {
+    return [...new Set(appState.rows.map((row) => row['Goal'] || 'No Goal'))].sort((a, b) =>
+      a.localeCompare(b)
+    );
+  }
+
+  if (view === 'department') {
+    return [...new Set(appState.rows.map((row) => row['Department'] || 'Other'))].sort((a, b) =>
+      a.localeCompare(b)
+    );
+  }
+
+  if (view === 'employee') {
+    return [...new Set(appState.rows.map((row) => row['Responsible']).filter(Boolean))].sort(
+      (a, b) => a.localeCompare(b)
+    );
+  }
+
+  return [];
+}
+
+function renderHeaderRouteNav() {
+  const nav = elements.headerRouteNav;
+  if (!nav) return;
+
+  const isLoaded = appState.lifecycle.phase === 'loaded';
+  const currentView = appState.route.view;
+  const currentParam = appState.route.param;
+
+  const jumpGroups = [
+    {
+      view: 'goal',
+      label: 'Goals',
+      placeholder: isLoaded ? 'Jump to goal' : 'Loading goals…',
+      options: isLoaded ? getRouteNavEntities('goal') : [],
+    },
+    {
+      view: 'department',
+      label: 'Departments',
+      placeholder: isLoaded ? 'Jump to department' : 'Loading departments…',
+      options: isLoaded ? getRouteNavEntities('department') : [],
+    },
+    {
+      view: 'employee',
+      label: 'People',
+      placeholder: isLoaded ? 'Jump to person' : 'Loading people…',
+      options: isLoaded ? getRouteNavEntities('employee') : [],
+    },
+  ];
+
+  nav.innerHTML = `
+    <div class="header-route-links" data-hook="header-route-links">
+      <a
+        href="${escapeHtml(buildHash('overview'))}"
+        class="header-route-link${currentView === 'overview' ? ' is-active' : ''}"
+        data-hook="header-route-overview"
+      >
+        Overview
+      </a>
+      <a
+        href="${escapeHtml(buildHash('trends', '', getRouteNavCarryFilters('trends')))}"
+        class="header-route-link${currentView === 'trends' ? ' is-active' : ''}"
+        data-hook="header-route-trends"
+      >
+        Trends
+      </a>
+    </div>
+    <div class="header-route-jumps" data-hook="header-route-jumps">
+      ${jumpGroups
+        .map((group) => {
+          const isActive = currentView === group.view;
+          const selectedValue = isActive ? currentParam : '';
+          return `
+            <label
+              class="header-route-group${isActive ? ' is-active' : ''}${!isLoaded ? ' is-disabled' : ''}"
+              data-hook="header-route-group-${group.view}"
+            >
+              <span class="header-route-group-label">${group.label}</span>
+              <select
+                class="header-route-select"
+                data-route-jump="${group.view}"
+                data-hook="header-route-select-${group.view}"
+                aria-label="Jump to ${group.label.toLowerCase()}"
+                ${!isLoaded ? 'disabled' : ''}
+              >
+                <option value="" disabled${selectedValue ? '' : ' selected'}>${group.placeholder}</option>
+                ${group.options
+                  .map(
+                    (option) =>
+                      `<option value="${escapeHtml(option)}"${option === selectedValue ? ' selected' : ''}>${escapeHtml(option)}</option>`
+                  )
+                  .join('')}
+              </select>
+            </label>
+          `;
+        })
+        .join('')}
+    </div>
+  `;
+
+  nav.querySelectorAll('[data-route-jump]').forEach((select) => {
+    select.addEventListener('change', (event) => {
+      const target = event.currentTarget;
+      const view = target.getAttribute('data-route-jump');
+      const value = target.value;
+      if (!view || !value) return;
+      navigateTo(view, value, getRouteNavCarryFilters(view));
+    });
+  });
+}
+
 function navigateTo(view, param = '', filters = {}) {
   const hash = buildHash(view, param, filters);
   if (window.location.hash === hash) return;
@@ -1522,25 +1591,24 @@ function renderDrilldownTrendPanel(level, entity, filters) {
   );
 
   container.style.display = '';
-  const isOpen = isTrendPanelOpen();
-
   container.innerHTML = `
-    <button type="button" class="trend-panel-toggle" aria-expanded="${isOpen}" data-hook="trend-panel-toggle">
-      ${isOpen ? 'Hide' : 'Show'} Trends
-      <span class="trend-panel-chevron">${isOpen ? '▾' : '▸'}</span>
-    </button>
-    <div class="trend-panel-content${isOpen ? ' trend-panel-open' : ''}">
-      <div class="trend-panel-period" id="drilldown-trend-period"></div>
-      <div class="trend-panel-charts" id="drilldown-trend-charts"></div>
-    </div>
+    <section class="trend-panel-shell" data-hook="trend-panel-shell" aria-label="Performance trends">
+      <div class="trend-panel-header">
+        <div class="trend-panel-copy">
+          <p class="trend-panel-kicker">Historical view</p>
+          <h3 class="trend-panel-title" data-hook="trend-panel-title">Trends</h3>
+          <p class="trend-panel-description">Recent movement for this slice of the business, shown against the selected comparison window.</p>
+        </div>
+      </div>
+      <div class="trend-panel-body">
+        <div class="trend-panel-period-wrap">
+          <div class="trend-panel-period-label">Compare</div>
+          <div class="trend-panel-period" id="drilldown-trend-period"></div>
+        </div>
+        <div class="trend-panel-charts" id="drilldown-trend-charts"></div>
+      </div>
+    </section>
   `;
-
-  container.querySelector('.trend-panel-toggle').addEventListener('click', () => {
-    setTrendPanelOpen(!isOpen);
-    renderDrilldownTrendPanel(level, entity, filters);
-  });
-
-  if (!isOpen) return;
 
   const periodEl = document.getElementById('drilldown-trend-period');
   renderPeriodToggle(periodEl, period, (newPeriod) => {
@@ -1550,7 +1618,7 @@ function renderDrilldownTrendPanel(level, entity, filters) {
   });
 
   const chartsEl = document.getElementById('drilldown-trend-charts');
-  if (historyRows.length < 2) {
+  if (aggregateDaily(historyRows).length < 2) {
     chartsEl.innerHTML =
       '<p class="trend-panel-empty">Not enough data for this period. Try a wider range.</p>';
     return;
@@ -1561,24 +1629,66 @@ function renderDrilldownTrendPanel(level, entity, filters) {
       <div class="trend-panel-chart" id="trend-chart-pct" aria-label="Completion trend chart"></div>
       <div class="trend-panel-chart" id="trend-chart-blocked" aria-label="Blocked items trend chart"></div>
     `;
-    renderFrappeLineChart('trend-chart-pct', historyRows, 'pct', '% Complete');
-    renderFrappeLineChart('trend-chart-blocked', historyRows, 'blocked', 'Blocked');
+    renderTrendPanelChartOrEmpty(
+      'trend-chart-pct',
+      historyRows,
+      'pct',
+      '% Complete',
+      'No completed items recorded for this period yet.'
+    );
+    renderTrendPanelChartOrEmpty(
+      'trend-chart-blocked',
+      historyRows,
+      'blocked',
+      'Blocked',
+      'No blocked items recorded for this period.'
+    );
   } else if (level === 'department') {
     chartsEl.innerHTML = `
       <div class="trend-panel-chart" id="trend-chart-pct" aria-label="Completion trend chart"></div>
       <div class="trend-panel-chart" id="trend-chart-workload" aria-label="Workload trend chart"></div>
     `;
-    renderFrappeLineChart('trend-chart-pct', historyRows, 'pct', '% Complete');
-    renderFrappeLineChart('trend-chart-workload', historyRows, 'total', 'Total Items');
+    renderTrendPanelChartOrEmpty(
+      'trend-chart-pct',
+      historyRows,
+      'pct',
+      '% Complete',
+      'No completed items recorded for this period yet.'
+    );
+    renderTrendPanelChartOrEmpty(
+      'trend-chart-workload',
+      historyRows,
+      'total',
+      'Total Items',
+      'No workload recorded for this period yet.'
+    );
   } else if (level === 'employee') {
     chartsEl.innerHTML = `
       <div class="trend-panel-chart" id="trend-chart-pct" aria-label="Completion trend chart"></div>
       <div class="trend-panel-chart" id="trend-chart-done" aria-label="Done items trend chart"></div>
       <div class="trend-panel-chart" id="trend-chart-blocked" aria-label="Blocked items trend chart"></div>
     `;
-    renderFrappeLineChart('trend-chart-pct', historyRows, 'pct', '% Complete');
-    renderFrappeLineChart('trend-chart-done', historyRows, 'done', 'Done');
-    renderFrappeLineChart('trend-chart-blocked', historyRows, 'blocked', 'Blocked');
+    renderTrendPanelChartOrEmpty(
+      'trend-chart-pct',
+      historyRows,
+      'pct',
+      '% Complete',
+      'No completed items recorded for this period yet.'
+    );
+    renderTrendPanelChartOrEmpty(
+      'trend-chart-done',
+      historyRows,
+      'done',
+      'Done',
+      'No completed items recorded for this period yet.'
+    );
+    renderTrendPanelChartOrEmpty(
+      'trend-chart-blocked',
+      historyRows,
+      'blocked',
+      'Blocked',
+      'No blocked items recorded for this period.'
+    );
   }
 }
 
@@ -2090,6 +2200,7 @@ function renderEmployeeDrilldown(personName, filters) {
 }
 
 function renderApp() {
+  renderHeaderRouteNav();
   const isLoaded = appState.lifecycle.phase === 'loaded';
   syncVisibility(isLoaded);
   if (!isLoaded) return;
@@ -2642,4 +2753,5 @@ function unwindEscapeState() {
 initializeViewedDate();
 bindEvents();
 appState.route = parseRoute(window.location.hash);
+renderHeaderRouteNav();
 fetchSheetData();

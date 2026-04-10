@@ -1,5 +1,10 @@
 const { test, expect } = require('@playwright/test');
-const { mockSheetCsv, mockHistoryCsv, failHistoryCsv } = require('./helpers/sheet-fixtures');
+const {
+  mockSheetCsv,
+  mockHistoryCsv,
+  mockHistoryCsvBody,
+  failHistoryCsv,
+} = require('./helpers/sheet-fixtures');
 
 test.describe('goal drilldown view', () => {
   test('shows filtered summary and table for the goal', async ({ page }) => {
@@ -87,10 +92,12 @@ test.describe('goal drilldown view', () => {
     await expect(statValues.nth(1)).toHaveText('0');
     await expect(statValues.nth(3)).toHaveText('1');
     await expect(statValues.nth(4)).toHaveText('1');
-    await expect(page.locator('[data-hook="drilldown-departments"] .drilldown-chip')).toHaveCount(1);
-    await expect(page.locator('[data-hook="drilldown-blocked"] .drilldown-blocked-item')).toHaveCount(
+    await expect(page.locator('[data-hook="drilldown-departments"] .drilldown-chip')).toHaveCount(
       1
     );
+    await expect(
+      page.locator('[data-hook="drilldown-blocked"] .drilldown-blocked-item')
+    ).toHaveCount(1);
   });
 
   test('expanding drilldown rows updates aria-expanded and collapses the prior row', async ({
@@ -462,9 +469,7 @@ test.describe('trends drilldown view', () => {
     await expect(page.locator('.drilldown-subtitle')).toHaveText('Loading history data…');
     await page.waitForFunction(() => window.appState?.history?.status === 'error');
     await expect(page.locator('.drilldown-subtitle')).toHaveText('History data unavailable');
-    await expect(page.locator('.trends-empty-state')).toContainText(
-      'Could not load history data.'
-    );
+    await expect(page.locator('.trends-empty-state')).toContainText('Could not load history data.');
   });
 
   test('breadcrumb shows Overview > Trends', async ({ page }) => {
@@ -476,10 +481,10 @@ test.describe('trends drilldown view', () => {
     await expect(page.locator('.drilldown-breadcrumb-list')).toContainText('Trends');
   });
 
-  test('header trends link navigates to #/trends', async ({ page }) => {
+  test('header route nav trends link navigates to #/trends', async ({ page }) => {
     await mockSheetCsv(page, 'drilldown-mixed');
     await page.goto('/');
-    await page.locator('.header-trends-link').click();
+    await page.locator('[data-hook="header-route-trends"]').click();
     await expect(page).toHaveURL(/#\/trends/);
   });
 
@@ -494,25 +499,24 @@ test.describe('trends drilldown view', () => {
 });
 
 test.describe('drilldown trend panels', () => {
-  test('goal drilldown shows collapsible trend panel', async ({ page }) => {
+  test('goal drilldown shows always-open trend section', async ({ page }) => {
     await mockSheetCsv(page, 'drilldown-mixed');
     await mockHistoryCsv(page, 'history-mixed');
     await page.goto('/#/goal/Legal+Framework');
     await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
-    await expect(page.locator('[data-hook="trend-panel-toggle"]')).toBeVisible();
+    await expect(page.locator('[data-hook="trend-panel-shell"]')).toBeVisible();
+    await expect(page.locator('[data-hook="trend-panel-title"]')).toHaveText('Trends');
   });
 
-  test('trend panel toggle opens and closes', async ({ page }) => {
+  test('trend section shows visible charts without interaction', async ({ page }) => {
     await mockSheetCsv(page, 'drilldown-mixed');
     await mockHistoryCsv(page, 'history-mixed');
     await page.goto('/#/goal/Legal+Framework');
     await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
-    const toggle = page.locator('[data-hook="trend-panel-toggle"]');
-    await expect(toggle).toBeVisible();
-    await toggle.click();
-    await expect(page.locator('.trend-panel-open')).toBeVisible();
-    await toggle.click();
-    await expect(page.locator('.trend-panel-open')).toHaveCount(0);
+    await expect(page.locator('[data-hook="trend-panel-shell"]')).toBeVisible();
+    await expect(page.locator('.trend-panel-period .period-toggle')).toBeVisible();
+    await page.locator('.trend-panel-period').getByRole('radio', { name: '1M' }).click();
+    await expect(page.locator('.trend-panel-chart')).toHaveCount(2);
   });
 
   test('department drilldown shows trend panel', async ({ page }) => {
@@ -520,7 +524,7 @@ test.describe('drilldown trend panels', () => {
     await mockHistoryCsv(page, 'history-mixed');
     await page.goto('/#/department/Governance');
     await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
-    await expect(page.locator('[data-hook="trend-panel-toggle"]')).toBeVisible();
+    await expect(page.locator('[data-hook="trend-panel-shell"]')).toBeVisible();
   });
 
   test('employee drilldown shows trend panel', async ({ page }) => {
@@ -528,7 +532,7 @@ test.describe('drilldown trend panels', () => {
     await mockHistoryCsv(page, 'history-mixed');
     await page.goto('/#/employee/Ana+Cruz');
     await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
-    await expect(page.locator('[data-hook="trend-panel-toggle"]')).toBeVisible();
+    await expect(page.locator('[data-hook="trend-panel-shell"]')).toBeVisible();
   });
 
   test('trend panel hidden when no history data', async ({ page }) => {
@@ -536,7 +540,7 @@ test.describe('drilldown trend panels', () => {
     // History aborted by default
     await page.goto('/#/goal/Legal+Framework');
     await expect(page.locator('.drilldown-title')).toHaveText('Legal Framework');
-    await expect(page.locator('[data-hook="trend-panel-toggle"]')).toHaveCount(0);
+    await expect(page.locator('[data-hook="trend-panel-shell"]')).toHaveCount(0);
   });
 
   test('delta badge on goal drilldown hero', async ({ page }) => {
@@ -545,5 +549,63 @@ test.describe('drilldown trend panels', () => {
     await page.goto('/#/goal/Legal+Framework');
     await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
     await expect(page.locator('.drilldown-hero-card .delta-badge').first()).toBeVisible();
+  });
+
+  test('zero-only goal history shows explicit empty chart state instead of blank cards', async ({
+    page,
+  }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsvBody(
+      page,
+      [
+        'Timestamp,Level,Entity,Total,Done,Doing,Blocked,Pct',
+        '2026-04-08T20:42:02.991Z,overall,—,20,4,16,0,20',
+        '2026-04-08T20:42:02.991Z,goal,Legal Framework,3,0,3,0,0',
+        '2026-04-10T20:06:13.222Z,overall,—,20,5,15,0,25',
+        '2026-04-10T20:06:13.222Z,goal,Legal Framework,3,0,3,0,0',
+      ].join('\n')
+    );
+
+    await page.goto('/#/goal/Legal+Framework');
+    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
+
+    const emptyStates = page.locator('.trend-panel-chart .trend-panel-empty');
+    await expect(emptyStates).toHaveCount(2);
+    await expect(emptyStates.nth(0)).toContainText(
+      'No completed items recorded for this period yet.'
+    );
+    await expect(emptyStates.nth(1)).toContainText('No blocked items recorded for this period.');
+  });
+});
+
+test.describe('header route nav', () => {
+  test('shows route links and jump menus on drilldowns', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await page.goto('/#/department/Governance');
+
+    await expect(page.locator('[data-hook="header-route-overview"]')).toBeVisible();
+    await expect(page.locator('[data-hook="header-route-trends"]')).toBeVisible();
+    await expect(page.locator('[data-hook="header-route-select-goal"]')).toBeVisible();
+    await expect(page.locator('[data-hook="header-route-select-department"]')).toHaveValue(
+      'Governance'
+    );
+    await expect(page.locator('[data-hook="header-route-select-employee"]')).toBeVisible();
+  });
+
+  test('jump menus let you move directly between drilldowns', async ({ page }) => {
+    await mockSheetCsv(page, 'drilldown-mixed');
+    await mockHistoryCsv(page, 'history-mixed');
+    await page.goto('/#/department/Governance');
+
+    await page.locator('[data-hook="header-route-select-goal"]').selectOption('Infrastructure');
+    await expect(page).toHaveURL(/#\/goal\/Infrastructure/);
+    await expect(page.locator('.drilldown-title')).toHaveText('Infrastructure');
+
+    await page.locator('[data-hook="header-route-select-employee"]').selectOption('Mia Park');
+    await expect(page).toHaveURL(/#\/employee\/Mia\+Park/);
+    await expect(page.locator('.drilldown-title')).toHaveText('Mia Park');
+
+    await page.locator('[data-hook="header-route-trends"]').click();
+    await expect(page).toHaveURL(/#\/trends/);
   });
 });

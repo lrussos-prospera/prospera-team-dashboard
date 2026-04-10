@@ -277,16 +277,17 @@ test.describe('dashboard browser harness fixtures', () => {
     expect(result.view).toBe('trends');
   });
 
-  test('hero zone shows delta badge when history data exists', async ({ page }) => {
+  test('overview hero stays trend-free even when history data exists', async ({ page }) => {
     await mockSheetCsv(page, 'drilldown-mixed');
     await mockHistoryCsv(page, 'history-mixed');
     await page.goto('/');
     await expect(page.locator('#summary .hero-pct')).toBeVisible();
     await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
-    await expect(page.locator('#summary .delta-badge').first()).toBeVisible();
+    await expect(page.locator('#summary .delta-badge')).toHaveCount(0);
+    await expect(page.locator('#hero-period-toggle')).toHaveCount(0);
   });
 
-  test('overview history rerender restores toggle and all summary delta badges after delayed history load', async ({
+  test('overview history rerender keeps hero free of trend controls after delayed history load', async ({
     page,
   }) => {
     await mockSheetCsv(page, 'drilldown-mixed');
@@ -295,63 +296,21 @@ test.describe('dashboard browser harness fixtures', () => {
     await page.goto('/');
 
     await expect(page.locator('#summary .hero-pct')).toBeVisible();
-    await expect(page.locator('#hero-period-toggle')).toBeHidden();
-    await expect(page.locator('#summary [data-hook=\"summary-done\"] .delta-badge')).toHaveCount(0);
-    await expect(page.locator('#summary [data-hook=\"summary-blocked\"] .delta-badge')).toHaveCount(
-      0
-    );
+    await expect(page.locator('#hero-period-toggle')).toHaveCount(0);
+    await expect(page.locator('#summary .delta-badge')).toHaveCount(0);
 
     await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
-    await expect(page.locator('#hero-period-toggle')).toBeVisible();
-    await expect(page.locator('#summary .hero-pct + .delta-badge')).toHaveText('↑ 10%');
-    await expect(page.locator('#summary [data-hook="summary-done"] .delta-badge')).toHaveText(
-      '↑ 2'
-    );
-    await expect(page.locator('#summary [data-hook="summary-blocked"] .delta-badge')).toHaveText(
-      '↓ 1'
-    );
+    await expect(page.locator('#hero-period-toggle')).toHaveCount(0);
+    await expect(page.locator('#summary .delta-badge')).toHaveCount(0);
   });
 
-  test('overview period switch recomputes done and blocked delta badges', async ({ page }) => {
-    await mockSheetCsv(page, 'drilldown-mixed');
-    await mockHistoryCsv(page, 'history-mixed');
-
-    await page.goto('/');
-
-    await page.waitForFunction(() => window.appState?.history?.status === 'loaded');
-    await expect(page.locator('#summary [data-hook="summary-done"] .delta-badge')).toHaveText(
-      '↑ 2'
-    );
-    await expect(page.locator('#summary [data-hook="summary-blocked"] .delta-badge')).toHaveText(
-      '↓ 1'
-    );
-
-    await page.locator('#hero-period-toggle').getByRole('radio', { name: '1M' }).click();
-
-    await expect(page).toHaveURL(/period=1m/);
-    await expect(page.locator('#summary .hero-pct + .delta-badge')).toHaveText('↑ 30%');
-    await expect(page.locator('#summary [data-hook="summary-done"] .delta-badge')).toHaveText(
-      '↑ 6'
-    );
-    await expect(page.locator('#summary [data-hook="summary-blocked"] .delta-badge')).toHaveText(
-      '↓ 2'
-    );
-  });
-
-  test('no delta badges when history has fewer than 2 snapshots', async ({ page }) => {
+  test('overview hero shows no trend affordances when history is unavailable', async ({ page }) => {
     await mockSheetCsv(page, 'drilldown-mixed');
     // History is aborted by default — no history data
     await page.goto('/');
     await expect(page.locator('#summary .hero-pct')).toBeVisible();
     await expect(page.locator('#summary .delta-badge')).toHaveCount(0);
-  });
-
-  test('trends link navigates to #/trends', async ({ page }) => {
-    await mockSheetCsv(page, 'drilldown-mixed');
-    await page.goto('/');
-    await expect(page.locator('[data-hook="trends-link"]')).toBeVisible();
-    await page.locator('[data-hook="trends-link"]').click();
-    await expect(page).toHaveURL(/#\/trends/);
+    await expect(page.locator('#hero-period-toggle')).toHaveCount(0);
   });
 
   test('goal cards show delta badge when history exists', async ({ page }) => {

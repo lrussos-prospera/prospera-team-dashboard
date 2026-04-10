@@ -79,6 +79,21 @@ async function mockHistoryCsv(page, fixtureName, options = {}) {
   });
 }
 
+async function mockHistoryCsvBody(page, body, options = {}) {
+  await page.route(HISTORY_ROUTE, async (route) => {
+    if (options.delayMs) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, options.delayMs);
+      });
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/csv; charset=utf-8',
+      body,
+    });
+  });
+}
+
 async function failHistoryCsv(page, options = {}) {
   await page.route(HISTORY_ROUTE, async (route) => {
     if (options.delayMs) {
@@ -108,5 +123,6 @@ module.exports = {
   mockSheetCsvSequence,
   mockSheetCsvBody,
   mockHistoryCsv,
+  mockHistoryCsvBody,
   failHistoryCsv,
 };
