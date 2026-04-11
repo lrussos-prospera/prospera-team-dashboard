@@ -89,9 +89,9 @@ test.describe('goal drilldown view', () => {
 
     const statValues = page.locator('.drilldown-stats .drilldown-stat-value');
     await expect(page.locator('.drilldown-progress-pct')).toContainText('0%');
-    await expect(statValues.nth(1)).toHaveText('0');
+    await expect(statValues.nth(0)).toHaveText('0');
+    await expect(statValues.nth(2)).toHaveText('1');
     await expect(statValues.nth(3)).toHaveText('1');
-    await expect(statValues.nth(4)).toHaveText('1');
     await expect(page.locator('[data-hook="drilldown-departments"] .drilldown-chip')).toHaveCount(
       1
     );
@@ -586,7 +586,7 @@ test.describe('header route nav', () => {
     await expect(page.locator('[data-hook="header-route-overview"]')).toBeVisible();
     await expect(page.locator('[data-hook="header-route-trends"]')).toBeVisible();
     await expect(page.locator('[data-hook="header-route-select-goal"]')).toBeVisible();
-    await expect(page.locator('[data-hook="header-route-select-department"]')).toHaveValue(
+    await expect(page.locator('[data-hook="header-route-select-department"]')).toContainText(
       'Governance'
     );
     await expect(page.locator('[data-hook="header-route-select-employee"]')).toBeVisible();
@@ -597,11 +597,15 @@ test.describe('header route nav', () => {
     await mockHistoryCsv(page, 'history-mixed');
     await page.goto('/#/department/Governance');
 
-    await page.locator('[data-hook="header-route-select-goal"]').selectOption('Infrastructure');
+    // Open goals dropdown and click an option
+    await page.locator('[data-hook="header-route-select-goal"]').click();
+    await page.locator('.header-route-option[data-value="Infrastructure"]').click();
     await expect(page).toHaveURL(/#\/goal\/Infrastructure/);
     await expect(page.locator('.drilldown-title')).toHaveText('Infrastructure');
 
-    await page.locator('[data-hook="header-route-select-employee"]').selectOption('Mia Park');
+    // Open people dropdown and click an option
+    await page.locator('[data-hook="header-route-select-employee"]').click();
+    await page.locator('.header-route-option[data-value="Mia Park"]').click();
     await expect(page).toHaveURL(/#\/employee\/Mia\+Park/);
     await expect(page.locator('.drilldown-title')).toHaveText('Mia Park');
 

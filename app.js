@@ -1319,43 +1319,126 @@ function renderHeaderRouteNav() {
         .map((group) => {
           const isActive = currentView === group.view;
           const selectedValue = isActive ? currentParam : '';
+          const displayText = selectedValue
+            ? selectedValue.length > 22
+              ? selectedValue.slice(0, 22) + '…'
+              : selectedValue
+            : group.placeholder;
           return `
-            <label
+            <div
               class="header-route-group${isActive ? ' is-active' : ''}${!isLoaded ? ' is-disabled' : ''}"
               data-hook="header-route-group-${group.view}"
             >
               <span class="header-route-group-label">${group.label}</span>
-              <select
-                class="header-route-select"
+              <button
+                type="button"
+                class="header-route-trigger"
                 data-route-jump="${group.view}"
                 data-hook="header-route-select-${group.view}"
                 aria-label="Jump to ${group.label.toLowerCase()}"
+                aria-haspopup="listbox"
+                aria-expanded="false"
                 ${!isLoaded ? 'disabled' : ''}
-              >
-                <option value="" disabled${selectedValue ? '' : ' selected'}>${group.placeholder}</option>
+              >${escapeHtml(displayText)}</button>
+              ${isActive ? `<button type="button" class="header-route-clear" data-route-clear="${group.view}" aria-label="Back to overview" data-hook="header-route-clear-${group.view}">×</button>` : ''}
+              <div class="header-route-dropdown" role="listbox" aria-label="${group.label}">
                 ${group.options
                   .map(
                     (option) =>
-                      `<option value="${escapeHtml(option)}"${option === selectedValue ? ' selected' : ''}>${escapeHtml(option)}</option>`
+                      `<div class="header-route-option${option === selectedValue ? ' is-selected' : ''}" role="option" tabindex="0" aria-selected="${option === selectedValue}" data-value="${escapeHtml(option)}">${escapeHtml(option)}</div>`
                   )
                   .join('')}
-              </select>
-            </label>
+                ${group.options.length === 0 ? '<div class="header-route-option is-empty">No items</div>' : ''}
+              </div>
+            </div>
           `;
         })
         .join('')}
     </div>
   `;
 
-  nav.querySelectorAll('[data-route-jump]').forEach((select) => {
-    select.addEventListener('change', (event) => {
-      const target = event.currentTarget;
-      const view = target.getAttribute('data-route-jump');
-      const value = target.value;
-      if (!view || !value) return;
-      navigateTo(view, value, getRouteNavCarryFilters(view));
+  // Custom dropdown toggle + selection
+  nav.querySelectorAll('[data-route-jump]').forEach((trigger) => {
+    const group = trigger.closest('.header-route-group');
+    const dropdown = group.querySelector('.header-route-dropdown');
+    const view = trigger.getAttribute('data-route-jump');
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const wasOpen = trigger.getAttribute('aria-expanded') === 'true';
+      // Close all other dropdowns first
+      nav.querySelectorAll('.header-route-trigger[aria-expanded="true"]').forEach((other) => {
+        other.setAttribute('aria-expanded', 'false');
+      });
+      if (!wasOpen) {
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    });
+
+    // Option selection
+    dropdown.querySelectorAll('.header-route-option:not(.is-empty)').forEach((option) => {
+      option.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const value = option.getAttribute('data-value');
+        if (!value) return;
+        trigger.setAttribute('aria-expanded', 'false');
+        navigateTo(view, value, getRouteNavCarryFilters(view));
+      });
+    });
+
+    // Keyboard navigation
+    trigger.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.focus();
+      }
+      if (e.key === 'ArrowDown' && trigger.getAttribute('aria-expanded') === 'true') {
+        e.preventDefault();
+        const first = dropdown.querySelector('.header-route-option:not(.is-empty)');
+        if (first) first.focus();
+      }
+    });
+
+    dropdown.addEventListener('keydown', (e) => {
+      const options = [...dropdown.querySelectorAll('.header-route-option:not(.is-empty)')];
+      const idx = options.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown' && idx < options.length - 1) {
+        e.preventDefault();
+        options[idx + 1].focus();
+      } else if (e.key === 'ArrowUp' && idx > 0) {
+        e.preventDefault();
+        options[idx - 1].focus();
+      } else if (e.key === 'ArrowUp' && idx === 0) {
+        e.preventDefault();
+        trigger.focus();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (idx >= 0) options[idx].click();
+      } else if (e.key === 'Escape') {
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.focus();
+      }
     });
   });
+
+  // Clear buttons → back to overview
+  nav.querySelectorAll('[data-route-clear]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigateTo('overview');
+    });
+  });
+
+  // Click outside closes all dropdowns
+  function closeAllHeaderDropdowns(e) {
+    if (!nav.contains(e.target)) {
+      nav.querySelectorAll('.header-route-trigger[aria-expanded="true"]').forEach((t) => {
+        t.setAttribute('aria-expanded', 'false');
+      });
+    }
+  }
+  document.removeEventListener('click', closeAllHeaderDropdowns);
+  document.addEventListener('click', closeAllHeaderDropdowns);
 }
 
 function navigateTo(view, param = '', filters = {}) {
@@ -1462,16 +1545,19 @@ function applyDrilldownFilters(rows, filters) {
   });
 }
 
-function renderDrilldownSummaryStats(summary) {
+function renderDrilldownSummaryStats(summary, opts = {}) {
   const doneClass = summary.done > 0 ? ' status-done' : '';
   const blockedClass = summary.blocked > 0 ? ' status-blocked' : '';
-  return `
-    <div class="drilldown-stats">
-      <div class="drilldown-stat">
+  const completeStat = opts.omitPct
+    ? ''
+    : `<div class="drilldown-stat">
         <span class="drilldown-stat-value">${summary.pct}%</span>
         <span class="drilldown-stat-label">Complete</span>
       </div>
-      <div class="drilldown-stat-divider"></div>
+      <div class="drilldown-stat-divider"></div>`;
+  return `
+    <div class="drilldown-stats">
+      ${completeStat}
       <div class="drilldown-stat">
         <span class="drilldown-stat-value${doneClass}">${summary.done}</span>
         <span class="drilldown-stat-label">Done</span>
@@ -1764,7 +1850,7 @@ function renderGoalDrilldown(goalName, filters) {
           <div class="drilldown-progress-fill" style="width:${summary.pct}%"></div>
         </div>
       </div>
-      ${renderDrilldownSummaryStats(summary)}
+      ${renderDrilldownSummaryStats(summary, { omitPct: true })}
       ${departmentSection}
       ${blockedCallout}
     </div>
@@ -1913,6 +1999,9 @@ function renderTrendsDrilldown(filters) {
 
 function renderDrilldownView() {
   const { view, param, filters } = appState.route;
+  elements.drilldownView.setAttribute('data-drilldown-type', view);
+  const firstTh = elements.drilldownTableWrap.querySelector('thead th:first-child');
+  if (firstTh) firstTh.textContent = view === 'employee' ? 'Department' : 'Responsible';
   if (view === 'goal') return renderGoalDrilldown(param, filters);
   if (view === 'department') return renderDepartmentDrilldown(param, filters);
   if (view === 'employee') return renderEmployeeDrilldown(param, filters);
@@ -1939,7 +2028,7 @@ function renderDepartmentDrilldown(deptName, filters) {
   const teams = [...new Set(allDeptRows.map((r) => r['Team']).filter(Boolean))];
   const people = [...new Set(allDeptRows.map((r) => r['Responsible']).filter(Boolean))];
   elements.drilldownTitle.textContent = deptName;
-  elements.drilldownSubtitle.textContent = `${teams.length} team${teams.length !== 1 ? 's' : ''} · ${people.length} people · ${allDeptRows.length} updates`;
+  elements.drilldownSubtitle.textContent = `${teams.length} team${teams.length !== 1 ? 's' : ''} · ${people.length} ${people.length !== 1 ? 'people' : 'person'} · ${allDeptRows.length} update${allDeptRows.length !== 1 ? 's' : ''}`;
 
   // Hero — per-team breakdown
   const teamStats = {};
